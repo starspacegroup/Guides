@@ -1,10 +1,10 @@
-# Atlas
+# *Space Atlas
 
 The atlas.starspace.group platform for creating sets of guides (e.g. UI/UX Patterns and the Principles that guide them).
 
 ## Overview
 
-Atlas is a SvelteKit application designed to help teams create and manage:
+*Space Atlas is a SvelteKit application designed to help teams create and manage:
 - **Principles**: Core guiding principles for design and development
 - **Patterns**: Reusable patterns that implement one or more principles
 

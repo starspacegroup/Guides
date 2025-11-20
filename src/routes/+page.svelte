@@ -1,5 +1,5 @@
 <div class="container">
-	<h1>Atlas</h1>
+	<h1>*Space Atlas</h1>
 	<p class="subtitle">Platform for creating sets of guides</p>
 	
 	<div class="links">

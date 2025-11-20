@@ -1,6 +1,6 @@
 # Deployment Guide for Cloudflare Pages
 
-This guide explains how to deploy the Atlas application to Cloudflare Pages.
+This guide explains how to deploy the *Space Atlas application to Cloudflare Pages.
 
 ## Prerequisites
 

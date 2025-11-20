@@ -9,7 +9,7 @@
 </svelte:head>
 
 <nav>
-	<a href="/" class="logo">Atlas</a>
+	<a href="/" class="logo">*Space Atlas</a>
 	<div class="nav-links">
 		<a href="/principles">Principles</a>
 		<a href="/patterns">Patterns</a>
