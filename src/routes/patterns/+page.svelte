@@ -1,27 +1,53 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
+	import type { Pattern } from '$lib/types';
+	import Editor from '$lib/components/Editor.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	
 	let showForm = $state(false);
+	let editingPattern = $state<Pattern | null>(null);
+	let createContent = $state('');
+	let editContent = $state('');
 	
 	function getPrincipleNames(principleIds: string[]) {
 		return principleIds
 			.map(id => data.principles.find(p => p.id === id)?.title)
 			.filter(Boolean);
 	}
+	
+	function startEdit(pattern: Pattern) {
+		editingPattern = pattern;
+		editContent = pattern.content || '';
+		showForm = false;
+	}
+	
+	function cancelEdit() {
+		editingPattern = null;
+		editContent = '';
+	}
+	
+	function toggleForm() {
+		showForm = !showForm;
+		if (showForm) {
+			editingPattern = null;
+			createContent = '';
+		}
+	}
 </script>
 
 <div class="container">
 	<div class="header">
 		<h1>Patterns</h1>
-		<button onclick={() => showForm = !showForm} class="btn-primary">
-			{showForm ? 'Cancel' : 'Add Pattern'}
-		</button>
+		{#if data.isAuthorized}
+			<button onclick={toggleForm} class="btn-primary">
+				{showForm ? 'Cancel' : 'Add Pattern'}
+			</button>
+		{/if}
 	</div>
 
-	{#if showForm}
+	{#if showForm && data.isAuthorized}
 		<form method="POST" action="?/create" use:enhance class="form-card">
 			<div class="form-group">
 				<label for="title">Title</label>
@@ -61,6 +87,12 @@
 				</div>
 			</div>
 
+			<div class="form-group">
+				<label for="content">Detailed Content</label>
+				<Editor bind:value={createContent} />
+				<input type="hidden" name="content" value={createContent} />
+			</div>
+
 			{#if form?.success}
 				<div class="success">Pattern created successfully!</div>
 			{/if}
@@ -73,10 +105,74 @@
 		</form>
 	{/if}
 
+	{#if editingPattern && data.isAuthorized}
+		<form method="POST" action="?/update" use:enhance class="form-card">
+			<input type="hidden" name="id" value={editingPattern.id} />
+			
+			<div class="form-group">
+				<label for="edit-title">Title</label>
+				<input
+					type="text"
+					id="edit-title"
+					name="title"
+					required
+					value={editingPattern.title}
+				/>
+			</div>
+			
+			<div class="form-group">
+				<label for="edit-description">Description</label>
+				<textarea
+					id="edit-description"
+					name="description"
+					required
+					rows="4"
+					value={editingPattern.description}
+				></textarea>
+			</div>
+
+			<div class="form-group">
+				<div class="label-text">Related Principles</div>
+				<div class="checkbox-group">
+					{#each data.principles as principle (principle.id)}
+						<label class="checkbox-label">
+							<input
+								type="checkbox"
+								name="principleIds"
+								value={principle.id}
+								checked={editingPattern.principleIds.includes(principle.id)}
+							/>
+							{principle.title}
+						</label>
+					{/each}
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label for="edit-content">Detailed Content</label>
+				<Editor bind:value={editContent} />
+				<input type="hidden" name="content" value={editContent} />
+			</div>
+
+			{#if form?.success}
+				<div class="success">Pattern updated successfully!</div>
+			{/if}
+			
+			{#if form?.error}
+				<div class="error">{form.error}</div>
+			{/if}
+
+			<div class="button-group">
+				<button type="submit" class="btn-primary">Update Pattern</button>
+				<button type="button" onclick={cancelEdit} class="btn-secondary">Cancel</button>
+			</div>
+		</form>
+	{/if}
+
 	<div class="grid">
 		{#each data.patterns as pattern (pattern.id)}
 			<div class="card">
-				<h2>{pattern.title}</h2>
+				<h2><a href="/patterns/{pattern.id}">{pattern.title}</a></h2>
 				<p>{pattern.description}</p>
 				
 				{#if pattern.principleIds.length > 0}
@@ -91,6 +187,9 @@
 				<div class="meta">
 					Created: {new Date(pattern.createdAt).toLocaleDateString()}
 				</div>
+				{#if data.isAuthorized}
+					<button onclick={() => startEdit(pattern)} class="btn-edit">Edit</button>
+				{/if}
 			</div>
 		{/each}
 	</div>
@@ -112,12 +211,12 @@
 	
 	h1 {
 		margin: 0;
-		color: #333;
+		color: var(--text-primary);
 	}
 	
 	.btn-primary {
-		background: #0066cc;
-		color: white;
+		background: var(--nav-bg);
+		color: var(--nav-text);
 		border: none;
 		padding: 0.75rem 1.5rem;
 		border-radius: 4px;
@@ -127,15 +226,15 @@
 	}
 	
 	.btn-primary:hover {
-		background: #0052a3;
+		background: var(--button-hover);
 	}
 	
 	.form-card {
-		background: #f8f9fa;
+		background: var(--bg-secondary);
 		padding: 2rem;
 		border-radius: 8px;
 		margin-bottom: 2rem;
-		border: 1px solid #e0e0e0;
+		border: 1px solid var(--border-primary);
 	}
 	
 	.form-group {
@@ -146,22 +245,24 @@
 		display: block;
 		margin-bottom: 0.5rem;
 		font-weight: 600;
-		color: #333;
+		color: var(--text-primary);
 	}
 	
 	input[type="text"], textarea {
 		width: 100%;
 		padding: 0.75rem;
-		border: 1px solid #ddd;
+		border: 1px solid var(--border-secondary);
 		border-radius: 4px;
 		font-size: 1rem;
 		font-family: inherit;
 		box-sizing: border-box;
+		background: var(--bg-primary);
+		color: var(--text-primary);
 	}
 	
 	input[type="text"]:focus, textarea:focus {
 		outline: none;
-		border-color: #0066cc;
+		border-color: var(--nav-bg);
 	}
 	
 	.checkbox-group {
@@ -206,27 +307,37 @@
 	}
 	
 	.card {
-		background: white;
+		background: var(--bg-secondary);
 		padding: 1.5rem;
 		border-radius: 8px;
-		border: 1px solid #e0e0e0;
+		border: 1px solid var(--border-primary);
 		transition: transform 0.2s, box-shadow 0.2s;
 	}
 	
 	.card:hover {
 		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-md);
 	}
 	
 	.card h2 {
 		margin: 0 0 1rem 0;
-		color: #0066cc;
 		font-size: 1.3rem;
+	}
+
+	.card h2 a {
+		color: var(--nav-bg);
+		text-decoration: none;
+		transition: color 0.2s;
+	}
+
+	.card h2 a:hover {
+		color: var(--button-hover);
+		text-decoration: underline;
 	}
 	
 	.card p {
 		margin: 0 0 1rem 0;
-		color: #666;
+		color: var(--text-secondary);
 		line-height: 1.6;
 	}
 	
@@ -237,8 +348,8 @@
 	
 	.principle-tag {
 		display: inline-block;
-		background: #e3f2fd;
-		color: #0066cc;
+		background: var(--bg-tertiary);
+		color: var(--nav-bg);
 		padding: 0.25rem 0.75rem;
 		border-radius: 12px;
 		font-size: 0.875rem;
@@ -248,6 +359,42 @@
 	
 	.meta {
 		font-size: 0.875rem;
-		color: #999;
+		color: var(--text-tertiary);
+		margin-bottom: 1rem;
+	}
+	
+	.btn-edit {
+		background: #28a745;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 0.9rem;
+		transition: background 0.2s;
+	}
+	
+	.btn-edit:hover {
+		background: #218838;
+	}
+	
+	.btn-secondary {
+		background: var(--button-bg);
+		color: var(--button-text);
+		border: none;
+		padding: 0.75rem 1.5rem;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 1rem;
+		transition: background 0.2s;
+	}
+	
+	.btn-secondary:hover {
+		background: var(--button-hover);
+	}
+	
+	.button-group {
+		display: flex;
+		gap: 1rem;
 	}
 </style>

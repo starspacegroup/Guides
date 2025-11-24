@@ -1,0 +1,12 @@
+# Wrangler configuration for local development
+# This file is used when running `wrangler pages dev`
+
+name = "space-atlas"
+compatibility_date = "2024-01-01"
+
+# For local development, create a .dev.vars file with your environment variables
+# .dev.vars is gitignored and should contain:
+# AUTH_SECRET=your-secret
+# AUTH_GITHUB_ID=your-client-id
+# AUTH_GITHUB_SECRET=your-client-secret
+# AUTHORIZED_USER_NAME=your-github-username

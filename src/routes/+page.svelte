@@ -25,12 +25,12 @@
 	h1 {
 		font-size: 3rem;
 		margin-bottom: 0.5rem;
-		color: #333;
+		color: var(--text-primary);
 	}
 	
 	.subtitle {
 		font-size: 1.2rem;
-		color: #666;
+		color: var(--text-secondary);
 		margin-bottom: 3rem;
 	}
 	
@@ -43,26 +43,26 @@
 	.card {
 		display: block;
 		padding: 2rem;
-		background: #f8f9fa;
+		background: var(--bg-secondary);
 		border-radius: 8px;
 		text-decoration: none;
 		color: inherit;
 		transition: transform 0.2s, box-shadow 0.2s;
-		border: 1px solid #e0e0e0;
+		border: 1px solid var(--border-primary);
 	}
 	
 	.card:hover {
 		transform: translateY(-4px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-md);
 	}
 	
 	.card h2 {
 		margin: 0 0 0.5rem 0;
-		color: #0066cc;
+		color: var(--nav-bg);
 	}
 	
 	.card p {
 		margin: 0;
-		color: #666;
+		color: var(--text-secondary);
 	}
 </style>
