@@ -91,8 +91,8 @@
 		{
 			id: 'sections',
 			label: 'Browse User Interface Guides',
-			description: 'Open the user-interfaces section',
-			action: () => goto('/user-interfaces'),
+			description: 'Open the user-interface section',
+			action: () => goto('/user-interface'),
 			icon: '🧭'
 		},
 		{

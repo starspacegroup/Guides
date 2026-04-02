@@ -17,7 +17,7 @@
 		<h1>Guides for the *Space community</h1>
 		<p class="lede">
 			Publish practical guides in section-based URLs like
-			<code>/user-interfaces/theme-toggles</code> with Markdown-powered rich text editing.
+			<code>/user-interface/theme-toggles</code> with Markdown-powered rich text editing.
 		</p>
 		<div class="actions">
 			<a class="button primary" href="/auth/login">Sign In</a>
@@ -30,7 +30,7 @@
 			<h2>1. Create a Section</h2>
 			<p>
 				Use <strong>Admin CMS</strong> to create section slugs such as
-				<code>user-interfaces</code>, <code>cloudflare</code>, or <code>automation</code>.
+				<code>user-interface</code>, <code>cloudflare</code>, or <code>automation</code>.
 			</p>
 		</article>
 		<article class="card">

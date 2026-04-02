@@ -71,9 +71,9 @@ export const blogContentType: ContentTypeDefinition = {
   }
 };
 
-export const userInterfacesContentType: ContentTypeDefinition = {
-  slug: 'user-interfaces',
-  name: 'User Interfaces',
+export const userInterfaceContentType: ContentTypeDefinition = {
+  slug: 'user-interface',
+  name: 'User Interface',
   description: 'Section guides for UI implementation details and design decisions',
   icon: 'layout',
   fields: [
@@ -122,7 +122,7 @@ export const userInterfacesContentType: ContentTypeDefinition = {
     hasTags: true,
     hasSEO: true,
     hasAuthor: true,
-    routePrefix: '/user-interfaces',
+    routePrefix: '/user-interface',
     listPageSize: 12,
     defaultSort: 'published_at',
     defaultSortDirection: 'desc',
@@ -134,7 +134,7 @@ export const userInterfacesContentType: ContentTypeDefinition = {
 
 export const contentTypeRegistry: ContentTypeDefinition[] = [
   blogContentType,
-  userInterfacesContentType
+  userInterfaceContentType
 ];
 
 export function getContentTypeDefinition(slug: string): ContentTypeDefinition | undefined {

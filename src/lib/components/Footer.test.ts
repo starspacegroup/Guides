@@ -64,10 +64,10 @@ describe('Footer', () => {
 		expect(adminCmsLink).toHaveAttribute('href', '/admin/cms');
 	});
 
-	it('should contain user interfaces section link', () => {
+	it('should contain user interface section link', () => {
 		render(Footer);
-		const sectionLink = screen.getByRole('link', { name: /user interfaces/i });
-		expect(sectionLink).toHaveAttribute('href', '/user-interfaces');
+		const sectionLink = screen.getByRole('link', { name: /user interface/i });
+		expect(sectionLink).toHaveAttribute('href', '/user-interface');
 	});
 
 	it('should contain GitHub link in resources', () => {

@@ -4,12 +4,12 @@ Guides is the foundation for guides.starspace.group.
 
 It is a section-based guide platform for the *Space Discord community where content is published with URLs shaped like:
 
-- /user-interfaces
-- /user-interfaces/theme-toggles
+- /user-interface
+- /user-interface/theme-toggles
 
 ## Core Idea
 
-- Sections are modeled as CMS content types (for example: user-interfaces, cloudflare, automation).
+- Sections are modeled as CMS content types (for example: user-interface, cloudflare, automation).
 - Guide pages are content items within each section.
 - Guide bodies are written with the built-in rich text (Markdown-supporting) editor.
 

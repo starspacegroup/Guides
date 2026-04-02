@@ -47,7 +47,7 @@
 					<h3 class="footer-heading">Resources</h3>
 					<ul class="footer-links">
 						<li><a href="/admin/cms">Admin CMS</a></li>
-						<li><a href="/user-interfaces">User Interfaces</a></li>
+						<li><a href="/user-interface">User Interface</a></li>
 						<li>
 							<a
 								href="https://github.com/starspacegroup/Guides"
