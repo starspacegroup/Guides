@@ -4,7 +4,7 @@
 
 <SharingMeta
 	title="Guides"
-	description="Guides for everyone, created by *Space community members at guides.starspace.group"
+	description="Curated software guides from the rockstars at *Space on guides.starspace.group"
 	image="/og-image.png"
 	imageAlt="Guides by *Space"
 	imageWidth={1200}
@@ -14,7 +14,7 @@
 <section class="landing">
 	<div class="hero">
 		<p class="eyebrow">guides.starspace.group</p>
-		<h1>Guides for everyone, created by *Space community members</h1>
+		<h1>Curated software guides from the rockstars at *Space</h1>
 		<p class="lede">
 			Publish practical guides in section-based URLs like
 			<code>/user-interface/theme-toggles</code> with Markdown-powered rich text editing.
