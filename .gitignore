@@ -1,0 +1,32 @@
+.DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+.wrangler
+wrangler.toml.local
+
+# LLM outputs (test logs, coverage dumps, etc.)
+.llm-outputs/
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
