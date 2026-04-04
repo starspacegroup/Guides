@@ -264,7 +264,7 @@
 
 {#if show}
 	<div
-		class="backdrop"
+		class="palette-overlay"
 		on:click={handleBackdropClick}
 		on:wheel|nonpassive={handleBackdropWheel}
 		role="presentation"
@@ -358,7 +358,7 @@
 {/if}
 
 <style>
-	.backdrop {
+	.palette-overlay {
 		position: fixed;
 		inset: 0;
 		background: rgba(0, 0, 0, 0.5);

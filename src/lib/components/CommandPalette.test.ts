@@ -18,12 +18,12 @@ describe('CommandPalette', () => {
 
 	it('should not render when show is false', () => {
 		const { container } = render(CommandPalette, { props: { show: false } });
-		expect(container.querySelector('.backdrop')).toBeNull();
+		expect(container.querySelector('.palette-overlay')).toBeNull();
 	});
 
 	it('should render when show is true', () => {
 		const { container } = render(CommandPalette, { props: { show: true } });
-		expect(container.querySelector('.backdrop')).toBeTruthy();
+		expect(container.querySelector('.palette-overlay')).toBeTruthy();
 		expect(container.querySelector('.palette')).toBeTruthy();
 	});
 
@@ -116,7 +116,7 @@ describe('CommandPalette', () => {
 
 	it('should close on backdrop click', async () => {
 		const { container, component } = render(CommandPalette, { props: { show: true } });
-		const backdrop = container.querySelector('.backdrop') as HTMLElement;
+		const backdrop = container.querySelector('.palette-overlay') as HTMLElement;
 
 		await fireEvent.click(backdrop);
 		await new Promise((resolve) => setTimeout(resolve, 0));
@@ -127,7 +127,7 @@ describe('CommandPalette', () => {
 
 	it('should close on Escape key', async () => {
 		const { container, component } = render(CommandPalette, { props: { show: true } });
-		const backdrop = container.querySelector('.backdrop') as HTMLElement;
+		const backdrop = container.querySelector('.palette-overlay') as HTMLElement;
 
 		await fireEvent.keyDown(backdrop, { key: 'Escape' });
 		await new Promise((resolve) => setTimeout(resolve, 0));
@@ -166,7 +166,7 @@ describe('CommandPalette', () => {
 
 	it('should have proper accessibility attributes', () => {
 		const { container } = render(CommandPalette, { props: { show: true } });
-		const backdrop = container.querySelector('.backdrop');
+		const backdrop = container.querySelector('.palette-overlay');
 
 		expect(backdrop?.getAttribute('role')).toBe('presentation');
 	});
