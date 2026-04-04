@@ -23,12 +23,13 @@ describe('Home page', () => {
 		expect(
 			screen.getByRole('heading', {
 				level: 1,
-				name: /software guides for the systems \*space ships/i
+				name: /software guides for \*space quality launches/i
 			})
 		).toBeTruthy();
 		expect(
 			screen.getByText(/explore a curated library of practical guidance for building the future of software/i)
 		).toBeTruthy();
+		expect(screen.queryByRole('link', { name: /sign in/i })).not.toBeInTheDocument();
 		expect(screen.queryByText(/publish practical guides/i)).not.toBeInTheDocument();
 		expect(screen.queryByText(/create a section/i)).not.toBeInTheDocument();
 		expect(screen.queryByText(/write a guide/i)).not.toBeInTheDocument();

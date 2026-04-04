@@ -48,14 +48,13 @@
 	<div class="hero">
 		<div class="hero-copy">
 			<p class="eyebrow">guides.starspace.group</p>
-			<h1>Software guides for the systems *Space ships</h1>
+			<h1>Software guides for *Space quality launches</h1>
 			<p class="lede">
 				Explore a curated library of practical guidance for building the future of software,
 				from interface patterns to product decisions and release-ready systems.
 			</p>
 			<div class="actions">
 				<a class="button primary" href="#guide-types">Browse Guide Types</a>
-				<a class="button" href="/auth/login">Sign In</a>
 			</div>
 		</div>
 
