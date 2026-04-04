@@ -11,6 +11,7 @@ import {
 	isContentTypeSlug,
 	syncContentTypes
 } from '$lib/services/cms';
+import { enhanceGuideItem } from '$lib/cms/guideEnhancements';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -41,9 +42,10 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 	if (!item) {
 		throw error(404, 'Content not found');
 	}
+	const enhancedItem = enhanceGuideItem(contentType.slug, item);
 
 	// Only show published items on public routes
-	if (item.status !== 'published') {
+	if (enhancedItem.status !== 'published') {
 		throw error(404, 'Content not found');
 	}
 
@@ -55,7 +57,7 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 
 	return {
 		contentType,
-		item,
+		item: enhancedItem,
 		tags
 	};
 };

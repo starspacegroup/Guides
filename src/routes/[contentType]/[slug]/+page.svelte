@@ -7,6 +7,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import ArticleHeaderDemo from '$lib/components/article-demos/ArticleHeaderDemo.svelte';
+	import { isSupportedHeaderDemo } from '$lib/cms/guideEnhancements';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { enhanceCodeBlocks } from '$lib/utils/codeBlocks';
 	import { getMarkdownHeadings, renderMarkdownToHtml } from '$lib/utils/markdown';
@@ -40,7 +41,7 @@
 	}
 
 	function resolveHeaderDemo(value: unknown): string | null {
-		return value === 'theme-toggle-next-action' ? value : null;
+		return isSupportedHeaderDemo(value) ? value : null;
 	}
 </script>
 
