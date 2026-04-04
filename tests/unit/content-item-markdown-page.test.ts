@@ -145,14 +145,13 @@ describe('Content item page markdown rendering', () => {
 
     expect(container.querySelector('.cms-blog-article-header-demo')).toBeTruthy();
     expect(container.querySelector('[data-header-demo="theme-toggle-next-action"]')).toBeTruthy();
+    expect(container.querySelector('[data-preview-theme="light"]')).toBeTruthy();
 
     const toggleButton = screen.getByRole('button', { name: 'Switch to dark mode' });
-    expect(screen.getByText('Current theme')).toBeInTheDocument();
-    expect(screen.getByText('Light')).toBeInTheDocument();
 
     await fireEvent.click(toggleButton);
 
     expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
-    expect(screen.getByText('Dark')).toBeInTheDocument();
+    expect(container.querySelector('[data-preview-theme="dark"]')).toBeTruthy();
   });
 });
