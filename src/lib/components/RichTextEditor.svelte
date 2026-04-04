@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	import { enhanceCodeBlocks } from '$lib/utils/codeBlocks';
 	import { renderMarkdownToHtml } from '$lib/utils/markdown';
@@ -36,6 +36,9 @@
 	let isToolsPanelOpen = isDesktopLayout;
 	let isGuidePanelOpen = isDesktopLayout;
 	const editorInstanceId = `rich-text-editor-${++editorInstanceCount}`;
+	let previousBodyOverflow = '';
+	let previousHtmlOverflow = '';
+	let isScrollLocked = false;
 
 	const codeLanguageOptions: { value: CodeLanguage; label: string; }[] = [
 		{ value: 'plaintext', label: 'Plain text' },
@@ -52,6 +55,7 @@
 	$: previewHtml = renderMarkdownToHtml(value);
 	$: wordCount = value.trim() ? value.trim().split(/\s+/).filter(Boolean).length : 0;
 	$: characterCount = value.length;
+	$: readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 180));
 	$: showFormattingTools = isDesktopLayout || isToolsPanelOpen;
 	$: showGuide = isExpanded && (isDesktopLayout || isGuidePanelOpen);
 
@@ -103,6 +107,7 @@
 		}
 
 		return () => {
+			syncDocumentScrollLock(false);
 			if (typeof desktopMedia.removeEventListener === 'function') {
 				desktopMedia.removeEventListener('change', handleResponsiveChange);
 			} else {
@@ -115,6 +120,8 @@
 		syncEditorFromValue();
 	}
 
+	$: syncDocumentScrollLock(isExpanded);
+
 	function handleEditorInput() {
 		if (!editorElement) {
 			return;
@@ -125,6 +132,27 @@
 
 	function focusEditor() {
 		editorElement?.focus();
+	}
+
+	function syncDocumentScrollLock(shouldLock: boolean) {
+		if (typeof document === 'undefined') {
+			return;
+		}
+
+		if (shouldLock && !isScrollLocked) {
+			previousBodyOverflow = document.body.style.overflow;
+			previousHtmlOverflow = document.documentElement.style.overflow;
+			document.body.style.overflow = 'hidden';
+			document.documentElement.style.overflow = 'hidden';
+			isScrollLocked = true;
+			return;
+		}
+
+		if (!shouldLock && isScrollLocked) {
+			document.body.style.overflow = previousBodyOverflow;
+			document.documentElement.style.overflow = previousHtmlOverflow;
+			isScrollLocked = false;
+		}
 	}
 
 	function execCommand(command: string, commandValue?: string) {
@@ -298,7 +326,12 @@
 	function handleExpandToggle(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		toggleExpanded();
+		if (isExpanded) {
+			toggleExpanded();
+			return;
+		}
+
+		void enterFocusedEditor();
 	}
 
 	function toggleToolsPanel() {
@@ -307,6 +340,31 @@
 
 	function toggleGuidePanel() {
 		isGuidePanelOpen = !isGuidePanelOpen;
+	}
+
+	async function setActiveTab(nextTab: EditorTab) {
+		activeTab = nextTab;
+		if (nextTab === 'visual') {
+			await tick();
+			focusEditor();
+		}
+	}
+
+	async function enterFocusedEditor() {
+		if (!isExpanded) {
+			isExpanded = true;
+		}
+
+		if (!isDesktopLayout) {
+			isToolsPanelOpen = false;
+			isGuidePanelOpen = false;
+		}
+
+		await tick();
+
+		if (activeTab === 'visual') {
+			focusEditor();
+		}
 	}
 
 	function createLink() {
@@ -371,6 +429,18 @@
 			}
 		};
 	}
+
+	function getVisibleModeLabel(tab: EditorTab) {
+		if (tab === 'visual') {
+			return 'Visual mode';
+		}
+
+		if (tab === 'preview') {
+			return 'Preview mode';
+		}
+
+		return 'Markdown mode';
+	}
 </script>
 
 <div class="rich-text-editor" class:is-expanded={isExpanded} use:bindEditorKeydown>
@@ -385,6 +455,7 @@
 				<div class="rich-text-editor__metrics" aria-label="Editor metrics">
 					<span>{wordCount} words</span>
 					<span>{characterCount} chars</span>
+					<span>{readingTimeMinutes} min read</span>
 				</div>
 				<button type="button" class="rich-text-editor__expand" on:click={handleExpandToggle}>
 					{isExpanded ? 'Exit full-page editor' : 'Open full-page editor'}
@@ -395,6 +466,12 @@
 		<div class="rich-text-editor__workspace">
 			<section class="rich-text-editor__canvas">
 				<div class="rich-text-editor__header">
+					<div class="rich-text-editor__mode-summary">
+						<span class="rich-text-editor__mode-pill">{getVisibleModeLabel(activeTab)}</span>
+						{#if !isDesktopLayout}
+							<span class="rich-text-editor__mode-note">Core tools stay tucked away until you need them.</span>
+						{/if}
+					</div>
 					<div class="rich-text-editor__workspace-controls">
 						<div class="rich-text-editor__tabs" role="tablist" aria-label="{label} editor views">
 			<button
@@ -403,7 +480,7 @@
 				class:is-active={activeTab === 'visual'}
 				role="tab"
 				aria-selected={activeTab === 'visual'}
-				on:click={() => (activeTab = 'visual')}
+				on:click={() => void setActiveTab('visual')}
 			>
 				Visual
 			</button>
@@ -413,7 +490,7 @@
 				class:is-active={activeTab === 'preview'}
 				role="tab"
 				aria-selected={activeTab === 'preview'}
-				on:click={() => (activeTab = 'preview')}
+				on:click={() => void setActiveTab('preview')}
 			>
 				Preview
 			</button>
@@ -423,7 +500,7 @@
 				class:is-active={activeTab === 'markdown'}
 				role="tab"
 				aria-selected={activeTab === 'markdown'}
-				on:click={() => (activeTab = 'markdown')}
+				on:click={() => void setActiveTab('markdown')}
 			>
 				Markdown
 			</button>
@@ -454,6 +531,20 @@
 							</div>
 						{/if}
 					</div>
+
+					{#if !isDesktopLayout && activeTab === 'visual'}
+						<div class="rich-text-editor__quick-inserts" aria-label="Quick insert actions">
+							<button type="button" class="rich-text-editor__quick-insert" aria-label="Quick insert image" on:click={insertImage}>
+								Image
+							</button>
+							<button type="button" class="rich-text-editor__quick-insert" aria-label="Quick insert table" on:click={insertTable}>
+								Table
+							</button>
+							<button type="button" class="rich-text-editor__quick-insert" aria-label="Quick insert code block" on:click={insertCodeBlock}>
+								Snippet
+							</button>
+						</div>
+					{/if}
 
 					{#if showFormattingTools}
 						<div class="rich-text-editor__toolbar-stack" id={`${editorInstanceId}-tools`}>
@@ -682,6 +773,13 @@
 		grid-template-rows: auto minmax(0, 1fr);
 	}
 
+	.rich-text-editor.is-expanded .rich-text-editor__header {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		backdrop-filter: blur(16px);
+	}
+
 	.rich-text-editor__header {
 		display: grid;
 		gap: var(--spacing-sm);
@@ -691,14 +789,44 @@
 		background: var(--color-background);
 	}
 
+	.rich-text-editor__mode-summary {
+		display: grid;
+		gap: 0.35rem;
+	}
+
+	.rich-text-editor__mode-pill {
+		width: fit-content;
+		padding: 0.35rem 0.65rem;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		background: var(--color-surface);
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.rich-text-editor__mode-note {
+		font-size: 0.85rem;
+		color: var(--color-text-secondary);
+	}
+
 	.rich-text-editor__panel-toggles {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
 		gap: var(--spacing-xs);
 	}
 
+	.rich-text-editor__quick-inserts {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--spacing-xs);
+	}
+
 	.rich-text-editor__panel-toggle,
 	.rich-text-editor__tab,
+	.rich-text-editor__quick-insert,
 	.rich-text-editor__toolbar button,
 	.rich-text-editor__quick-card,
 	.rich-text-editor__language-picker select {
@@ -720,6 +848,12 @@
 		padding: var(--spacing-sm);
 		font-weight: 600;
 		text-align: left;
+	}
+
+	.rich-text-editor__quick-insert {
+		padding: 0.7rem var(--spacing-sm);
+		font-weight: 600;
+		text-align: center;
 	}
 
 	.rich-text-editor__tabs,
@@ -756,6 +890,7 @@
 	.rich-text-editor__panel-toggle:hover,
 	.rich-text-editor__tab:hover,
 	.rich-text-editor__tab.is-active,
+	.rich-text-editor__quick-insert:hover,
 	.rich-text-editor__toolbar button:hover,
 	.rich-text-editor__quick-card:hover,
 	.rich-text-editor__panel-toggle[aria-expanded='true'] {
@@ -986,6 +1121,11 @@
 			padding: var(--spacing-md);
 		}
 
+		.rich-text-editor__mode-summary {
+			grid-template-columns: auto 1fr;
+			align-items: center;
+		}
+
 		.rich-text-editor__hero-actions {
 			justify-items: end;
 		}
@@ -1001,6 +1141,10 @@
 
 		.rich-text-editor__quick-actions {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+
+		.rich-text-editor__quick-inserts {
+			max-width: 24rem;
 		}
 
 		.rich-text-editor__surface,

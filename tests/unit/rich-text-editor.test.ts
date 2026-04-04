@@ -66,6 +66,29 @@ describe('RichTextEditor', () => {
     expect(screen.getByRole('complementary', { name: /editor guide/i })).toBeTruthy();
   });
 
+  it('exposes quick insert actions on mobile without opening the full toolset', async () => {
+    vi.stubGlobal('matchMedia', mockMatchMedia(false));
+
+    const promptValues = ['https://example.com/mobile-photo.png', 'Mobile image', ''];
+    vi.spyOn(window, 'prompt').mockImplementation(() => promptValues.shift() ?? null);
+
+    const { container } = render(RichTextEditor, {
+      props: {
+        value: '',
+        label: 'Body',
+        startExpanded: true
+      }
+    });
+
+    expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
+
+    await fireEvent.click(screen.getByRole('button', { name: /quick insert image/i }));
+    await fireEvent.click(screen.getByRole('tab', { name: /markdown/i }));
+
+    const source = container.querySelector('textarea.rich-text-editor__source') as HTMLTextAreaElement;
+    expect(source.value).toContain('![Mobile image](https://example.com/mobile-photo.png)');
+  });
+
   it('updates markdown source when the visual editor content changes', async () => {
     const { container } = render(RichTextEditor, {
       props: {
@@ -105,6 +128,8 @@ describe('RichTextEditor', () => {
   });
 
   it('inserts image, table, and language-tagged code blocks from toolbar actions', async () => {
+    vi.stubGlobal('matchMedia', mockMatchMedia(true));
+
     const promptValues = ['https://example.com/photo.png', 'Cover image', 'System diagram'];
     vi.spyOn(window, 'prompt').mockImplementation(() => promptValues.shift() ?? null);
 
@@ -116,7 +141,6 @@ describe('RichTextEditor', () => {
       }
     });
 
-    await fireEvent.click(screen.getByRole('button', { name: /show formatting tools/i }));
     await fireEvent.change(screen.getByLabelText(/code block language/i), {
       target: { value: 'python' }
     });
@@ -173,5 +197,26 @@ describe('RichTextEditor', () => {
 
     expect(parentKeydownSpy).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /open full-page editor/i })).toBeTruthy();
+  });
+
+  it('locks document scroll while expanded and restores it when collapsed', async () => {
+    document.body.style.overflow = 'visible';
+    document.documentElement.style.overflow = 'visible';
+
+    render(RichTextEditor, {
+      props: {
+        value: '',
+        label: 'Body',
+        startExpanded: true
+      }
+    });
+
+    expect(document.body.style.overflow).toBe('hidden');
+    expect(document.documentElement.style.overflow).toBe('hidden');
+
+    await fireEvent.click(screen.getByRole('button', { name: /exit full-page editor/i }));
+
+    expect(document.body.style.overflow).toBe('visible');
+    expect(document.documentElement.style.overflow).toBe('visible');
   });
 });
