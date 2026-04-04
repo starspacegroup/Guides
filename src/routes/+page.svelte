@@ -12,6 +12,7 @@
 	};
 
 	const accentVariants = ['aurora', 'signal', 'ember'] as const;
+	const nebulaKitHref = 'https://nebulakit.starspace.group';
 
 	const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
 		`${count} ${count === 1 ? singular : plural}`;
@@ -62,14 +63,28 @@
 <section class="landing">
 	<div class="hero">
 		<div class="hero-copy">
-			<p class="eyebrow">guides.starspace.group</p>
-			<h1>Software guides for launch-ready teams</h1>
+			<div class="hero-intro">
+				<p class="eyebrow">guides.starspace.group</p>
+				<h1>Software guides for launch-ready apps</h1>
+			</div>
 			<p class="lede">
 				Explore a curated library of practical guidance for building the future of software,
 				from interface patterns to product decisions and release-ready systems.
 			</p>
 			<div class="actions">
 				<a class="button primary" href="#guide-types">Browse Guide Types</a>
+				<a
+					class="button nebula"
+					href={nebulaKitHref}
+					target="_blank"
+					rel="noreferrer"
+				>
+					<span class="button-kicker">Design system</span>
+					<span class="button-copy">
+						<span class="button-title">NebulaKit</span>
+						<span class="button-detail">Everything here in one easy SvelteKit template</span>
+					</span>
+				</a>
 			</div>
 		</div>
 
@@ -213,11 +228,16 @@
 	.hero-copy {
 		display: grid;
 		align-content: start;
-		gap: var(--spacing-sm);
+		gap: clamp(0.9rem, 2vw, var(--spacing-lg));
+	}
+
+	.hero-intro {
+		display: grid;
+		gap: clamp(0.8rem, 1.6vw, var(--spacing-md));
 	}
 
 	.eyebrow {
-		margin: 0 0 var(--spacing-sm);
+		margin: 0;
 		font-size: 0.85rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -233,9 +253,9 @@
 
 	.lede {
 		margin: 0;
-		max-width: 38ch;
+		max-width: 34ch;
 		color: var(--color-text-secondary);
-		line-height: 1.55;
+		line-height: 1.6;
 	}
 
 	.hero-panel {
@@ -296,8 +316,8 @@
 	.actions {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-sm);
-		margin-top: var(--spacing-sm);
+		gap: 0.8rem;
+		margin-top: 0.2rem;
 		flex-wrap: wrap;
 	}
 
@@ -314,12 +334,91 @@
 		color: var(--color-text);
 		background: var(--color-background);
 		font-weight: 600;
+		transition:
+			transform var(--transition-base),
+			box-shadow var(--transition-base),
+			border-color var(--transition-base),
+			background var(--transition-base),
+			color var(--transition-base);
+	}
+
+	.button:hover {
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-md);
+		color: var(--color-text);
 	}
 
 	.button.primary {
 		background: var(--color-primary);
 		color: var(--color-background);
 		border-color: var(--color-primary);
+	}
+
+	.button.primary:hover {
+		background: var(--color-primary-hover);
+		border-color: var(--color-primary-hover);
+		color: var(--color-background);
+	}
+
+	.button.nebula {
+		justify-content: flex-start;
+		align-items: flex-start;
+		min-height: 0;
+		padding: 0.9rem 1rem;
+		gap: 0.85rem;
+		background:
+			linear-gradient(
+				135deg,
+				color-mix(in srgb, var(--color-background) 84%, var(--color-secondary)) 0%,
+				color-mix(in srgb, var(--color-surface) 86%, var(--color-primary)) 52%,
+				color-mix(in srgb, var(--color-background) 84%, var(--color-primary)) 100%
+			),
+			var(--color-background);
+		border-color: color-mix(in srgb, var(--color-secondary) 38%, var(--color-border));
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, var(--color-background) 82%, transparent),
+			var(--shadow-sm);
+	}
+
+	.button.nebula:hover {
+		border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, var(--color-background) 82%, transparent),
+			var(--shadow-lg);
+	}
+
+	.button-kicker {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 4.5rem;
+		padding: 0.45rem 0.6rem;
+		border-radius: var(--radius-pill, 999px);
+		background: color-mix(in srgb, var(--color-background) 76%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-border) 68%, var(--color-primary));
+		font-size: 0.72rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		flex-shrink: 0;
+	}
+
+	.button-copy {
+		display: grid;
+		gap: 0.2rem;
+	}
+
+	.button-title {
+		font-size: 1rem;
+		font-weight: 700;
+		line-height: 1.2;
+		color: var(--color-text);
+	}
+
+	.button-detail {
+		font-size: 0.84rem;
+		line-height: 1.5;
+		color: var(--color-text-secondary);
 	}
 
 	.guide-types {
@@ -717,10 +816,15 @@
 
 		.actions {
 			flex-direction: row;
+			align-items: stretch;
 		}
 
 		.button {
 			width: fit-content;
+		}
+
+		.button.nebula {
+			max-width: 22rem;
 		}
 
 		.card-grid {
@@ -757,7 +861,7 @@
 		}
 
 		.hero-copy {
-			gap: var(--spacing-md);
+			gap: var(--spacing-lg);
 		}
 
 		h1 {

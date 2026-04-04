@@ -41,12 +41,22 @@ describe('Home page', () => {
 		expect(
 			screen.getByRole('heading', {
 				level: 1,
-				name: /software guides for launch-ready teams/i
+				name: /software guides for launch-ready apps/i
 			})
 		).toBeTruthy();
 		expect(
 			screen.getByText(/explore a curated library of practical guidance for building the future of software/i)
 		).toBeTruthy();
+		expect(
+			screen.getByRole('link', {
+				name: /design system nebulakit everything here in one easy sveltekit template/i
+			})
+		).toHaveAttribute('href', 'https://nebulakit.starspace.group');
+		expect(
+			screen.getByRole('link', {
+				name: /design system nebulakit everything here in one easy sveltekit template/i
+			})
+		).toHaveAttribute('target', '_blank');
 		expect(screen.queryByRole('link', { name: /sign in/i })).not.toBeInTheDocument();
 		expect(screen.queryByText(/publish practical guides/i)).not.toBeInTheDocument();
 		expect(screen.queryByText(/create a section/i)).not.toBeInTheDocument();
