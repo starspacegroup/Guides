@@ -123,7 +123,7 @@
 
 <style>
 	.landing {
-		width: min(100%, 1440px);
+		width: min(100%, 1560px);
 		margin: 0 auto;
 		padding: var(--spacing-lg) var(--spacing-sm) var(--spacing-2xl);
 		display: grid;
@@ -473,7 +473,7 @@
 		}
 
 		.hero {
-			grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.9fr);
+			grid-template-columns: minmax(0, 1.3fr) minmax(420px, 1fr);
 			gap: var(--spacing-xl);
 			padding: calc(var(--spacing-2xl) * 0.95);
 		}
@@ -494,6 +494,7 @@
 
 		.hero-panel {
 			padding: var(--spacing-lg);
+			max-width: 40rem;
 		}
 
 		.panel-title {

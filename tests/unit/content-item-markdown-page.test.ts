@@ -39,6 +39,9 @@ describe('Content item page markdown rendering', () => {
     expect(container.querySelector('.cms-item-shell')).toBeTruthy();
     expect(container.querySelector('.cms-blog-article-main')).toBeTruthy();
     expect(container.querySelector('.cms-blog-article-intro')).toBeTruthy();
+    expect(container.querySelector('.cms-blog-article-main')?.classList.contains('no-hero')).toBe(true);
+    expect(container.querySelector('.cms-blog-article-main')?.classList.contains('has-hero')).toBe(false);
+    expect(container.querySelector('.cms-blog-article-hero')).toBeFalsy();
 
     const content = container.querySelector('.cms-content');
     expect(content?.innerHTML).toContain('<h1>Rule</h1>');
