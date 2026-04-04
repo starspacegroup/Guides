@@ -7,6 +7,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
+	import { enhanceCodeBlocks } from '$lib/utils/codeBlocks';
 	import { getMarkdownHeadings, renderMarkdownToHtml } from '$lib/utils/markdown';
 
 	export let data: PageData;
@@ -97,7 +98,7 @@
 								</div>
 							{/if}
 
-							<div class="cms-blog-article-body cms-content">
+							<div class="cms-blog-article-body cms-content" use:enhanceCodeBlocks>
 								{@html bodyHtml}
 							</div>
 						</div>
@@ -143,7 +144,7 @@
 						{#if item.fields[fieldDef.name] !== undefined && item.fields[fieldDef.name] !== null && item.fields[fieldDef.name] !== ''}
 							<div class="cms-field-block">
 								{#if fieldDef.type === 'richtext'}
-									<div class="cms-content">{@html renderRichText(item.fields[fieldDef.name])}</div>
+									<div class="cms-content" use:enhanceCodeBlocks>{@html renderRichText(item.fields[fieldDef.name])}</div>
 								{:else if fieldDef.type === 'image' || fieldDef.type === 'url'}
 									{#if fieldDef.type === 'image'}
 										<img src={String(item.fields[fieldDef.name])} alt={fieldDef.label} />
@@ -605,9 +606,67 @@
 		box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-background) 75%, var(--color-surface));
 	}
 
+	.cms-content :global(.cms-code-block) {
+		margin: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl)) 0;
+	}
+
+	.cms-content :global(.cms-code-block-toolbar) {
+		padding: 0.8rem 1rem;
+	}
+
+	.cms-content :global(.cms-code-block-copy) {
+		min-width: 4.75rem;
+	}
+
+	.cms-content :global(.cms-code-block pre) {
+		margin: 0;
+		padding: clamp(var(--spacing-lg), 2.5vw, 2rem);
+		background: transparent;
+		border: none;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
 	.cms-content :global(pre code) {
 		background: none;
 		padding: 0;
+	}
+
+	.cms-content :global(.cms-code-block code) {
+		display: block;
+		color: var(--color-code-text);
+	}
+
+	.cms-content :global(.token.keyword) {
+		color: var(--color-code-keyword);
+	}
+
+	.cms-content :global(.token.string) {
+		color: var(--color-code-string);
+	}
+
+	.cms-content :global(.token.boolean) {
+		color: var(--color-code-boolean);
+	}
+
+	.cms-content :global(.token.number) {
+		color: var(--color-code-number);
+	}
+
+	.cms-content :global(.token.comment) {
+		color: var(--color-code-comment);
+	}
+
+	.cms-content :global(.token.tag) {
+		color: var(--color-code-tag);
+	}
+
+	.cms-content :global(.token.attr-name) {
+		color: var(--color-code-attribute);
+	}
+
+	.cms-content :global(.token.punctuation) {
+		color: var(--color-code-punctuation);
 	}
 
 	.cms-content :global(img) {

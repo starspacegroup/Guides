@@ -15,6 +15,9 @@ describe('Content item page styles', () => {
     expect(source).toContain('.cms-content :global(> :first-child)');
     expect(source).toContain('.cms-content :global(table)');
     expect(source).toContain('.cms-content :global(hr)');
+    expect(source).toContain('.cms-content :global(.cms-code-block)');
+    expect(source).toContain('.cms-content :global(.cms-code-block-copy)');
+    expect(source).toContain('.cms-content :global(.token.keyword)');
     expect(source).toContain('max-width: 1560px;');
   });
 });

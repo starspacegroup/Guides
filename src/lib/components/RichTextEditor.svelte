@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	import { enhanceCodeBlocks } from '$lib/utils/codeBlocks';
 	import { renderMarkdownToHtml } from '$lib/utils/markdown';
 	import { editorHtmlToMarkdown } from '$lib/utils/richTextEditor';
 
@@ -402,7 +403,7 @@
 						on:keydown={handleEditorKeydown}
 					></div>
 				{:else if activeTab === 'preview'}
-					<div class="rich-text-editor__preview" aria-label="{label} preview">
+					<div class="rich-text-editor__preview" aria-label="{label} preview" use:enhanceCodeBlocks>
 						{#if previewHtml}
 							{@html previewHtml}
 						{:else}
@@ -697,6 +698,46 @@
 		border-radius: var(--radius-sm);
 		border: 1px solid var(--color-border);
 		background: var(--color-surface);
+	}
+
+	.rich-text-editor__preview :global(.cms-code-block) {
+		margin: 0 0 var(--spacing-md);
+	}
+
+	.rich-text-editor__preview :global(.cms-code-block-toolbar) {
+		padding: var(--spacing-sm) var(--spacing-md);
+	}
+
+	.rich-text-editor__preview :global(.cms-code-block pre) {
+		margin: 0;
+		border: none;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.rich-text-editor__preview :global(.cms-code-block code) {
+		display: block;
+		color: var(--color-code-text);
+	}
+
+	.rich-text-editor__preview :global(.token.keyword) {
+		color: var(--color-code-keyword);
+	}
+
+	.rich-text-editor__preview :global(.token.string) {
+		color: var(--color-code-string);
+	}
+
+	.rich-text-editor__preview :global(.token.boolean) {
+		color: var(--color-code-boolean);
+	}
+
+	.rich-text-editor__preview :global(.token.number) {
+		color: var(--color-code-number);
+	}
+
+	.rich-text-editor__preview :global(.token.comment) {
+		color: var(--color-code-comment);
 	}
 
 	.rich-text-editor__surface :global(blockquote),

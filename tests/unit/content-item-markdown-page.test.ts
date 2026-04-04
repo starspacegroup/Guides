@@ -1,8 +1,17 @@
-import { render } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/svelte';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Page from '../../src/routes/[contentType]/[slug]/+page.svelte';
 
 describe('Content item page markdown rendering', () => {
+  beforeEach(() => {
+    Object.defineProperty(globalThis.navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: vi.fn().mockResolvedValue(undefined)
+      }
+    });
+  });
+
   it('renders markdown body inside the editorial blog-item layout', () => {
     const { container } = render(Page, {
       props: {
@@ -60,4 +69,44 @@ describe('Content item page markdown rendering', () => {
     );
     expect(container.querySelector('.cms-tag')?.textContent).toContain('Forms');
   });
+
+    it('copies rendered code blocks from the article body', async () => {
+      render(Page, {
+        props: {
+          data: {
+            contentType: {
+              slug: 'ui-patterns',
+              name: 'UI Patterns',
+              description: 'Guides for reusable UI patterns',
+              fields: [],
+              settings: {
+                itemTemplate: 'blog-item',
+                routePrefix: '/ui-patterns',
+                hasTags: false
+              }
+            },
+            item: {
+              title: 'Theme Toggle Icons Should Signal the Next Action',
+              seoTitle: null,
+              seoDescription: null,
+              seoImage: null,
+              publishedAt: '2026-04-03T00:00:00.000Z',
+              fields: {
+                excerpt: 'Theme toggles should show the next action.',
+                body: '# Code Examples\n\n```ts\nconst nextTheme = currentTheme === "light" ? "dark" : "light";\n```',
+                read_time: 6
+              }
+            },
+            tags: []
+          }
+        }
+      });
+
+      const copyButton = await screen.findByRole('button', { name: 'Copy TypeScript code' });
+      await fireEvent.click(copyButton);
+
+      expect(globalThis.navigator.clipboard.writeText).toHaveBeenCalledWith(
+        'const nextTheme = currentTheme === "light" ? "dark" : "light";'
+      );
+    });
 });
