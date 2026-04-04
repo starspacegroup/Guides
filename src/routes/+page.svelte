@@ -63,7 +63,7 @@
 	<div class="hero">
 		<div class="hero-copy">
 			<p class="eyebrow">guides.starspace.group</p>
-			<h1>Software guides for *Space quality launches</h1>
+			<h1>Software guides for launch-ready teams</h1>
 			<p class="lede">
 				Explore a curated library of practical guidance for building the future of software,
 				from interface patterns to product decisions and release-ready systems.

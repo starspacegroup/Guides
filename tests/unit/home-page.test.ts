@@ -41,7 +41,7 @@ describe('Home page', () => {
 		expect(
 			screen.getByRole('heading', {
 				level: 1,
-				name: /software guides for \*space quality launches/i
+				name: /software guides for launch-ready teams/i
 			})
 		).toBeTruthy();
 		expect(
