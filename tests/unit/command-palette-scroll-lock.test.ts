@@ -56,7 +56,7 @@ describe('CommandPalette scroll lock', () => {
 		await component.$set({ show: true });
 		await tick();
 
-		const backdrop = container.querySelector('.backdrop') as HTMLElement;
+		const backdrop = container.querySelector('.palette-overlay') as HTMLElement;
 		const commandsDiv = container.querySelector('.commands') as HTMLElement;
 
 		expect(backdrop).toBeTruthy();
@@ -75,5 +75,6 @@ describe('CommandPalette scroll lock', () => {
 
 		// The event should have been prevented (redirected)
 		expect(wheelEvent.defaultPrevented).toBe(true);
+		expect(commandsDiv.scrollTop).toBe(100);
 	});
 });
