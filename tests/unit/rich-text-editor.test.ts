@@ -91,4 +91,48 @@ describe('RichTextEditor', () => {
     expect(source.value).toContain('| Column 1 | Column 2 |');
     expect(source.value).toContain('```python');
   });
+
+  it('does not bubble expand toggle clicks to parent containers', async () => {
+    const parentClickSpy = vi.fn();
+    const target = document.createElement('div');
+    target.addEventListener('click', parentClickSpy);
+    document.body.appendChild(target);
+
+    render(RichTextEditor, {
+      target,
+      props: {
+        value: '',
+        label: 'Body',
+        startExpanded: true
+      }
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: /exit full-page editor/i }));
+
+    expect(parentClickSpy).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /open full-page editor/i })).toBeTruthy();
+  });
+
+  it('collapses expanded mode on escape without bubbling to parent handlers', async () => {
+    const parentKeydownSpy = vi.fn();
+    const target = document.createElement('div');
+    target.addEventListener('keydown', parentKeydownSpy);
+    document.body.appendChild(target);
+
+    render(RichTextEditor, {
+      target,
+      props: {
+        value: '',
+        label: 'Body',
+        startExpanded: true
+      }
+    });
+
+    await fireEvent.keyDown(screen.getByRole('textbox', { name: /body visual editor/i }), {
+      key: 'Escape'
+    });
+
+    expect(parentKeydownSpy).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /open full-page editor/i })).toBeTruthy();
+  });
 });

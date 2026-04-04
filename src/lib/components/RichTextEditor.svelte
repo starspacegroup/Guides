@@ -239,6 +239,12 @@
 		isExpanded = !isExpanded;
 	}
 
+	function handleExpandToggle(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		toggleExpanded();
+	}
+
 	function createLink() {
 		if (typeof window === 'undefined') {
 			return;
@@ -262,6 +268,13 @@
 	}
 
 	function handleEditorKeydown(event: KeyboardEvent) {
+		if (isExpanded && event.key === 'Escape') {
+			event.preventDefault();
+			event.stopPropagation();
+			isExpanded = false;
+			return;
+		}
+
 		if (!(event.metaKey || event.ctrlKey)) {
 			return;
 		}
@@ -280,9 +293,23 @@
 			createLink();
 		}
 	}
+
+	function bindEditorKeydown(node: HTMLDivElement) {
+		const handleKeydown = (event: KeyboardEvent) => {
+			handleEditorKeydown(event);
+		};
+
+		node.addEventListener('keydown', handleKeydown);
+
+		return {
+			destroy() {
+				node.removeEventListener('keydown', handleKeydown);
+			}
+		};
+	}
 </script>
 
-<div class="rich-text-editor" class:is-expanded={isExpanded}>
+<div class="rich-text-editor" class:is-expanded={isExpanded} use:bindEditorKeydown>
 	<div class="rich-text-editor__shell">
 		<div class="rich-text-editor__hero">
 			<div class="rich-text-editor__hero-copy">
@@ -295,7 +322,7 @@
 					<span>{wordCount} words</span>
 					<span>{characterCount} chars</span>
 				</div>
-				<button type="button" class="rich-text-editor__expand" on:click={toggleExpanded}>
+				<button type="button" class="rich-text-editor__expand" on:click={handleExpandToggle}>
 					{isExpanded ? 'Exit full-page editor' : 'Open full-page editor'}
 				</button>
 			</div>
@@ -400,7 +427,6 @@
 						contenteditable="true"
 						data-placeholder={placeholder}
 						on:input={handleEditorInput}
-						on:keydown={handleEditorKeydown}
 					></div>
 				{:else if activeTab === 'preview'}
 					<div class="rich-text-editor__preview" aria-label="{label} preview" use:enhanceCodeBlocks>
