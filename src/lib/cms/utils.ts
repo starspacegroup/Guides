@@ -42,6 +42,9 @@ export function parseContentType(row: ContentType): ContentTypeParsed {
 		icon: row.icon,
 		sortOrder: row.sort_order,
 		isSystem: row.is_system === 1,
+		purpose: row.purpose || 'general',
+		submissionPolicy: row.submission_policy || 'admin_only',
+		visibility: row.visibility || 'public',
 		createdAt: row.created_at,
 		updatedAt: row.updated_at
 	};

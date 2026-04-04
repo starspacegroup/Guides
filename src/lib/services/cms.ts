@@ -32,7 +32,9 @@ import type { D1Database } from '@cloudflare/workers-types';
 export async function syncContentTypes(db: D1Database): Promise<void> {
 	// Get existing types from DB
 	const existing = await db
-		.prepare('SELECT id, slug, name, description, fields, settings, icon FROM content_types')
+		.prepare(
+			'SELECT id, slug, name, description, fields, settings, icon, purpose, visibility, submission_policy FROM content_types'
+		)
 		.all<{
 			id: string;
 			slug: string;
@@ -41,6 +43,9 @@ export async function syncContentTypes(db: D1Database): Promise<void> {
 			fields: string;
 			settings: string;
 			icon: string;
+			purpose: string | null;
+			visibility: string | null;
+			submission_policy: string | null;
 		}>();
 
 	const existingBySlug = new Map((existing.results || []).map((row) => [row.slug, row]));
@@ -51,6 +56,9 @@ export async function syncContentTypes(db: D1Database): Promise<void> {
 		const def = contentTypeRegistry[i];
 		const fieldsJson = JSON.stringify(def.fields);
 		const settingsJson = JSON.stringify(def.settings);
+		const purpose = def.purpose || 'general';
+		const visibility = def.visibility || 'public';
+		const submissionPolicy = def.submissionPolicy || 'admin_only';
 		const existingType = existingBySlug.get(def.slug);
 
 		if (!existingType) {
@@ -59,10 +67,22 @@ export async function syncContentTypes(db: D1Database): Promise<void> {
 			statements.push(
 				db
 					.prepare(
-						`INSERT INTO content_types (id, slug, name, description, fields, settings, icon, sort_order, is_system)
-						 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`
+						`INSERT INTO content_types (id, slug, name, description, fields, settings, icon, sort_order, is_system, purpose, visibility, submission_policy)
+						 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`
 					)
-					.bind(id, def.slug, def.name, def.description, fieldsJson, settingsJson, def.icon, i)
+					.bind(
+						id,
+						def.slug,
+						def.name,
+						def.description,
+						fieldsJson,
+						settingsJson,
+						def.icon,
+						i,
+						purpose,
+						visibility,
+						submissionPolicy
+					)
 			);
 		} else {
 			// Update if changed (also ensure is_system = 1)
@@ -71,17 +91,31 @@ export async function syncContentTypes(db: D1Database): Promise<void> {
 				existingType.description !== def.description ||
 				existingType.fields !== fieldsJson ||
 				existingType.settings !== settingsJson ||
-				existingType.icon !== def.icon;
+				existingType.icon !== def.icon ||
+				existingType.purpose !== purpose ||
+				existingType.visibility !== visibility ||
+				existingType.submission_policy !== submissionPolicy;
 
 			if (hasChanged) {
 				statements.push(
 					db
 						.prepare(
 							`UPDATE content_types
-							 SET name = ?, description = ?, fields = ?, settings = ?, icon = ?, sort_order = ?, is_system = 1, updated_at = CURRENT_TIMESTAMP
+							 SET name = ?, description = ?, fields = ?, settings = ?, icon = ?, sort_order = ?, is_system = 1, purpose = ?, visibility = ?, submission_policy = ?, updated_at = CURRENT_TIMESTAMP
 							 WHERE slug = ?`
 						)
-						.bind(def.name, def.description, fieldsJson, settingsJson, def.icon, i, def.slug)
+						.bind(
+							def.name,
+							def.description,
+							fieldsJson,
+							settingsJson,
+							def.icon,
+							i,
+							purpose,
+							visibility,
+							submissionPolicy,
+							def.slug
+						)
 				);
 			}
 		}
@@ -128,7 +162,12 @@ export async function getPublicGuideCollections(
 	await syncContentTypes(db);
 
 	const contentTypes = await getContentTypes(db);
-	const publicTypes = contentTypes.filter((contentType) => contentType.settings.isPublic);
+	const publicTypes = contentTypes.filter(
+		(contentType) =>
+			contentType.settings.isPublic !== false &&
+			contentType.visibility === 'public' &&
+			contentType.purpose === 'guide_section'
+	);
 
 	const collections = await Promise.all(
 		publicTypes.map(async (contentType) => {
@@ -579,8 +618,8 @@ export async function createContentTypeInDB(
 
 	const row = await db
 		.prepare(
-			`INSERT INTO content_types (id, slug, name, description, fields, settings, icon, sort_order, is_system)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+			`INSERT INTO content_types (id, slug, name, description, fields, settings, icon, sort_order, is_system, purpose, visibility, submission_policy)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
 			 RETURNING *`
 		)
 		.bind(
@@ -591,7 +630,10 @@ export async function createContentTypeInDB(
 			fieldsJson,
 			settingsJson,
 			icon,
-			sortOrder
+			sortOrder,
+			input.purpose || 'general',
+			input.visibility || 'public',
+			input.submissionPolicy || 'admin_only'
 		)
 		.first<ContentType>();
 
@@ -625,6 +667,18 @@ export async function updateContentTypeInDB(
 	if (input.icon !== undefined) {
 		setClauses.push('icon = ?');
 		params.push(input.icon);
+	}
+	if (input.purpose !== undefined) {
+		setClauses.push('purpose = ?');
+		params.push(input.purpose);
+	}
+	if (input.visibility !== undefined) {
+		setClauses.push('visibility = ?');
+		params.push(input.visibility);
+	}
+	if (input.submissionPolicy !== undefined) {
+		setClauses.push('submission_policy = ?');
+		params.push(input.submissionPolicy);
 	}
 	if (input.fields !== undefined) {
 		setClauses.push('fields = ?');

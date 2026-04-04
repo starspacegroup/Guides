@@ -62,13 +62,103 @@ describe('CMS Service', () => {
 					description: contentType.description,
 					fields: JSON.stringify(contentType.fields),
 					settings: JSON.stringify(contentType.settings),
-					icon: contentType.icon
+					icon: contentType.icon,
+					purpose: contentType.purpose,
+					visibility: contentType.visibility,
+					submission_policy: contentType.submissionPolicy
 				}))
 			});
 
 			await syncContentTypes(mockDB);
 
 			expect(mockDB.batch).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('getPublicGuideCollections', () => {
+		it('should return only public guide sections', async () => {
+			const { getPublicGuideCollections } = await import('../../src/lib/services/cms.js');
+
+			mockDB.all
+				.mockResolvedValueOnce({
+					results: [
+						{
+							id: 'system-1',
+							slug: 'user-interface',
+							name: 'User Interface',
+							description: 'Guides',
+							fields: '[]',
+							settings: '{"isPublic":true}',
+							icon: 'layout',
+							purpose: 'guide_section',
+							visibility: 'public',
+							submission_policy: 'trusted_members'
+						}
+					]
+				})
+				.mockResolvedValueOnce({
+					results: [
+						{
+							id: 'ct-blog',
+							slug: 'blog',
+							name: 'Blog Posts',
+							description: 'Legacy content',
+							fields: '[]',
+							settings: '{"isPublic":true,"routePrefix":"/blog"}',
+							icon: 'article',
+							sort_order: 0,
+							is_system: 1,
+							purpose: 'general',
+							visibility: 'public',
+							submission_policy: 'admin_only',
+							created_at: '2024-01-01',
+							updated_at: '2024-01-01'
+						},
+						{
+							id: 'ct-guides',
+							slug: 'ui-patterns',
+							name: 'UI Patterns',
+							description: 'Guide collection',
+							fields: '[]',
+							settings: '{"isPublic":true,"routePrefix":"/ui-patterns","defaultSort":"published_at","defaultSortDirection":"desc"}',
+							icon: 'layout',
+							sort_order: 1,
+							is_system: 0,
+							purpose: 'guide_section',
+							visibility: 'public',
+							submission_policy: 'trusted_members',
+							created_at: '2024-01-01',
+							updated_at: '2024-01-01'
+						}
+					]
+				})
+				.mockResolvedValueOnce({
+					results: [
+						{
+							id: 'item-1',
+							content_type_id: 'ct-guides',
+							slug: 'modal-dialogs',
+							title: 'Modal Dialogs',
+							status: 'published',
+							fields: '{}',
+							seo_title: null,
+							seo_description: null,
+							seo_image: null,
+							author_id: null,
+							published_at: '2024-01-01',
+							created_at: '2024-01-01',
+							updated_at: '2024-01-01'
+						}
+					]
+				});
+
+			mockDB.first.mockResolvedValueOnce({ count: 1 });
+
+			const collections = await getPublicGuideCollections(mockDB, 3);
+
+			expect(collections).toHaveLength(1);
+			expect(collections[0].slug).toBe('ui-patterns');
+			expect(collections[0].href).toBe('/ui-patterns');
 		});
 	});
 

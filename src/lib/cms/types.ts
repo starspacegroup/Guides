@@ -22,6 +22,12 @@ export type ContentFieldType =
 	| 'json'
 	| 'color';
 
+export type ContentTypePurpose = 'general' | 'guide_section';
+
+export type ContentSubmissionPolicy = 'admin_only' | 'trusted_members' | 'all_members';
+
+export type ContentVisibility = 'public' | 'unlisted' | 'private';
+
 /** Validation rules for a content field */
 export interface ContentFieldValidation {
 	min?: number;
@@ -99,6 +105,12 @@ export interface ContentTypeDefinition {
 	description: string;
 	/** Icon identifier for admin UI */
 	icon: string;
+	/** Whether this type is a generic CMS type or a guide section */
+	purpose?: ContentTypePurpose;
+	/** Who can submit content for this type */
+	submissionPolicy?: ContentSubmissionPolicy;
+	/** Public visibility for browse surfaces */
+	visibility?: ContentVisibility;
 	/** Custom field definitions */
 	fields: ContentFieldDefinition[];
 	/** Content type settings */
@@ -116,6 +128,9 @@ export interface ContentType {
 	icon: string;
 	sort_order: number;
 	is_system: number; // 1 = code-defined (from registry), 0 = user-created
+	purpose?: ContentTypePurpose;
+	submission_policy?: ContentSubmissionPolicy;
+	visibility?: ContentVisibility;
 	created_at: string;
 	updated_at: string;
 }
@@ -131,6 +146,9 @@ export interface ContentTypeParsed {
 	icon: string;
 	sortOrder: number;
 	isSystem: boolean;
+	purpose: ContentTypePurpose;
+	submissionPolicy: ContentSubmissionPolicy;
+	visibility: ContentVisibility;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -261,6 +279,9 @@ export interface CreateContentTypeInput {
 	slug?: string;
 	description?: string;
 	icon?: string;
+	purpose?: ContentTypePurpose;
+	submissionPolicy?: ContentSubmissionPolicy;
+	visibility?: ContentVisibility;
 	fields: ContentFieldDefinition[];
 	settings: ContentTypeSettings;
 }
@@ -271,6 +292,9 @@ export interface UpdateContentTypeInput {
 	slug?: string;
 	description?: string;
 	icon?: string;
+	purpose?: ContentTypePurpose;
+	submissionPolicy?: ContentSubmissionPolicy;
+	visibility?: ContentVisibility;
 	fields?: ContentFieldDefinition[];
 	settings?: ContentTypeSettings;
 }

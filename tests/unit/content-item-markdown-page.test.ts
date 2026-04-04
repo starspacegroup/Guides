@@ -18,6 +18,9 @@ function createContentType(overrides: Partial<ContentTypeParsed> = {}): ContentT
     icon: 'article',
     sortOrder: 0,
     isSystem: true,
+    purpose: 'guide_section',
+    submissionPolicy: 'trusted_members',
+    visibility: 'public',
     createdAt: '2026-04-01T00:00:00.000Z',
     updatedAt: '2026-04-01T00:00:00.000Z',
     ...overrides

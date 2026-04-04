@@ -53,25 +53,31 @@ describe('CMS Utils', () => {
 		it('should parse a D1 content type row', () => {
 			const row: ContentType = {
 				id: 'ct-1',
-				slug: 'blog',
-				name: 'Blog Posts',
-				description: 'Blog articles',
+				slug: 'user-interface',
+				name: 'User Interface',
+				description: 'Guide articles',
 				fields: JSON.stringify([{ name: 'body', label: 'Body', type: 'richtext' }]),
 				settings: JSON.stringify({ hasDrafts: true }),
-				icon: 'article',
+				icon: 'layout',
 				sort_order: 0,
 				is_system: 0,
+				purpose: 'guide_section',
+				submission_policy: 'trusted_members',
+				visibility: 'public',
 				created_at: '2024-01-01T00:00:00Z',
 				updated_at: '2024-01-01T00:00:00Z'
 			};
 
 			const parsed = parseContentType(row);
 			expect(parsed.id).toBe('ct-1');
-			expect(parsed.slug).toBe('blog');
-			expect(parsed.name).toBe('Blog Posts');
+			expect(parsed.slug).toBe('user-interface');
+			expect(parsed.name).toBe('User Interface');
 			expect(parsed.fields).toEqual([{ name: 'body', label: 'Body', type: 'richtext' }]);
 			expect(parsed.settings).toEqual({ hasDrafts: true });
 			expect(parsed.sortOrder).toBe(0);
+			expect(parsed.purpose).toBe('guide_section');
+			expect(parsed.submissionPolicy).toBe('trusted_members');
+			expect(parsed.visibility).toBe('public');
 		});
 	});
 

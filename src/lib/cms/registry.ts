@@ -1,89 +1,13 @@
 import type { ContentTypeDefinition } from './types';
 
-export const blogContentType: ContentTypeDefinition = {
-  slug: 'blog',
-  name: 'Blog Posts',
-  description: 'Blog articles, news, and updates',
-  icon: 'article',
-  fields: [
-    {
-      name: 'excerpt',
-      label: 'Excerpt',
-      type: 'textarea',
-      required: true,
-      placeholder: 'A brief summary of the post...',
-      helpText: 'Shown on list pages and in search results',
-      validation: { maxLength: 300 },
-      sortOrder: 1
-    },
-    {
-      name: 'body',
-      label: 'Body',
-      type: 'richtext',
-      required: true,
-      helpText: 'The main content of the post (supports Markdown)',
-      sortOrder: 2
-    },
-    {
-      name: 'header_demo',
-      label: 'Header Demo',
-      type: 'select',
-      options: [{ label: 'Theme Toggle: Next Action', value: 'theme-toggle-next-action' }],
-      helpText: 'Optional working component shown in the article header.',
-      sortOrder: 3
-    },
-    {
-      name: 'featured_image',
-      label: 'Featured Image',
-      type: 'url',
-      placeholder: 'https://example.com/image.jpg',
-      helpText: 'URL to the featured image',
-      sortOrder: 4
-    },
-    {
-      name: 'category',
-      label: 'Category',
-      type: 'select',
-      options: [
-        { label: 'General', value: 'general' },
-        { label: 'Tutorial', value: 'tutorial' },
-        { label: 'News', value: 'news' },
-        { label: 'Update', value: 'update' },
-        { label: 'Guide', value: 'guide' }
-      ],
-      defaultValue: 'general',
-      sortOrder: 5
-    },
-    {
-      name: 'read_time',
-      label: 'Read Time (minutes)',
-      type: 'number',
-      placeholder: '5',
-      helpText: 'Estimated reading time',
-      validation: { min: 1, max: 120 },
-      sortOrder: 6
-    }
-  ],
-  settings: {
-    hasDrafts: true,
-    hasTags: true,
-    hasSEO: true,
-    hasAuthor: true,
-    routePrefix: '/blog',
-    listPageSize: 12,
-    defaultSort: 'published_at',
-    defaultSortDirection: 'desc',
-    isPublic: true,
-    listTemplate: 'blog-list',
-    itemTemplate: 'blog-item'
-  }
-};
-
 export const userInterfaceContentType: ContentTypeDefinition = {
   slug: 'user-interface',
   name: 'User Interface',
   description: 'Section guides for UI implementation details and design decisions',
   icon: 'layout',
+  purpose: 'guide_section',
+  submissionPolicy: 'trusted_members',
+  visibility: 'public',
   fields: [
     {
       name: 'excerpt',
@@ -149,7 +73,6 @@ export const userInterfaceContentType: ContentTypeDefinition = {
 };
 
 export const contentTypeRegistry: ContentTypeDefinition[] = [
-  blogContentType,
   userInterfaceContentType
 ];
 
