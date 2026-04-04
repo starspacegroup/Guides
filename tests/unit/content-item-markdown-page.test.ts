@@ -70,43 +70,89 @@ describe('Content item page markdown rendering', () => {
     expect(container.querySelector('.cms-tag')?.textContent).toContain('Forms');
   });
 
-    it('copies rendered code blocks from the article body', async () => {
-      render(Page, {
-        props: {
-          data: {
-            contentType: {
-              slug: 'ui-patterns',
-              name: 'UI Patterns',
-              description: 'Guides for reusable UI patterns',
-              fields: [],
-              settings: {
-                itemTemplate: 'blog-item',
-                routePrefix: '/ui-patterns',
-                hasTags: false
-              }
-            },
-            item: {
-              title: 'Theme Toggle Icons Should Signal the Next Action',
-              seoTitle: null,
-              seoDescription: null,
-              seoImage: null,
-              publishedAt: '2026-04-03T00:00:00.000Z',
-              fields: {
-                excerpt: 'Theme toggles should show the next action.',
-                body: '# Code Examples\n\n```ts\nconst nextTheme = currentTheme === "light" ? "dark" : "light";\n```',
-                read_time: 6
-              }
-            },
-            tags: []
-          }
+  it('copies rendered code blocks from the article body', async () => {
+    render(Page, {
+      props: {
+        data: {
+          contentType: {
+            slug: 'ui-patterns',
+            name: 'UI Patterns',
+            description: 'Guides for reusable UI patterns',
+            fields: [],
+            settings: {
+              itemTemplate: 'blog-item',
+              routePrefix: '/ui-patterns',
+              hasTags: false
+            }
+          },
+          item: {
+            title: 'Theme Toggle Icons Should Signal the Next Action',
+            seoTitle: null,
+            seoDescription: null,
+            seoImage: null,
+            publishedAt: '2026-04-03T00:00:00.000Z',
+            fields: {
+              excerpt: 'Theme toggles should show the next action.',
+              body: '# Code Examples\n\n```ts\nconst nextTheme = currentTheme === "light" ? "dark" : "light";\n```',
+              read_time: 6
+            }
+          },
+          tags: []
         }
-      });
-
-      const copyButton = await screen.findByRole('button', { name: 'Copy TypeScript code' });
-      await fireEvent.click(copyButton);
-
-      expect(globalThis.navigator.clipboard.writeText).toHaveBeenCalledWith(
-        'const nextTheme = currentTheme === "light" ? "dark" : "light";'
-      );
+      }
     });
+
+    const copyButton = await screen.findByRole('button', { name: 'Copy TypeScript code' });
+    await fireEvent.click(copyButton);
+
+    expect(globalThis.navigator.clipboard.writeText).toHaveBeenCalledWith(
+      'const nextTheme = currentTheme === "light" ? "dark" : "light";'
+    );
+  });
+
+  it('renders a working header demo when the guide defines one', async () => {
+    const { container } = render(Page, {
+      props: {
+        data: {
+          contentType: {
+            slug: 'ui-patterns',
+            name: 'UI Patterns',
+            description: 'Guides for reusable UI patterns',
+            fields: [],
+            settings: {
+              itemTemplate: 'blog-item',
+              routePrefix: '/ui-patterns',
+              hasTags: false
+            }
+          },
+          item: {
+            title: 'Theme Toggle Icons Should Signal the Next Action',
+            seoTitle: null,
+            seoDescription: null,
+            seoImage: null,
+            publishedAt: '2026-04-03T00:00:00.000Z',
+            fields: {
+              excerpt: 'Theme toggles should show the next action.',
+              header_demo: 'theme-toggle-next-action',
+              body: '# Code Examples\n\n## Svelte\n\nUse the next theme icon.',
+              read_time: 6
+            }
+          },
+          tags: []
+        }
+      }
+    });
+
+    expect(container.querySelector('.cms-blog-article-header-demo')).toBeTruthy();
+    expect(container.querySelector('[data-header-demo="theme-toggle-next-action"]')).toBeTruthy();
+
+    const toggleButton = screen.getByRole('button', { name: 'Switch to dark mode' });
+    expect(screen.getByText('Current theme')).toBeInTheDocument();
+    expect(screen.getByText('Light')).toBeInTheDocument();
+
+    await fireEvent.click(toggleButton);
+
+    expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
+    expect(screen.getByText('Dark')).toBeInTheDocument();
+  });
 });

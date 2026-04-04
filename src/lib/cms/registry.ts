@@ -25,12 +25,20 @@ export const blogContentType: ContentTypeDefinition = {
       sortOrder: 2
     },
     {
+      name: 'header_demo',
+      label: 'Header Demo',
+      type: 'select',
+      options: [{ label: 'Theme Toggle: Next Action', value: 'theme-toggle-next-action' }],
+      helpText: 'Optional working component shown in the article header.',
+      sortOrder: 3
+    },
+    {
       name: 'featured_image',
       label: 'Featured Image',
       type: 'url',
       placeholder: 'https://example.com/image.jpg',
       helpText: 'URL to the featured image',
-      sortOrder: 3
+      sortOrder: 4
     },
     {
       name: 'category',
@@ -44,7 +52,7 @@ export const blogContentType: ContentTypeDefinition = {
         { label: 'Guide', value: 'guide' }
       ],
       defaultValue: 'general',
-      sortOrder: 4
+      sortOrder: 5
     },
     {
       name: 'read_time',
@@ -53,7 +61,7 @@ export const blogContentType: ContentTypeDefinition = {
       placeholder: '5',
       helpText: 'Estimated reading time',
       validation: { min: 1, max: 120 },
-      sortOrder: 5
+      sortOrder: 6
     }
   ],
   settings: {
@@ -96,6 +104,14 @@ export const userInterfaceContentType: ContentTypeDefinition = {
       sortOrder: 2
     },
     {
+      name: 'header_demo',
+      label: 'Header Demo',
+      type: 'select',
+      options: [{ label: 'Theme Toggle: Next Action', value: 'theme-toggle-next-action' }],
+      helpText: 'Optional working component shown in the article header.',
+      sortOrder: 3
+    },
+    {
       name: 'difficulty',
       label: 'Difficulty',
       type: 'select',
@@ -105,7 +121,7 @@ export const userInterfaceContentType: ContentTypeDefinition = {
         { label: 'Advanced', value: 'advanced' }
       ],
       defaultValue: 'beginner',
-      sortOrder: 3
+      sortOrder: 4
     },
     {
       name: 'read_time',
@@ -114,7 +130,7 @@ export const userInterfaceContentType: ContentTypeDefinition = {
       placeholder: '8',
       helpText: 'Estimated reading time',
       validation: { min: 1, max: 240 },
-      sortOrder: 4
+      sortOrder: 5
     }
   ],
   settings: {

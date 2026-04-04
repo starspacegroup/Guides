@@ -52,20 +52,18 @@ describe('CMS Service', () => {
 
 		it('should not batch when no changes needed', async () => {
 			const { syncContentTypes } = await import('../../src/lib/services/cms.js');
-			const { blogContentType } = await import('../../src/lib/cms/registry.js');
+			const { contentTypeRegistry } = await import('../../src/lib/cms/registry.js');
 
 			mockDB.all.mockResolvedValue({
-				results: [
-					{
-						id: 'existing-id',
-						slug: 'blog',
-						name: blogContentType.name,
-						description: blogContentType.description,
-						fields: JSON.stringify(blogContentType.fields),
-						settings: JSON.stringify(blogContentType.settings),
-						icon: blogContentType.icon
-					}
-				]
+				results: contentTypeRegistry.map((contentType, index) => ({
+					id: `existing-id-${index}`,
+					slug: contentType.slug,
+					name: contentType.name,
+					description: contentType.description,
+					fields: JSON.stringify(contentType.fields),
+					settings: JSON.stringify(contentType.settings),
+					icon: contentType.icon
+				}))
 			});
 
 			await syncContentTypes(mockDB);

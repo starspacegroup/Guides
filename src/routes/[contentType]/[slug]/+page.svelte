@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import type { PageData } from './$types';
+	import ArticleHeaderDemo from '$lib/components/article-demos/ArticleHeaderDemo.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import { enhanceCodeBlocks } from '$lib/utils/codeBlocks';
 	import { getMarkdownHeadings, renderMarkdownToHtml } from '$lib/utils/markdown';
@@ -19,6 +20,7 @@
 	$: bodyMarkdown = typeof item?.fields?.body === 'string' ? item.fields.body : '';
 	$: bodyHtml = renderMarkdownToHtml(bodyMarkdown);
 	$: bodyHeadings = getMarkdownHeadings(bodyMarkdown).filter((heading) => heading.level >= 2 && heading.level <= 3);
+	$: headerDemo = resolveHeaderDemo(item?.fields?.header_demo);
 
 	function formatDate(dateStr: string | null): string {
 		if (!dateStr) return '';
@@ -35,6 +37,10 @@
 
 	function renderRichText(value: unknown): string {
 		return renderMarkdownToHtml(typeof value === 'string' ? value : '');
+	}
+
+	function resolveHeaderDemo(value: unknown): string | null {
+		return value === 'theme-toggle-next-action' ? value : null;
 	}
 </script>
 
@@ -56,29 +62,39 @@
 		<!-- Blog item template -->
 		{#if contentType.settings.itemTemplate === 'blog-item'}
 			<article class="cms-blog-article">
-				<header class="cms-blog-article-header">
-					<p class="cms-blog-article-kicker">{contentType.name}</p>
-					{#if item.fields.category}
-						<span class="cms-blog-article-category">{item.fields.category}</span>
-					{/if}
-					<h1>{item.title}</h1>
-					<div class="cms-blog-article-meta">
-						{#if item.publishedAt}
-							<time class="cms-blog-meta-chip" datetime={item.publishedAt}>
-								{formatDate(item.publishedAt)}
-							</time>
-						{/if}
-						{#if item.fields.read_time}
-							<span class="cms-blog-meta-chip cms-read-time">{item.fields.read_time} min read</span>
+				<header class="cms-blog-article-header" class:has-demo={Boolean(headerDemo)}>
+					<div class="cms-blog-article-header-main">
+						<div class="cms-blog-article-header-copy">
+							<p class="cms-blog-article-kicker">{contentType.name}</p>
+							{#if item.fields.category}
+								<span class="cms-blog-article-category">{item.fields.category}</span>
+							{/if}
+							<h1>{item.title}</h1>
+							<div class="cms-blog-article-meta">
+								{#if item.publishedAt}
+									<time class="cms-blog-meta-chip" datetime={item.publishedAt}>
+										{formatDate(item.publishedAt)}
+									</time>
+								{/if}
+								{#if item.fields.read_time}
+									<span class="cms-blog-meta-chip cms-read-time">{item.fields.read_time} min read</span>
+								{/if}
+							</div>
+							{#if tags.length > 0}
+								<div class="cms-blog-article-tags">
+									{#each tags as tag}
+										<a href="{getRoutePrefix()}?tag={tag.slug}" class="cms-tag">{tag.name}</a>
+									{/each}
+								</div>
+							{/if}
+						</div>
+
+						{#if headerDemo}
+							<div class="cms-blog-article-header-demo">
+								<ArticleHeaderDemo demo={headerDemo} />
+							</div>
 						{/if}
 					</div>
-					{#if tags.length > 0}
-						<div class="cms-blog-article-tags">
-							{#each tags as tag}
-								<a href="{getRoutePrefix()}?tag={tag.slug}" class="cms-tag">{tag.name}</a>
-							{/each}
-						</div>
-					{/if}
 				</header>
 
 				<div class="cms-blog-article-layout" class:has-sidebar={bodyHeadings.length > 0}>
@@ -269,6 +285,26 @@
 			),
 			var(--color-background);
 		box-shadow: var(--shadow-lg);
+	}
+
+	.cms-blog-article-header-main {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		gap: clamp(var(--spacing-lg), 2.4vw, var(--spacing-xl));
+		align-items: start;
+	}
+
+	.cms-blog-article-header-copy {
+		display: grid;
+		gap: var(--spacing-md);
+		max-width: min(100%, 52rem);
+	}
+
+	.cms-blog-article-header-demo {
+		position: relative;
+		z-index: 1;
+		width: min(100%, 30rem);
 	}
 
 	.cms-blog-article-header::after {
@@ -780,6 +816,14 @@
 			padding-inline: var(--spacing-xl);
 		}
 
+		.cms-blog-article-header.has-demo .cms-blog-article-header-main {
+			grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+		}
+
+		.cms-blog-article-header-demo {
+			justify-self: end;
+		}
+
 		.cms-blog-article-layout.has-sidebar {
 			grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem);
 			align-items: start;
@@ -834,8 +878,12 @@
 			gap: clamp(var(--spacing-xl), 3vw, 3rem);
 		}
 
-		.cms-blog-article-header {
+		.cms-blog-article-header:not(.has-demo) {
 			padding-right: min(18rem, 22vw);
+		}
+
+		.cms-blog-article-header.has-demo {
+			padding-right: clamp(var(--spacing-xl), 3vw, 3rem);
 		}
 
 		.cms-blog-article-main.no-hero .cms-blog-article-copy {
