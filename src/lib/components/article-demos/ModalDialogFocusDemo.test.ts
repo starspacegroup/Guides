@@ -4,6 +4,23 @@ import { tick } from 'svelte';
 import { describe, expect, it } from 'vitest';
 
 describe('ModalDialogFocusDemo', () => {
+	it('locks body scroll while the dialog is open and restores it when closed', async () => {
+		document.body.style.overflow = '';
+
+		render(ModalDialogFocusDemo);
+
+		const trigger = screen.getByRole('button', { name: 'Open modal example' });
+		await fireEvent.click(trigger);
+		await tick();
+
+		expect(document.body.style.overflow).toBe('hidden');
+
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		await tick();
+
+		expect(document.body.style.overflow).toBe('');
+	});
+
 	it('describes backdrop blur and closes when the backdrop is clicked', async () => {
 		render(ModalDialogFocusDemo);
 

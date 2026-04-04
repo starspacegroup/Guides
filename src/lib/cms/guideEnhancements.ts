@@ -62,20 +62,40 @@ Use inline editing for a single low-risk field. Switch to a dedicated form when 
 
 ${codeFence}svelte
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 
 	let open = false;
 	let trigger: HTMLButtonElement | null = null;
 	let closeButton: HTMLButtonElement | null = null;
+	let previousBodyOverflow = '';
+	let isBodyScrollLocked = false;
+
+	function lockBodyScroll() {
+		if (typeof document === 'undefined' || isBodyScrollLocked) return;
+
+		previousBodyOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		isBodyScrollLocked = true;
+	}
+
+	function unlockBodyScroll() {
+		if (typeof document === 'undefined' || !isBodyScrollLocked) return;
+
+		document.body.style.overflow = previousBodyOverflow;
+		previousBodyOverflow = '';
+		isBodyScrollLocked = false;
+	}
 
 	async function openDialog() {
 		open = true;
+		lockBodyScroll();
 		await tick();
 		closeButton?.focus();
 	}
 
 	function closeDialog() {
 		open = false;
+		unlockBodyScroll();
 		trigger?.focus();
 	}
 
@@ -89,6 +109,10 @@ ${codeFence}svelte
 		if (!open) return;
 		if (event.key === 'Escape') closeDialog();
 	}
+
+	onDestroy(() => {
+		unlockBodyScroll();
+	});
 </script>
 
 <svelte:window on:keydown={onKeydown} />
@@ -120,7 +144,7 @@ ${codeFence}svelte
 </style>
 ${codeFence}
 
-Trap focus inside the dialog, blur the page behind the modal, close when the user clicks the backdrop, support Escape, and always restore focus to the trigger when the dialog closes.`
+Trap focus inside the dialog, prevent background scrolling, blur the page behind the modal, close when the user clicks the backdrop, support Escape, and always restore focus to the trigger when the dialog closes.`
 	},
 	'notification-badge-behavior': {
 		headerDemo: 'notification-badge-behavior',

@@ -1,10 +1,32 @@
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 
 	let isOpen = false;
 	let triggerButton: HTMLButtonElement | null = null;
 	let closeButton: HTMLButtonElement | null = null;
 	let keepEditingButton: HTMLButtonElement | null = null;
+	let previousBodyOverflow = '';
+	let isBodyScrollLocked = false;
+
+	function lockBodyScroll() {
+		if (typeof document === 'undefined' || isBodyScrollLocked) {
+			return;
+		}
+
+		previousBodyOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		isBodyScrollLocked = true;
+	}
+
+	function unlockBodyScroll() {
+		if (typeof document === 'undefined' || !isBodyScrollLocked) {
+			return;
+		}
+
+		document.body.style.overflow = previousBodyOverflow;
+		previousBodyOverflow = '';
+		isBodyScrollLocked = false;
+	}
 
 	function getFocusableButtons() {
 		return [closeButton, keepEditingButton].filter(Boolean) as HTMLButtonElement[];
@@ -12,12 +34,14 @@
 
 	async function openDialog() {
 		isOpen = true;
+		lockBodyScroll();
 		await tick();
 		closeButton?.focus();
 	}
 
 	function closeDialog() {
 		isOpen = false;
+		unlockBodyScroll();
 		triggerButton?.focus();
 	}
 
@@ -61,6 +85,10 @@
 			last.focus();
 		}
 	}
+
+	onDestroy(() => {
+		unlockBodyScroll();
+	});
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
