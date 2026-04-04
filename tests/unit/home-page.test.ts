@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, within } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import Page from '../../src/routes/+page.svelte';
 
@@ -72,32 +72,42 @@ describe('Home page', () => {
 	it('renders only guide collections with published guides and previews real guide titles', () => {
 		render(Page, { props: { data: { guideCollections } } });
 
+		const recommendedLabel = screen.getByText('Recommended starting point');
+		const insideLabel = screen.getByText(/inside this collection/i);
+		const highlightsList = screen.getByRole('list', { name: 'User Interface highlights' });
+
 		expect(screen.getByRole('heading', { level: 2, name: 'User Interface' })).toBeTruthy();
 		expect(
 			screen.getByText('Section guides for UI implementation details and design decisions')
 		).toBeTruthy();
-		expect(screen.getAllByText('2 published guides')).toHaveLength(2);
+		expect(
+			recommendedLabel.compareDocumentPosition(insideLabel) & Node.DOCUMENT_POSITION_FOLLOWING
+		).toBeTruthy();
+		expect(screen.getAllByText('2 published guides').length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByRole('link', { name: 'View collection' })).toHaveAttribute(
 			'href',
 			'/user-interface'
 		);
-		expect(screen.getByRole('link', { name: 'Theme Toggles' })).toHaveAttribute(
-			'href',
-			'/user-interface/theme-toggles'
-		);
+		expect(screen.getByText('Browse the full collection')).toBeTruthy();
+		expect(screen.getByText('Recommended starting point')).toBeTruthy();
+		expect(within(highlightsList).queryByRole('link', { name: 'Theme Toggles' })).not.toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'Command Palette Patterns' })).toHaveAttribute(
 			'href',
 			'/user-interface/command-palette-patterns'
 		);
+		expect(within(highlightsList).getByRole('link', { name: 'Command Palette Patterns' })).toBeTruthy();
+		expect(screen.queryByText('01')).not.toBeInTheDocument();
+		expect(screen.queryByText('02')).not.toBeInTheDocument();
 		expect(
 			screen.getByRole('link', {
 				name: /browse user interface/i
 			})
 		).toHaveAttribute('href', '/user-interface');
-		expect(screen.getByRole('link', { name: /start with theme toggles/i })).toHaveAttribute(
-			'href',
-			'/user-interface/theme-toggles'
-		);
+		expect(
+			screen.getByRole('link', {
+				name: /recommended starting point theme toggles read the first guide in this collection/i
+			})
+		).toHaveAttribute('href', '/user-interface/theme-toggles');
 		expect(screen.queryByText('/user-interface')).not.toBeInTheDocument();
 		expect(screen.queryByRole('heading', { level: 2, name: 'Blog Posts' })).not.toBeInTheDocument();
 	});

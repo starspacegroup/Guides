@@ -35,9 +35,9 @@
 		...guideCollection,
 		label: collectionLabels[guideCollection.icon] ?? 'Guide collection',
 		countLabel: `${guideCollection.publishedCount} published guides`,
-		previewItems: guideCollection.items.slice(0, 2),
 		firstItem: guideCollection.items[0] ?? null,
-		remainingItemCount: Math.max(guideCollection.items.length - 2, 0),
+		previewItems: guideCollection.items.slice(1, 3),
+		remainingItemCount: Math.max(guideCollection.items.length - 3, 0),
 		accent: accentVariants[index % accentVariants.length]
 	}));
 
@@ -130,31 +130,46 @@
 							<p class="card-description">{guideType.description}</p>
 						</div>
 
+						<div class="card-actions" class:card-actions-featured={!!guideType.firstItem}>
+							{#if guideType.firstItem}
+								<a
+									class="card-action card-action-featured"
+									href={guideType.firstItem.href}
+								>
+									<span class="card-action-label">Recommended starting point</span>
+									<span class="card-action-title">{guideType.firstItem.title}</span>
+									<span class="card-action-copy">Read the first guide in this collection</span>
+								</a>
+							{/if}
+							<a
+								class="card-action card-action-collection"
+								href={guideType.href}
+								aria-label={`Browse ${guideType.name}`}
+							>
+								<span class="card-action-label">Browse the full collection</span>
+								<span class="card-action-body">
+									<span class="card-action-title">{guideType.name}</span>
+									<span class="card-action-copy">{guideType.countLabel}</span>
+								</span>
+							</a>
+						</div>
+
 						<div class="card-preview">
 							<p class="card-preview-label">Inside this collection</p>
-							<ul class="card-highlights" aria-label={`${guideType.name} highlights`}>
-								{#each guideType.previewItems as item}
-									<li>
-										<a class="highlight-link" href={item.href}>{item.title}</a>
-									</li>
-								{/each}
-							</ul>
+							{#if guideType.previewItems.length > 0}
+								<ul class="card-highlights" aria-label={`${guideType.name} highlights`}>
+									{#each guideType.previewItems as item}
+										<li>
+											<a class="highlight-link" href={item.href}>{item.title}</a>
+										</li>
+									{/each}
+								</ul>
+							{/if}
 							{#if guideType.remainingItemCount > 0}
 								<p class="card-preview-more">
 									+{guideType.remainingItemCount}
 									{guideType.remainingItemCount === 1 ? ' more guide' : ' more guides'}
 								</p>
-							{/if}
-						</div>
-
-						<div class="card-actions">
-							<a class="card-link card-link-primary" href={guideType.href} aria-label={`Browse ${guideType.name}`}>
-								Browse collection
-							</a>
-							{#if guideType.firstItem}
-								<a class="card-link card-link-secondary" href={guideType.firstItem.href}>
-									Start with {guideType.firstItem.title}
-								</a>
 							{/if}
 						</div>
 					</article>
@@ -455,7 +470,14 @@
 
 	.card-count {
 		margin: 0;
-		font-size: 0.82rem;
+		display: inline-flex;
+		align-items: center;
+		width: fit-content;
+		padding: 0.3rem 0.65rem;
+		border-radius: var(--radius-pill, 999px);
+		border: 1px solid color-mix(in srgb, var(--color-border) 84%, var(--color-primary));
+		background: color-mix(in srgb, var(--color-background) 60%, var(--color-surface));
+		font-size: 0.8rem;
 		font-weight: 600;
 		color: var(--color-text);
 	}
@@ -497,7 +519,7 @@
 	.card-preview {
 		display: grid;
 		gap: var(--spacing-sm);
-		padding: var(--spacing-sm);
+		padding: 0.85rem;
 		border-radius: calc(var(--radius-lg) - 0.2rem);
 		border: 1px solid color-mix(in srgb, var(--color-border) 90%, var(--color-primary));
 		background: color-mix(in srgb, var(--color-background) 64%, var(--color-surface));
@@ -521,7 +543,7 @@
 	}
 
 	.card-highlights li {
-		padding: 0.55rem 0.75rem;
+		padding: 0.7rem 0.8rem;
 		border-radius: var(--radius-md);
 		background: color-mix(in srgb, var(--color-background) 78%, var(--color-surface));
 		border: 1px solid color-mix(in srgb, var(--color-border) 88%, var(--color-primary));
@@ -532,6 +554,7 @@
 	.highlight-link {
 		display: inline-flex;
 		width: 100%;
+		align-items: center;
 		color: var(--color-text);
 		text-decoration: none;
 	}
@@ -545,41 +568,124 @@
 	.card-actions {
 		display: grid;
 		gap: var(--spacing-sm);
+		padding-top: 0.15rem;
 	}
 
-	.card-link {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
+	.card-action {
+		display: grid;
+		gap: 0.5rem;
 		width: 100%;
-		min-height: 2.75rem;
-		padding: var(--spacing-sm) var(--spacing-md);
-		border-radius: var(--radius-md);
-		border: 1px solid var(--color-border);
+		min-height: auto;
+		padding: 1rem 1.1rem;
+		border-radius: calc(var(--radius-lg) - 0.2rem);
+		border: 1px solid color-mix(in srgb, var(--color-border) 86%, var(--color-primary));
 		text-decoration: none;
-		font-weight: 600;
+		align-content: start;
 		color: var(--color-text);
-		background: color-mix(in srgb, var(--color-background) 78%, var(--color-surface));
+		background: color-mix(in srgb, var(--color-background) 74%, var(--color-surface));
+		transition:
+			transform var(--transition-base),
+			border-color var(--transition-base),
+			background var(--transition-base),
+			box-shadow var(--transition-base);
 	}
 
-	.card-link-primary {
-		background: var(--color-text);
-		border-color: var(--color-text);
-		color: var(--color-background);
+	.card-action:hover {
+		transform: translateY(-2px);
+		border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+		box-shadow: var(--shadow-md);
 	}
 
-	.card-link-primary:hover {
-		color: var(--color-background);
-		background: color-mix(in srgb, var(--color-text) 86%, var(--color-primary));
-		border-color: color-mix(in srgb, var(--color-text) 86%, var(--color-primary));
+	.card-action-label {
+		font-size: 0.74rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
 	}
 
-	.card-link-secondary {
-		background: transparent;
+	.card-action-title {
+		font-size: clamp(1rem, 4vw, 1.45rem);
+		font-weight: 700;
+		line-height: 1.15;
+		text-wrap: balance;
 	}
 
-	.card-link-secondary:hover {
-		background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+	.card-action-copy {
+		font-size: 0.88rem;
+		line-height: 1.55;
+		color: var(--color-text-secondary);
+	}
+
+	.card-action-body {
+		display: grid;
+		gap: 0.35rem;
+	}
+
+	.card-action-featured {
+		min-height: 10rem;
+		align-content: end;
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--color-background) 88%, var(--color-primary)) 0%,
+				color-mix(in srgb, var(--color-surface) 92%, var(--color-background)) 100%
+			),
+			var(--color-surface);
+		border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border));
+		box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-background) 65%, transparent);
+		color: var(--color-text);
+	}
+
+	.card-action-featured .card-action-label,
+	.card-action-featured .card-action-copy {
+		color: var(--color-text-secondary);
+	}
+
+	.card-action-featured:hover {
+		color: var(--color-text);
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--color-background) 82%, var(--color-primary)) 0%,
+				color-mix(in srgb, var(--color-surface) 88%, var(--color-background)) 100%
+			),
+			var(--color-surface);
+	}
+
+	.card-action-collection {
+		background:
+			radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 45%),
+			color-mix(in srgb, var(--color-background) 78%, var(--color-surface));
+	}
+
+	.card-action-collection .card-action-body {
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: end;
+		column-gap: var(--spacing-sm);
+	}
+
+	.card-action-collection .card-action-title {
+		font-size: clamp(1rem, 3vw, 1.2rem);
+	}
+
+	.card-action-collection .card-action-copy {
+		white-space: nowrap;
+		text-align: right;
+	}
+
+	:global([data-theme='dark']) .card-action-featured {
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--color-surface) 88%, var(--color-primary)) 0%,
+				color-mix(in srgb, var(--color-surface) 96%, var(--color-background)) 100%
+			),
+			var(--color-surface);
+		border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, var(--color-background) 10%, white),
+			0 0 0 1px color-mix(in srgb, var(--color-background) 14%, transparent);
 	}
 
 	.empty-state {
@@ -613,8 +719,7 @@
 			flex-direction: row;
 		}
 
-		.button,
-		.card-link {
+		.button {
 			width: fit-content;
 		}
 
@@ -627,16 +732,16 @@
 			gap: var(--spacing-md);
 		}
 
-		.card-actions {
-			grid-template-columns: repeat(2, minmax(0, max-content));
-		}
-
 		.guide-card h2 {
 			font-size: 1.35rem;
 		}
 
 		.card-highlights li {
 			font-size: 0.9rem;
+		}
+
+		.card-action-featured {
+			min-height: 11rem;
 		}
 	}
 
@@ -691,7 +796,7 @@
 
 	@media (min-width: 1320px) {
 		.card-grid {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 
 		.card-header {
