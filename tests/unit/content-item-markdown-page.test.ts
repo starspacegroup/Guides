@@ -1,6 +1,71 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ContentItemParsed, ContentTagParsed, ContentTypeParsed } from '../../src/lib/cms/types';
 import Page from '../../src/routes/[contentType]/[slug]/+page.svelte';
+
+function createContentType(overrides: Partial<ContentTypeParsed> = {}): ContentTypeParsed {
+  return {
+    id: 'content-type-1',
+    slug: 'ui-patterns',
+    name: 'UI Patterns',
+    description: 'Guides for reusable UI patterns',
+    fields: [],
+    settings: {
+      itemTemplate: 'blog-item',
+      routePrefix: '/ui-patterns',
+      hasTags: false
+    },
+    icon: 'article',
+    sortOrder: 0,
+    isSystem: true,
+    createdAt: '2026-04-01T00:00:00.000Z',
+    updatedAt: '2026-04-01T00:00:00.000Z',
+    ...overrides
+  };
+}
+
+function createContentItem(overrides: Partial<ContentItemParsed> = {}): ContentItemParsed {
+  return {
+    id: 'item-1',
+    contentTypeId: 'content-type-1',
+    slug: 'theme-toggle-icons-should-signal-the-next-action',
+    title: 'Theme Toggle Icons Should Signal the Next Action',
+    status: 'published',
+    fields: {},
+    seoTitle: null,
+    seoDescription: null,
+    seoImage: null,
+    authorId: null,
+    publishedAt: '2026-04-03T00:00:00.000Z',
+    createdAt: '2026-04-03T00:00:00.000Z',
+    updatedAt: '2026-04-03T00:00:00.000Z',
+    ...overrides
+  };
+}
+
+function createTag(overrides: Partial<ContentTagParsed> = {}): ContentTagParsed {
+  return {
+    id: 'tag-1',
+    contentTypeId: 'content-type-1',
+    name: 'Forms',
+    slug: 'forms',
+    createdAt: '2026-04-03T00:00:00.000Z',
+    ...overrides
+  };
+}
+
+function createPageData(overrides: {
+  contentType: ContentTypeParsed;
+  item: ContentItemParsed;
+  tags: ContentTagParsed[];
+}) {
+  return {
+    user: null,
+    hasAIProviders: false,
+    guideCollections: [],
+    ...overrides
+  };
+}
 
 describe('Content item page markdown rendering', () => {
   beforeEach(() => {
@@ -15,23 +80,20 @@ describe('Content item page markdown rendering', () => {
   it('renders markdown body inside the editorial blog-item layout', () => {
     const { container } = render(Page, {
       props: {
-        data: {
-          contentType: {
+        data: createPageData({
+          contentType: createContentType({
             slug: 'ui-feedback-and-states',
             name: 'UI Feedback and States',
             description: 'Guides for feedback states',
-            fields: [],
             settings: {
               itemTemplate: 'blog-item',
               routePrefix: '/ui-feedback-and-states',
               hasTags: false
             }
-          },
-          item: {
+          }),
+          item: createContentItem({
             title: 'Validation Feedback Must Fire at the Right Time',
-            seoTitle: null,
-            seoDescription: null,
-            seoImage: null,
+            slug: 'validation-feedback-must-fire-at-the-right-time',
             publishedAt: '2026-04-03T00:00:00.000Z',
             fields: {
               category: 'Forms',
@@ -40,9 +102,9 @@ describe('Content item page markdown rendering', () => {
                 '# Rule\n\n## Why\n\nValidation should wait until the user has context.\n\n### Must\n\n- After blur\n- On submit',
               read_time: 6
             }
-          },
-          tags: [{ slug: 'forms', name: 'Forms' }]
-        }
+          }),
+          tags: [createTag()]
+        })
       }
     });
 
@@ -75,32 +137,17 @@ describe('Content item page markdown rendering', () => {
   it('copies rendered code blocks from the article body', async () => {
     render(Page, {
       props: {
-        data: {
-          contentType: {
-            slug: 'ui-patterns',
-            name: 'UI Patterns',
-            description: 'Guides for reusable UI patterns',
-            fields: [],
-            settings: {
-              itemTemplate: 'blog-item',
-              routePrefix: '/ui-patterns',
-              hasTags: false
-            }
-          },
-          item: {
-            title: 'Theme Toggle Icons Should Signal the Next Action',
-            seoTitle: null,
-            seoDescription: null,
-            seoImage: null,
-            publishedAt: '2026-04-03T00:00:00.000Z',
+        data: createPageData({
+          contentType: createContentType(),
+          item: createContentItem({
             fields: {
               excerpt: 'Theme toggles should show the next action.',
               body: '# Code Examples\n\n```ts\nconst nextTheme = currentTheme === "light" ? "dark" : "light";\n```',
               read_time: 6
             }
-          },
+          }),
           tags: []
-        }
+        })
       }
     });
 
@@ -115,33 +162,18 @@ describe('Content item page markdown rendering', () => {
   it('renders a working header demo when the guide defines one', async () => {
     const { container } = render(Page, {
       props: {
-        data: {
-          contentType: {
-            slug: 'ui-patterns',
-            name: 'UI Patterns',
-            description: 'Guides for reusable UI patterns',
-            fields: [],
-            settings: {
-              itemTemplate: 'blog-item',
-              routePrefix: '/ui-patterns',
-              hasTags: false
-            }
-          },
-          item: {
-            title: 'Theme Toggle Icons Should Signal the Next Action',
-            seoTitle: null,
-            seoDescription: null,
-            seoImage: null,
-            publishedAt: '2026-04-03T00:00:00.000Z',
+        data: createPageData({
+          contentType: createContentType(),
+          item: createContentItem({
             fields: {
               excerpt: 'Theme toggles should show the next action.',
               header_demo: 'theme-toggle-next-action',
               body: '# Code Examples\n\n## Svelte\n\nUse the next theme icon.',
               read_time: 6
             }
-          },
+          }),
           tags: []
-        }
+        })
       }
     });
 

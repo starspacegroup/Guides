@@ -62,7 +62,7 @@ function highlightMarkup(code: string): string {
 		(_, open, tagName, attributes, close) => {
 			const highlightedAttributes = attributes.replace(
 				/([A-Za-z_:][-A-Za-z0-9_:.]*)(=)(&quot;[\s\S]*?&quot;|&#39;[\s\S]*?&#39;|\{[^}]+\})?/g,
-				(attributeMatch, name, equals, value) => {
+				(_attributeMatch: string, name: string, equals: string, value?: string) => {
 					const highlightedValue = value
 						? `<span class="token string">${value}</span>`
 						: '';

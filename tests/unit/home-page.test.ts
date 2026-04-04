@@ -4,14 +4,15 @@ import Page from '../../src/routes/+page.svelte';
 
 const guideCollections = [
 	{
+		slug: 'user-interface',
 		name: 'User Interface',
 		description: 'Section guides for UI implementation details and design decisions',
 		href: '/user-interface',
 		icon: 'layout',
 		publishedCount: 2,
 		items: [
-			{ title: 'Theme Toggles', href: '/user-interface/theme-toggles' },
-			{ title: 'Command Palette Patterns', href: '/user-interface/command-palette-patterns' }
+			{ title: 'Theme Toggles', href: '/user-interface/theme-toggles', publishedAt: null },
+			{ title: 'Command Palette Patterns', href: '/user-interface/command-palette-patterns', publishedAt: null }
 		]
 	}
 ];
@@ -19,15 +20,16 @@ const guideCollections = [
 const multipleGuideCollections = [
 	...guideCollections,
 	{
+		slug: 'payments',
 		name: 'Payments',
 		description: 'Guides for payment state handling, reconciliation, and recovery paths',
 		href: '/payments',
 		icon: 'article',
 		publishedCount: 3,
 		items: [
-			{ title: 'Retry Flows', href: '/payments/retry-flows' },
-			{ title: 'Ledger Reconciliation', href: '/payments/ledger-reconciliation' },
-			{ title: 'Refund States', href: '/payments/refund-states' }
+			{ title: 'Retry Flows', href: '/payments/retry-flows', publishedAt: null },
+			{ title: 'Ledger Reconciliation', href: '/payments/ledger-reconciliation', publishedAt: null },
+			{ title: 'Refund States', href: '/payments/refund-states', publishedAt: null }
 		]
 	}
 ];

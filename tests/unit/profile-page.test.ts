@@ -21,6 +21,12 @@ describe('Profile Page', () => {
 		vi.clearAllMocks();
 	});
 
+	const withLayoutData = <T extends Record<string, unknown>>(data: T) => ({
+		hasAIProviders: false,
+		guideCollections: [],
+		...data
+	});
+
 	describe('Server Load Function', () => {
 		it('should redirect to login if user is not authenticated', async () => {
 			const mockEvent = {
@@ -116,13 +122,12 @@ describe('Profile Page', () => {
 					isOwner: false,
 					isAdmin: false
 				},
-				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { container, getByText } = render(ProfilePage.default, {
-				props: { data: mockData }
+				props: { data: withLayoutData(mockData) }
 			});
 
 			// Check for user information
@@ -146,13 +151,12 @@ describe('Profile Page', () => {
 					email: 'test@example.com',
 					isOwner: false
 				},
-				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { container } = render(ProfilePage.default, {
-				props: { data: mockData }
+				props: { data: withLayoutData(mockData) }
 			});
 
 			// Check h1 contains the login name
@@ -171,13 +175,12 @@ describe('Profile Page', () => {
 					name: 'Test User',
 					isOwner: false
 				},
-				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { container } = render(ProfilePage.default, {
-				props: { data: mockData }
+				props: { data: withLayoutData(mockData) }
 			});
 
 			// Check for avatar placeholder div
@@ -198,13 +201,12 @@ describe('Profile Page', () => {
 					isOwner: false,
 					isAdmin: true
 				},
-				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { getByText } = render(ProfilePage.default, {
-				props: { data: mockData }
+				props: { data: withLayoutData(mockData) }
 			});
 
 			expect(getByText('Admin')).toBeTruthy();
@@ -222,13 +224,12 @@ describe('Profile Page', () => {
 					avatarUrl: 'https://avatars.githubusercontent.com/u/123456',
 					isOwner: true
 				},
-				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { getByText } = render(ProfilePage.default, {
-				props: { data: mockData }
+				props: { data: withLayoutData(mockData) }
 			});
 
 			expect(getByText('Owner')).toBeTruthy();
@@ -245,13 +246,12 @@ describe('Profile Page', () => {
 					name: 'Test User',
 					isOwner: false
 				},
-				hasAIProviders: false,
 				connectedAccounts: [],
-			configuredProviders: { github: false, discord: false }
+				configuredProviders: { github: false, discord: false }
 			};
 
 			const { container } = render(ProfilePage.default, {
-				props: { data: mockData }
+				props: { data: withLayoutData(mockData) }
 			});
 
 			const githubLink = container.querySelector('a[href="https://github.com/testuser"]');

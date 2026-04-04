@@ -1,16 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import ciWorkflowSource from '../../.github/workflows/ci.yml?raw';
+import packageJsonSource from '../../package.json?raw';
 
 const MINIMUM_NODE_VERSION = '20.18.1';
 
-function readWorkspaceFile(relativePath: string) {
-  return readFileSync(join(process.cwd(), relativePath), 'utf8');
-}
-
 describe('Node version alignment', () => {
   it('declares the runtime floor in package metadata', () => {
-    const packageJson = JSON.parse(readWorkspaceFile('package.json')) as {
+    const packageJson = JSON.parse(packageJsonSource) as {
       engines?: { node?: string; };
     };
 
@@ -18,8 +14,7 @@ describe('Node version alignment', () => {
   });
 
   it('pins CI to a compatible Node version', () => {
-    const ciWorkflow = readWorkspaceFile('.github/workflows/ci.yml');
-    const nodeVersionMatch = ciWorkflow.match(/NODE_VERSION:\s*'([^']+)'/);
+    const nodeVersionMatch = ciWorkflowSource.match(/NODE_VERSION:\s*'([^']+)'/);
 
     expect(nodeVersionMatch?.[1]).toBe(MINIMUM_NODE_VERSION);
   });

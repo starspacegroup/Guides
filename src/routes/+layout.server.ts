@@ -1,10 +1,11 @@
 import type { LayoutServerLoad } from './$types';
 import { getPublicGuideCollections } from '$lib/services/cms';
+import type { PublicGuideCollection } from '$lib/cms/types';
 
 export const load: LayoutServerLoad = async ({ locals, fetch, platform }) => {
 	// Check if AI providers are enabled
 	let hasAIProviders = false;
-	let guideCollections = [];
+	let guideCollections: PublicGuideCollection[] = [];
 	try {
 		const response = await fetch('/api/admin/ai-keys/status');
 		if (response.ok) {
