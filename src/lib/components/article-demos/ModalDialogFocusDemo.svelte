@@ -67,6 +67,14 @@
 
 <section class="modal-dialog-focus-demo" data-header-demo="modal-dialog-focus-and-close">
 	<div class="modal-dialog-focus-demo__frame">
+		<div class="modal-dialog-focus-demo__page-preview" aria-hidden="true">
+			<div class="modal-dialog-focus-demo__preview-card modal-dialog-focus-demo__preview-card--wide"></div>
+			<div class="modal-dialog-focus-demo__preview-row">
+				<div class="modal-dialog-focus-demo__preview-card"></div>
+				<div class="modal-dialog-focus-demo__preview-card"></div>
+			</div>
+		</div>
+
 		<button
 			bind:this={triggerButton}
 			type="button"
@@ -104,6 +112,7 @@
 					<ul class="modal-dialog-focus-demo__checklist">
 						<li>Initial focus lands on a close control.</li>
 						<li>Tab wraps inside the dialog.</li>
+						<li>Backdrop softens the page behind the dialog.</li>
 						<li>Dismiss returns focus to the trigger.</li>
 					</ul>
 
@@ -127,11 +136,42 @@
 	}
 
 	.modal-dialog-focus-demo__frame {
+		position: relative;
+		display: grid;
+		gap: var(--spacing-sm);
 		padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md));
 		border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-background));
 		border-radius: 1.35rem;
 		background: color-mix(in srgb, var(--color-surface) 88%, var(--color-background));
 		box-shadow: var(--shadow-md);
+	}
+
+	.modal-dialog-focus-demo__page-preview {
+		display: grid;
+		gap: 0.6rem;
+		padding: 0.35rem;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in srgb, var(--color-border) 80%, var(--color-background));
+		background: color-mix(in srgb, var(--color-background) 94%, var(--color-surface));
+	}
+
+	.modal-dialog-focus-demo__preview-row {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.6rem;
+	}
+
+	.modal-dialog-focus-demo__preview-card {
+		height: 3.6rem;
+		border-radius: 0.85rem;
+		background:
+			linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 18%, var(--color-surface)) 0%, color-mix(in srgb, var(--color-surface) 94%, var(--color-background)) 100%),
+			var(--color-surface);
+		border: 1px solid color-mix(in srgb, var(--color-border) 80%, var(--color-background));
+	}
+
+	.modal-dialog-focus-demo__preview-card--wide {
+		height: 4.5rem;
 	}
 
 	.modal-dialog-focus-demo__trigger {
@@ -146,14 +186,15 @@
 	}
 
 	.modal-dialog-focus-demo__overlay {
-		position: absolute;
+		position: fixed;
 		inset: 0;
 		display: grid;
 		place-items: center;
-		padding: var(--spacing-sm);
-		border-radius: 1rem;
-		background: color-mix(in srgb, var(--color-background) 72%, transparent);
-		backdrop-filter: blur(6px);
+		padding: clamp(var(--spacing-sm), 4vw, var(--spacing-lg));
+		background: color-mix(in srgb, var(--color-background) 58%, transparent);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+		z-index: 40;
 	}
 
 	.modal-dialog-focus-demo__panel {

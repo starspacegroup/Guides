@@ -79,6 +79,12 @@ ${codeFence}svelte
 		trigger?.focus();
 	}
 
+	function onBackdropClick(event: MouseEvent) {
+		if (event.target === event.currentTarget) {
+			closeDialog();
+		}
+	}
+
 	function onKeydown(event: KeyboardEvent) {
 		if (!open) return;
 		if (event.key === 'Escape') closeDialog();
@@ -90,7 +96,7 @@ ${codeFence}svelte
 <button bind:this={trigger} type="button" on:click={openDialog}>Open modal</button>
 
 {#if open}
-	<div class="backdrop" on:click={closeDialog}>
+	<div class="backdrop" on:click={onBackdropClick}>
 		<section
 			role="dialog"
 			aria-modal="true"
@@ -103,9 +109,18 @@ ${codeFence}svelte
 		</section>
 	</div>
 {/if}
+
+<style>
+	.backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgb(15 18 28 / 0.48);
+		backdrop-filter: blur(10px);
+	}
+</style>
 ${codeFence}
 
-Trap focus inside the dialog, support Escape, and always restore focus to the trigger when the dialog closes.`
+Trap focus inside the dialog, blur the page behind the modal, close when the user clicks the backdrop, support Escape, and always restore focus to the trigger when the dialog closes.`
 	},
 	'notification-badge-behavior': {
 		headerDemo: 'notification-badge-behavior',
