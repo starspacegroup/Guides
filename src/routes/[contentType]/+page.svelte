@@ -121,14 +121,26 @@
 
 <style>
 	.cms-list-page {
-		max-width: 1600px;
+		max-width: 1720px;
 		margin: 0 auto;
 		padding: var(--spacing-xl) var(--spacing-md);
 	}
 
 	.cms-list-header {
-		margin-bottom: var(--spacing-2xl);
+		margin-bottom: clamp(var(--spacing-2xl), 4vw, 4rem);
 		text-align: center;
+		padding: clamp(var(--spacing-xl), 4vw, 3rem);
+		border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-background));
+		border-radius: 1.5rem;
+		background:
+			radial-gradient(circle at top center, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 42%),
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--color-surface) 84%, var(--color-background)) 0%,
+				color-mix(in srgb, var(--color-background) 94%, var(--color-surface)) 100%
+			),
+			var(--color-background);
+		box-shadow: var(--shadow-md);
 	}
 
 	.cms-list-header h1 {
@@ -141,6 +153,8 @@
 	.cms-list-description {
 		color: var(--color-text-secondary);
 		font-size: 1.125rem;
+		max-width: 48rem;
+		margin: 0 auto;
 	}
 
 	.cms-empty-state {
@@ -158,15 +172,27 @@
 	.cms-blog-card {
 		display: flex;
 		flex-direction: column;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-background));
+		border-radius: 1.25rem;
 		overflow: hidden;
-		background: var(--color-surface);
-		transition: box-shadow 0.2s ease;
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--color-surface) 90%, var(--color-background)) 0%,
+				color-mix(in srgb, var(--color-background) 96%, var(--color-surface)) 100%
+			),
+			var(--color-surface);
+		box-shadow: var(--shadow-sm);
+		transition:
+			box-shadow var(--transition-base),
+			transform var(--transition-base),
+			border-color var(--transition-base);
 	}
 
 	.cms-blog-card:hover {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+		box-shadow: var(--shadow-lg);
+		transform: translateY(-4px);
+		border-color: color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
 	}
 
 	.cms-blog-card-image {
@@ -181,7 +207,9 @@
 	}
 
 	.cms-blog-card-content {
-		padding: var(--spacing-lg);
+		padding: clamp(var(--spacing-lg), 2.5vw, var(--spacing-xl));
+		display: grid;
+		gap: var(--spacing-sm);
 	}
 
 	.cms-blog-category {
@@ -197,8 +225,8 @@
 	.cms-blog-card-content h2 {
 		font-size: 1.375rem;
 		font-weight: 600;
-		margin-bottom: var(--spacing-sm);
 		line-height: 1.3;
+		letter-spacing: -0.02em;
 	}
 
 	.cms-blog-card-content h2 a {
@@ -214,11 +242,11 @@
 		color: var(--color-text-secondary);
 		font-size: 0.9375rem;
 		line-height: 1.6;
-		margin-bottom: var(--spacing-md);
 	}
 
 	.cms-blog-meta {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--spacing-md);
 		font-size: 0.8125rem;
 		color: var(--color-text-secondary);
@@ -304,11 +332,12 @@
 
 	@media (min-width: 1100px) {
 		.cms-list-page {
-			padding: var(--spacing-2xl) var(--spacing-lg);
+			padding: calc(var(--spacing-2xl) * 1.1) var(--spacing-xl);
 		}
 
 		.cms-blog-grid {
 			grid-template-columns: repeat(3, 1fr);
+			gap: clamp(var(--spacing-xl), 2.5vw, 2.5rem);
 		}
 	}
 

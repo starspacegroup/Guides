@@ -8,6 +8,7 @@ describe('Content type list page responsiveness', () => {
       'utf8'
     );
 
+		expect(source).toContain('max-width: 1720px;');
     expect(source).toContain('@media (min-width: 1400px)');
     expect(source).toContain('grid-template-columns: repeat(4, 1fr);');
   });

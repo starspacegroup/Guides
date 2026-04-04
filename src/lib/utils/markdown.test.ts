@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderMarkdownToHtml } from './markdown';
+import { getMarkdownHeadings, renderMarkdownToHtml } from './markdown';
 
 describe('renderMarkdownToHtml', () => {
   it('renders headings, paragraphs, emphasis, and lists', () => {
@@ -12,12 +12,34 @@ Validation errors shown too early interrupt the user.
 
 Use **clear** copy and _helpful_ guidance.`);
 
-    expect(html).toContain('<h1>Rule</h1>');
+    expect(html).toContain('<h1 id="rule">Rule</h1>');
     expect(html).toContain('<p>Validation errors shown too early interrupt the user.</p>');
     expect(html).toContain('<ul>');
     expect(html).toContain('<li>Show field-level errors after blur</li>');
     expect(html).toContain('<strong>clear</strong>');
     expect(html).toContain('<em>helpful</em>');
+  });
+
+  it('adds stable anchor ids to headings and exposes matching toc data', () => {
+    const markdown = `# Rule
+
+## Why this matters
+
+### Keyboard support
+
+## Why this matters`;
+    const html = renderMarkdownToHtml(markdown);
+    const headings = getMarkdownHeadings(markdown);
+
+    expect(html).toContain('<h2 id="why-this-matters">Why this matters</h2>');
+    expect(html).toContain('<h3 id="keyboard-support">Keyboard support</h3>');
+    expect(html).toContain('<h2 id="why-this-matters-2">Why this matters</h2>');
+    expect(headings).toEqual([
+      { level: 1, text: 'Rule', id: 'rule' },
+      { level: 2, text: 'Why this matters', id: 'why-this-matters' },
+      { level: 3, text: 'Keyboard support', id: 'keyboard-support' },
+      { level: 2, text: 'Why this matters', id: 'why-this-matters-2' }
+    ]);
   });
 
   it('renders fenced code blocks and inline code safely', () => {

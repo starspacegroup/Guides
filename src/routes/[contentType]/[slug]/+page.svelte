@@ -7,7 +7,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
-	import { renderMarkdownToHtml } from '$lib/utils/markdown';
+	import { getMarkdownHeadings, renderMarkdownToHtml } from '$lib/utils/markdown';
 
 	export let data: PageData;
 
@@ -15,6 +15,9 @@
 	$: item = data.item;
 	$: tags = data.tags || [];
 	$: hasFeaturedImage = Boolean(item?.fields?.featured_image);
+	$: bodyMarkdown = typeof item?.fields?.body === 'string' ? item.fields.body : '';
+	$: bodyHtml = renderMarkdownToHtml(bodyMarkdown);
+	$: bodyHeadings = getMarkdownHeadings(bodyMarkdown).filter((heading) => heading.level >= 2 && heading.level <= 3);
 
 	function formatDate(dateStr: string | null): string {
 		if (!dateStr) return '';
@@ -53,6 +56,7 @@
 		{#if contentType.settings.itemTemplate === 'blog-item'}
 			<article class="cms-blog-article">
 				<header class="cms-blog-article-header">
+					<p class="cms-blog-article-kicker">{contentType.name}</p>
 					{#if item.fields.category}
 						<span class="cms-blog-article-category">{item.fields.category}</span>
 					{/if}
@@ -76,26 +80,43 @@
 					{/if}
 				</header>
 
-				<div class="cms-blog-article-main" class:has-hero={hasFeaturedImage} class:no-hero={!hasFeaturedImage}>
-					{#if item.fields.featured_image}
-						<div class="cms-blog-article-hero">
-							<img src={String(item.fields.featured_image)} alt={item.title} />
-						</div>
-					{/if}
-
-					<div class="cms-blog-article-copy">
-						{#if item.fields.excerpt}
-							<div class="cms-blog-article-intro">
-								<div class="cms-blog-article-excerpt">
-									<p>{item.fields.excerpt}</p>
-								</div>
+				<div class="cms-blog-article-layout" class:has-sidebar={bodyHeadings.length > 0}>
+					<div class="cms-blog-article-main" class:has-hero={hasFeaturedImage} class:no-hero={!hasFeaturedImage}>
+						{#if item.fields.featured_image}
+							<div class="cms-blog-article-hero">
+								<img src={String(item.fields.featured_image)} alt={item.title} />
 							</div>
 						{/if}
 
-						<div class="cms-blog-article-body cms-content">
-							{@html renderRichText(item.fields.body)}
+						<div class="cms-blog-article-copy">
+							{#if item.fields.excerpt}
+								<div class="cms-blog-article-intro">
+									<div class="cms-blog-article-excerpt">
+										<p>{item.fields.excerpt}</p>
+									</div>
+								</div>
+							{/if}
+
+							<div class="cms-blog-article-body cms-content">
+								{@html bodyHtml}
+							</div>
 						</div>
 					</div>
+
+					{#if bodyHeadings.length > 0}
+						<aside class="cms-article-sidebar" aria-label="On this page">
+							<nav class="cms-article-toc" aria-label="Table of contents">
+								<p class="cms-article-toc-label">On this page</p>
+								<ul class="cms-article-toc-list">
+									{#each bodyHeadings as heading}
+										<li class:sub-item={heading.level === 3}>
+											<a href={`#${heading.id}`}>{heading.text}</a>
+										</li>
+									{/each}
+								</ul>
+							</nav>
+						</aside>
+					{/if}
 				</div>
 			</article>
 		{:else}
@@ -221,6 +242,16 @@
 		gap: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl));
 	}
 
+	.cms-blog-article-kicker {
+		position: relative;
+		z-index: 1;
+		font-size: 0.8rem;
+		font-weight: 600;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--color-text-secondary) 88%, var(--color-primary));
+	}
+
 	.cms-blog-article-header {
 		position: relative;
 		overflow: hidden;
@@ -344,6 +375,11 @@
 		gap: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl));
 	}
 
+	.cms-blog-article-layout {
+		display: grid;
+		gap: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl));
+	}
+
 	.cms-blog-article-main.no-hero {
 		max-width: 96rem;
 	}
@@ -432,6 +468,59 @@
 		width: min(100%, 82rem);
 	}
 
+	.cms-article-sidebar {
+		display: none;
+	}
+
+	.cms-article-toc {
+		padding: 1.2rem 1.1rem 1.25rem;
+		border: 1px solid color-mix(in srgb, var(--color-border) 84%, var(--color-background));
+		border-radius: 1.15rem;
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--color-surface) 88%, var(--color-background)) 0%,
+				color-mix(in srgb, var(--color-background) 94%, var(--color-surface)) 100%
+			),
+			var(--color-background);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.cms-article-toc-label {
+		font-size: 0.76rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.cms-article-toc-list {
+		list-style: none;
+		margin-top: var(--spacing-md);
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.cms-article-toc-list li {
+		padding-left: 0;
+		margin-bottom: 0;
+	}
+
+	.cms-article-toc-list li.sub-item {
+		padding-left: 0.9rem;
+	}
+
+	.cms-article-toc-list a {
+		display: inline-block;
+		color: var(--color-text-secondary);
+		text-decoration: none;
+		line-height: 1.4;
+	}
+
+	.cms-article-toc-list a:hover {
+		color: var(--color-primary);
+	}
+
 	.cms-content :global(> :first-child) {
 		margin-top: 0;
 	}
@@ -448,6 +537,11 @@
 		line-height: 1.15;
 		letter-spacing: -0.03em;
 		max-width: 16ch;
+	}
+
+	.cms-content :global(h2[id]),
+	.cms-content :global(h3[id]) {
+		scroll-margin-top: 5.5rem;
 	}
 
 	.cms-content :global(h3) {
@@ -627,6 +721,11 @@
 			padding-inline: var(--spacing-xl);
 		}
 
+		.cms-blog-article-layout.has-sidebar {
+			grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem);
+			align-items: start;
+		}
+
 		.cms-blog-article-main.has-hero {
 			grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 0.9fr);
 			align-items: start;
@@ -642,6 +741,15 @@
 			order: 1;
 		}
 
+		.cms-article-sidebar {
+			display: block;
+		}
+
+		.cms-article-toc {
+			position: sticky;
+			top: calc(var(--spacing-xl) + 4.5rem);
+		}
+
 		.cms-blog-article-header h1 {
 			max-width: 14ch;
 		}
@@ -653,12 +761,17 @@
 
 	@media (min-width: 1200px) {
 		.cms-item-page {
-			max-width: 1480px;
+			max-width: 1560px;
 			padding-inline: 3rem;
 		}
 
+		.cms-blog-article-layout.has-sidebar {
+			grid-template-columns: minmax(0, 1fr) minmax(17rem, 20rem);
+			gap: clamp(var(--spacing-xl), 3vw, 3.25rem);
+		}
+
 		.cms-blog-article-main.has-hero {
-			grid-template-columns: minmax(0, 1.2fr) minmax(22rem, 0.95fr);
+			grid-template-columns: minmax(0, 1.15fr) minmax(24rem, 0.95fr);
 			gap: clamp(var(--spacing-xl), 3vw, 3rem);
 		}
 
@@ -672,6 +785,10 @@
 
 		.cms-content {
 			padding: 3.25rem;
+		}
+
+		.cms-article-toc {
+			padding: 1.35rem 1.25rem 1.45rem;
 		}
 	}
 

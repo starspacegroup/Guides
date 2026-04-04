@@ -20,6 +20,62 @@ function escapeAttribute(value: string): string {
   return escapeHtml(value).replaceAll('`', '&#96;');
 }
 
+function normalizeHeadingText(markdown: string): string {
+  return markdown
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1$2')
+    .replace(/(^|[^_])_([^_]+)_(?!_)/g, '$1$2')
+    .trim();
+}
+
+function slugifyHeading(text: string): string {
+  const slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+
+  return slug || 'section';
+}
+
+function getUniqueHeadingId(text: string, headingCounts: Map<string, number>): string {
+  const baseId = slugifyHeading(text);
+  const count = (headingCounts.get(baseId) ?? 0) + 1;
+  headingCounts.set(baseId, count);
+  return count === 1 ? baseId : `${baseId}-${count}`;
+}
+
+export interface MarkdownHeading {
+  level: number;
+  text: string;
+  id: string;
+}
+
+export function getMarkdownHeadings(markdown: string | null | undefined): MarkdownHeading[] {
+  if (!markdown?.trim()) {
+    return [];
+  }
+
+  const headingCounts = new Map<string, number>();
+  return markdown
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.trim().match(/^(#{1,6})\s+(.*)$/))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+    .map((match) => {
+      const text = normalizeHeadingText(match[2].trim());
+      return {
+        level: match[1].length,
+        text,
+        id: getUniqueHeadingId(text, headingCounts)
+      };
+    });
+}
+
 function parseImageSyntax(markdown: string): { alt: string; src: string; title: string | null; } | null {
   const match = markdown.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/);
   if (!match) {
@@ -147,6 +203,7 @@ export function renderMarkdownToHtml(markdown: string | null | undefined): strin
   const normalized = markdown.replace(/\r\n?/g, '\n');
   const lines = normalized.split('\n');
   const blocks: string[] = [];
+  const headingCounts = new Map<string, number>();
   let index = 0;
 
   while (index < lines.length) {
@@ -189,7 +246,9 @@ export function renderMarkdownToHtml(markdown: string | null | undefined): strin
     const headingMatch = trimmedLine.match(/^(#{1,6})\s+(.*)$/);
     if (headingMatch) {
       const level = headingMatch[1].length;
-      blocks.push(`<h${level}>${renderInline(headingMatch[2].trim())}</h${level}>`);
+      const text = normalizeHeadingText(headingMatch[2].trim());
+      const id = getUniqueHeadingId(text, headingCounts);
+      blocks.push(`<h${level} id="${escapeAttribute(id)}">${renderInline(headingMatch[2].trim())}</h${level}>`);
       index += 1;
       continue;
     }
