@@ -31,6 +31,20 @@ npm run dev
 
 This project is configured for Cloudflare Pages/Workers with D1, KV, and R2 bindings in wrangler.toml.
 
+This is a Cloudflare Pages project. Do not run `wrangler deploy`, which is for Workers projects and will fail for this repository.
+
+Use:
+
+```bash
+npm run deploy
+```
+
+Or directly:
+
+```bash
+npx wrangler pages deploy .svelte-kit/cloudflare
+```
+
 Use:
 
 ```bash
