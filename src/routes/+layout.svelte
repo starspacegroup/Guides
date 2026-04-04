@@ -29,6 +29,8 @@
 	}
 
 	onMount(() => {
+		document.documentElement.setAttribute('data-app-hydrated', 'true');
+
 		// Listen for keyboard shortcuts (Cmd/Ctrl + K, Cmd/Ctrl + Shift + P)
 		const handleKeydown = (e: KeyboardEvent) => {
 			const isModifierPressed = e.metaKey || e.ctrlKey;

@@ -1,47 +1,54 @@
 import { expect, test } from '@playwright/test';
 
+async function waitForAppHydration(page: Parameters<typeof test>[0]['page']) {
+	await page.waitForFunction(
+		() => document.documentElement.getAttribute('data-app-hydrated') === 'true',
+		{ timeout: 15000 }
+	);
+}
+
 test.describe('Homepage', () => {
 	test('should load homepage successfully', async ({ page }) => {
 		await page.goto('/');
 		await expect(page).toHaveTitle(/Guides/);
 	});
 
-	test('should navigate to documentation page via command palette', async ({ page }) => {
+	test('should navigate to sign in page via command palette', async ({ page }) => {
 		await page.goto('/');
+		await waitForAppHydration(page);
 
 		// Open command palette
 		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
 		await commandPaletteBtn.click();
 
 		// Wait for command palette dialog to appear
-		const palette = page.locator('[role="dialog"]');
+		const palette = page.getByRole('dialog', { name: /command palette/i });
 		await expect(palette).toBeVisible();
 
-		// Search for documentation
-		const searchInput = palette.locator('input[placeholder*="Search"]');
-		await searchInput.fill('documentation');
+		// Search for a stable built-in command
+		const searchInput = palette.getByRole('textbox');
+		await searchInput.fill('sign in');
 
-		// Click on the documentation command (scoped to palette)
-		const docCommand = palette.locator('button:has-text("Documentation")').first();
-		await expect(docCommand).toBeVisible();
-		await docCommand.click();
+		// Click on the built-in sign in command (scoped to palette)
+		const signInCommand = palette.getByRole('button', { name: /sign in/i }).first();
+		await expect(signInCommand).toBeVisible();
+		await signInCommand.click();
 
-		await expect(page).toHaveURL('/documentation');
+		await expect(page).toHaveURL('/auth/login');
 	});
 
 	test('should open command palette with keyboard shortcut', async ({ page }) => {
 		await page.goto('/');
+		await waitForAppHydration(page);
 
-		// Wait for hydration so the keyboard handler from onMount is registered
 		const commandPaletteBtn = page.locator('button[aria-label="Open command palette"]');
 		await expect(commandPaletteBtn).toBeVisible();
-		await page.waitForLoadState('networkidle');
 
 		// Use Ctrl+K keyboard shortcut to open command palette
 		await page.keyboard.press('Control+k');
 
 		// Command palette should be visible
-		const palette = page.locator('[role="dialog"]');
+		const palette = page.getByRole('dialog', { name: /command palette/i });
 		await expect(palette).toBeVisible();
 	});
 });
@@ -49,8 +56,9 @@ test.describe('Homepage', () => {
 test.describe('Theme System', () => {
 	test('should toggle theme', async ({ page }) => {
 		await page.goto('/');
+		await waitForAppHydration(page);
 
-		// Wait for hydration to set initial data-theme
+		// Wait for the initial theme to be available before toggling
 		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'), {
 			timeout: 10000
 		});
@@ -76,8 +84,9 @@ test.describe('Theme System', () => {
 
 	test('should persist theme preference', async ({ page, context }) => {
 		await page.goto('/');
+		await waitForAppHydration(page);
 
-		// Wait for hydration to set initial data-theme
+		// Wait for the initial theme to be available before toggling
 		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'), {
 			timeout: 10000
 		});
@@ -108,6 +117,7 @@ test.describe('Theme System', () => {
 
 		// Reload page to verify persistence
 		await page.reload();
+		await waitForAppHydration(page);
 
 		// Wait for hydration to re-apply the persisted theme
 		await page.waitForFunction(() => document.documentElement.hasAttribute('data-theme'), {
