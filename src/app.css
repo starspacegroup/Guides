@@ -27,6 +27,28 @@
 	--color-code-tag: #5ed3f3;
 	--color-code-attribute: #ffd166;
 	--color-code-punctuation: #cbd8ea;
+	--color-demo-theme-toggle-light-frame-background: #f4f7ff;
+	--color-demo-theme-toggle-light-frame-border: #d5def2;
+	--color-demo-theme-toggle-light-surface-top: #ffffff;
+	--color-demo-theme-toggle-light-surface-bottom: #eef3ff;
+	--color-demo-theme-toggle-light-button-background: #d9e5ff;
+	--color-demo-theme-toggle-light-button-border: #9fb6ea;
+	--color-demo-theme-toggle-light-button-highlight: rgb(255 255 255 / 0.72);
+	--color-demo-theme-toggle-light-button-glow: rgb(106 142 255 / 0.22);
+	--color-demo-theme-toggle-light-icon-background: #ffffff;
+	--color-demo-theme-toggle-light-icon-foreground: #53648f;
+	--color-demo-theme-toggle-light-icon-shadow: rgb(124 147 214 / 0.28);
+	--color-demo-theme-toggle-dark-frame-background: #141a28;
+	--color-demo-theme-toggle-dark-frame-border: #2b334a;
+	--color-demo-theme-toggle-dark-surface-top: #182133;
+	--color-demo-theme-toggle-dark-surface-bottom: #0d1220;
+	--color-demo-theme-toggle-dark-button-background: #23355f;
+	--color-demo-theme-toggle-dark-button-border: #4c63a6;
+	--color-demo-theme-toggle-dark-button-highlight: rgb(197 214 255 / 0.18);
+	--color-demo-theme-toggle-dark-button-glow: rgb(124 150 255 / 0.24);
+	--color-demo-theme-toggle-dark-icon-background: #0b1020;
+	--color-demo-theme-toggle-dark-icon-foreground: #c3d0ff;
+	--color-demo-theme-toggle-dark-icon-shadow: rgb(75 101 190 / 0.34);
 
 	/* Spacing */
 	--spacing-xs: 0.25rem;
@@ -86,6 +108,28 @@
 	--color-code-tag: #74dcff;
 	--color-code-attribute: #ffe08a;
 	--color-code-punctuation: #d7e3f5;
+	--color-demo-theme-toggle-light-frame-background: #f4f7ff;
+	--color-demo-theme-toggle-light-frame-border: #d5def2;
+	--color-demo-theme-toggle-light-surface-top: #ffffff;
+	--color-demo-theme-toggle-light-surface-bottom: #eef3ff;
+	--color-demo-theme-toggle-light-button-background: #d9e5ff;
+	--color-demo-theme-toggle-light-button-border: #9fb6ea;
+	--color-demo-theme-toggle-light-button-highlight: rgb(255 255 255 / 0.72);
+	--color-demo-theme-toggle-light-button-glow: rgb(106 142 255 / 0.22);
+	--color-demo-theme-toggle-light-icon-background: #ffffff;
+	--color-demo-theme-toggle-light-icon-foreground: #53648f;
+	--color-demo-theme-toggle-light-icon-shadow: rgb(124 147 214 / 0.28);
+	--color-demo-theme-toggle-dark-frame-background: #141a28;
+	--color-demo-theme-toggle-dark-frame-border: #2b334a;
+	--color-demo-theme-toggle-dark-surface-top: #182133;
+	--color-demo-theme-toggle-dark-surface-bottom: #0d1220;
+	--color-demo-theme-toggle-dark-button-background: #23355f;
+	--color-demo-theme-toggle-dark-button-border: #4c63a6;
+	--color-demo-theme-toggle-dark-button-highlight: rgb(197 214 255 / 0.18);
+	--color-demo-theme-toggle-dark-button-glow: rgb(124 150 255 / 0.24);
+	--color-demo-theme-toggle-dark-icon-background: #0b1020;
+	--color-demo-theme-toggle-dark-icon-foreground: #c3d0ff;
+	--color-demo-theme-toggle-dark-icon-shadow: rgb(75 101 190 / 0.34);
 }
 
 /* Reset and base styles */
