@@ -3,12 +3,28 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RichTextEditor from '../../src/lib/components/RichTextEditor.svelte';
 
+function mockMatchMedia(matches: boolean) {
+  return vi.fn().mockImplementation((query: string) => ({
+    matches,
+    media: query,
+    onchange: null,
+    addListener: () => { },
+    removeListener: () => { },
+    addEventListener: () => { },
+    removeEventListener: () => { },
+    dispatchEvent: () => true
+  }));
+}
+
 describe('RichTextEditor', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubGlobal('matchMedia', mockMatchMedia(false));
   });
 
-  it('renders a visual editing surface with formatting controls', () => {
+  it('renders a desktop workspace with formatting controls and guide panels visible', () => {
+    vi.stubGlobal('matchMedia', mockMatchMedia(true));
+
     render(RichTextEditor, {
       props: {
         value: '',
@@ -19,6 +35,7 @@ describe('RichTextEditor', () => {
 
     expect(screen.getByRole('toolbar', { name: /body formatting toolbar/i })).toBeTruthy();
     expect(screen.getByRole('textbox', { name: /body visual editor/i })).toBeTruthy();
+    expect(screen.getByRole('complementary', { name: /editor guide/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /code block/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert image/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert table/i })).toBeTruthy();
@@ -26,6 +43,27 @@ describe('RichTextEditor', () => {
     expect(screen.getByRole('button', { name: /exit full-page editor/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /preview/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /markdown/i })).toBeTruthy();
+  });
+
+  it('keeps secondary controls collapsed by default on mobile and reveals them on demand', async () => {
+    vi.stubGlobal('matchMedia', mockMatchMedia(false));
+
+    render(RichTextEditor, {
+      props: {
+        value: '',
+        label: 'Body',
+        startExpanded: true
+      }
+    });
+
+    expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: /editor guide/i })).toBeNull();
+
+    await fireEvent.click(screen.getByRole('button', { name: /show formatting tools/i }));
+    expect(screen.getByRole('toolbar', { name: /body formatting toolbar/i })).toBeTruthy();
+
+    await fireEvent.click(screen.getByRole('button', { name: /show writing guide/i }));
+    expect(screen.getByRole('complementary', { name: /editor guide/i })).toBeTruthy();
   });
 
   it('updates markdown source when the visual editor content changes', async () => {
@@ -78,6 +116,7 @@ describe('RichTextEditor', () => {
       }
     });
 
+    await fireEvent.click(screen.getByRole('button', { name: /show formatting tools/i }));
     await fireEvent.change(screen.getByLabelText(/code block language/i), {
       target: { value: 'python' }
     });

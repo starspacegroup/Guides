@@ -1,3 +1,7 @@
+<script context="module" lang="ts">
+	let editorInstanceCount = 0;
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 
@@ -11,14 +15,27 @@
 	export let helpText = 'Supports headings, lists, tables, images, links, and fenced code blocks with languages.';
 	export let startExpanded = false;
 
+	const DESKTOP_MEDIA_QUERY = '(min-width: 960px)';
+
 	type EditorTab = 'visual' | 'preview' | 'markdown';
 	type CodeLanguage = 'plaintext' | 'ts' | 'js' | 'python' | 'html' | 'css' | 'json' | 'sql' | 'bash';
+	type CompatibleMediaQueryList = MediaQueryList & {
+		addListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+		removeListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+	};
 
 	let activeTab: EditorTab = 'visual';
 	let editorElement: HTMLDivElement | null = null;
 	let languagePickerElement: HTMLSelectElement | null = null;
 	let isExpanded = startExpanded;
 	let codeLanguage: CodeLanguage = 'ts';
+	let isDesktopLayout =
+		typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+			? window.matchMedia(DESKTOP_MEDIA_QUERY).matches
+			: false;
+	let isToolsPanelOpen = isDesktopLayout;
+	let isGuidePanelOpen = isDesktopLayout;
+	const editorInstanceId = `rich-text-editor-${++editorInstanceCount}`;
 
 	const codeLanguageOptions: { value: CodeLanguage; label: string; }[] = [
 		{ value: 'plaintext', label: 'Plain text' },
@@ -35,6 +52,8 @@
 	$: previewHtml = renderMarkdownToHtml(value);
 	$: wordCount = value.trim() ? value.trim().split(/\s+/).filter(Boolean).length : 0;
 	$: characterCount = value.length;
+	$: showFormattingTools = isDesktopLayout || isToolsPanelOpen;
+	$: showGuide = isExpanded && (isDesktopLayout || isGuidePanelOpen);
 
 	function isEditorFocused(): boolean {
 		return typeof document !== 'undefined' && document.activeElement === editorElement;
@@ -53,6 +72,43 @@
 
 	onMount(() => {
 		syncEditorFromValue();
+
+		if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+			return;
+		}
+
+		const desktopMedia = window.matchMedia(DESKTOP_MEDIA_QUERY) as CompatibleMediaQueryList;
+
+		const syncResponsivePanels = (matches: boolean) => {
+			isDesktopLayout = matches;
+			if (matches) {
+				isToolsPanelOpen = true;
+				isGuidePanelOpen = true;
+			} else {
+				isToolsPanelOpen = false;
+				isGuidePanelOpen = false;
+			}
+		};
+
+		syncResponsivePanels(desktopMedia.matches);
+
+		const handleResponsiveChange = (event: MediaQueryListEvent) => {
+			syncResponsivePanels(event.matches);
+		};
+
+		if (typeof desktopMedia.addEventListener === 'function') {
+			desktopMedia.addEventListener('change', handleResponsiveChange);
+		} else {
+			desktopMedia.addListener?.(handleResponsiveChange);
+		}
+
+		return () => {
+			if (typeof desktopMedia.removeEventListener === 'function') {
+				desktopMedia.removeEventListener('change', handleResponsiveChange);
+			} else {
+				desktopMedia.removeListener?.(handleResponsiveChange);
+			}
+		};
 	});
 
 	$: if (activeTab === 'visual') {
@@ -245,6 +301,14 @@
 		toggleExpanded();
 	}
 
+	function toggleToolsPanel() {
+		isToolsPanelOpen = !isToolsPanelOpen;
+	}
+
+	function toggleGuidePanel() {
+		isGuidePanelOpen = !isGuidePanelOpen;
+	}
+
 	function createLink() {
 		if (typeof window === 'undefined') {
 			return;
@@ -331,7 +395,8 @@
 		<div class="rich-text-editor__workspace">
 			<section class="rich-text-editor__canvas">
 				<div class="rich-text-editor__header">
-					<div class="rich-text-editor__tabs" role="tablist" aria-label="{label} editor views">
+					<div class="rich-text-editor__workspace-controls">
+						<div class="rich-text-editor__tabs" role="tablist" aria-label="{label} editor views">
 			<button
 				type="button"
 				class="rich-text-editor__tab"
@@ -362,58 +427,88 @@
 			>
 				Markdown
 			</button>
-					</div>
+						</div>
 
-					<div class="rich-text-editor__toolbar" role="toolbar" aria-label="{label} formatting toolbar">
-						<div class="rich-text-editor__group">
-							<button type="button" on:click={() => execCommand('bold')} aria-label="Bold">Bold</button>
-							<button type="button" on:click={() => execCommand('italic')} aria-label="Italic">Italic</button>
-							<button type="button" on:click={createLink} aria-label="Insert link">Link</button>
-						</div>
-						<div class="rich-text-editor__group">
-							<button type="button" on:click={() => applyBlock('h2')} aria-label="Heading 2">H2</button>
-							<button type="button" on:click={() => applyBlock('h3')} aria-label="Heading 3">H3</button>
-							<button type="button" on:click={() => applyBlock('blockquote')} aria-label="Blockquote">Quote</button>
-						</div>
-						<div class="rich-text-editor__group">
-							<button type="button" on:click={() => execCommand('insertUnorderedList')} aria-label="Bulleted list">Bullets</button>
-							<button type="button" on:click={() => execCommand('insertOrderedList')} aria-label="Numbered list">Numbered</button>
-							<button type="button" on:click={insertInlineCode} aria-label="Inline code">Inline code</button>
-						</div>
-						<div class="rich-text-editor__group rich-text-editor__group--highlight">
-							<label class="rich-text-editor__language-picker">
-								<span>Code block language</span>
-								<select
-									bind:this={languagePickerElement}
-									aria-label="Code block language"
-									bind:value={codeLanguage}
-									on:change={handleLanguageChange}
+						{#if !isDesktopLayout}
+							<div class="rich-text-editor__panel-toggles">
+								<button
+									type="button"
+									class="rich-text-editor__panel-toggle"
+									aria-controls={`${editorInstanceId}-tools`}
+									aria-expanded={showFormattingTools}
+									on:click={toggleToolsPanel}
 								>
-									{#each codeLanguageOptions as option}
-										<option value={option.value}>{option.label}</option>
-									{/each}
-								</select>
-							</label>
-							<button type="button" on:click={insertCodeBlock} aria-label="Code block">Code block</button>
-							<button type="button" on:click={insertImage} aria-label="Insert image">Insert image</button>
-							<button type="button" on:click={insertTable} aria-label="Insert table">Insert table</button>
-						</div>
+									{showFormattingTools ? 'Hide formatting tools' : 'Show formatting tools'}
+								</button>
+								{#if isExpanded}
+									<button
+										type="button"
+										class="rich-text-editor__panel-toggle"
+										aria-controls={`${editorInstanceId}-guide`}
+										aria-expanded={showGuide}
+										on:click={toggleGuidePanel}
+									>
+										{showGuide ? 'Hide writing guide' : 'Show writing guide'}
+									</button>
+								{/if}
+							</div>
+						{/if}
 					</div>
 
-					<div class="rich-text-editor__quick-actions">
-						<button type="button" class="rich-text-editor__quick-card" on:click={insertImage}>
-							<strong>Drop an image</strong>
-							<span>Paste a hosted image URL and keep alt text close at hand.</span>
-						</button>
-						<button type="button" class="rich-text-editor__quick-card" on:click={insertTable}>
-							<strong>Build a table</strong>
-							<span>Start with a clean two-column structure and edit in markdown if needed.</span>
-						</button>
-						<button type="button" class="rich-text-editor__quick-card" on:click={insertCodeBlock}>
-							<strong>Insert a snippet</strong>
-							<span>Language-aware fences keep code readable in preview and on the public site.</span>
-						</button>
-					</div>
+					{#if showFormattingTools}
+						<div class="rich-text-editor__toolbar-stack" id={`${editorInstanceId}-tools`}>
+							<div class="rich-text-editor__toolbar" role="toolbar" aria-label="{label} formatting toolbar">
+								<div class="rich-text-editor__group">
+									<button type="button" on:click={() => execCommand('bold')} aria-label="Bold">Bold</button>
+									<button type="button" on:click={() => execCommand('italic')} aria-label="Italic">Italic</button>
+									<button type="button" on:click={createLink} aria-label="Insert link">Link</button>
+								</div>
+								<div class="rich-text-editor__group">
+									<button type="button" on:click={() => applyBlock('h2')} aria-label="Heading 2">H2</button>
+									<button type="button" on:click={() => applyBlock('h3')} aria-label="Heading 3">H3</button>
+									<button type="button" on:click={() => applyBlock('blockquote')} aria-label="Blockquote">Quote</button>
+								</div>
+								<div class="rich-text-editor__group">
+									<button type="button" on:click={() => execCommand('insertUnorderedList')} aria-label="Bulleted list">Bullets</button>
+									<button type="button" on:click={() => execCommand('insertOrderedList')} aria-label="Numbered list">Numbered</button>
+									<button type="button" on:click={insertInlineCode} aria-label="Inline code">Inline code</button>
+								</div>
+								<div class="rich-text-editor__group rich-text-editor__group--highlight">
+									<label class="rich-text-editor__language-picker">
+										<span>Code block language</span>
+										<select
+											bind:this={languagePickerElement}
+											aria-label="Code block language"
+											bind:value={codeLanguage}
+											on:change={handleLanguageChange}
+										>
+											{#each codeLanguageOptions as option}
+												<option value={option.value}>{option.label}</option>
+											{/each}
+										</select>
+									</label>
+									<button type="button" on:click={insertCodeBlock} aria-label="Code block">Code block</button>
+									<button type="button" on:click={insertImage} aria-label="Insert image">Insert image</button>
+									<button type="button" on:click={insertTable} aria-label="Insert table">Insert table</button>
+								</div>
+							</div>
+
+							<div class="rich-text-editor__quick-actions">
+								<button type="button" class="rich-text-editor__quick-card" on:click={insertImage}>
+									<strong>Drop an image</strong>
+									<span>Paste a hosted image URL and keep alt text close at hand.</span>
+								</button>
+								<button type="button" class="rich-text-editor__quick-card" on:click={insertTable}>
+									<strong>Build a table</strong>
+									<span>Start with a clean two-column structure and edit in markdown if needed.</span>
+								</button>
+								<button type="button" class="rich-text-editor__quick-card" on:click={insertCodeBlock}>
+									<strong>Insert a snippet</strong>
+									<span>Language-aware fences keep code readable in preview and on the public site.</span>
+								</button>
+							</div>
+						</div>
+					{/if}
 				</div>
 
 				{#if activeTab === 'visual'}
@@ -447,24 +542,30 @@
 				{/if}
 			</section>
 
-			<aside class="rich-text-editor__sidebar" aria-label="Editor guide">
-				<section class="rich-text-editor__panel">
-					<h4>Quick structure</h4>
-					<p>Lead with a sharp heading, then mix narrative blocks with tables, imagery, and annotated code.</p>
-				</section>
-				<section class="rich-text-editor__panel">
-					<h4>Current insertions</h4>
-					<div class="rich-text-editor__chips">
-						<span>Images</span>
-						<span>Tables</span>
-						<span>{codeLanguage === 'plaintext' ? 'Plain code' : codeLanguage}</span>
-					</div>
-				</section>
-				<section class="rich-text-editor__panel">
-					<h4>Keyboard hints</h4>
-					<p>Use Ctrl/Cmd+B for bold, Ctrl/Cmd+I for italic, and Ctrl/Cmd+K for links.</p>
-				</section>
-			</aside>
+			{#if showGuide}
+				<aside
+					class="rich-text-editor__sidebar"
+					id={`${editorInstanceId}-guide`}
+					aria-label="Editor guide"
+				>
+					<section class="rich-text-editor__panel">
+						<h4>Quick structure</h4>
+						<p>Lead with a sharp heading, then mix narrative blocks with tables, imagery, and annotated code.</p>
+					</section>
+					<section class="rich-text-editor__panel">
+						<h4>Current insertions</h4>
+						<div class="rich-text-editor__chips">
+							<span>Images</span>
+							<span>Tables</span>
+							<span>{codeLanguage === 'plaintext' ? 'Plain code' : codeLanguage}</span>
+						</div>
+					</section>
+					<section class="rich-text-editor__panel">
+						<h4>Keyboard hints</h4>
+						<p>Use Ctrl/Cmd+B for bold, Ctrl/Cmd+I for italic, and Ctrl/Cmd+K for links.</p>
+					</section>
+				</aside>
+			{/if}
 		</div>
 	</div>
 
@@ -483,7 +584,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 120;
-		padding: var(--spacing-lg);
+		padding: var(--spacing-xs);
 		background:
 			linear-gradient(160deg, var(--color-background) 0%, var(--color-surface) 55%, var(--color-background) 100%);
 	}
@@ -491,7 +592,7 @@
 	.rich-text-editor__shell {
 		display: grid;
 		gap: var(--spacing-md);
-		padding: var(--spacing-md);
+		padding: var(--spacing-sm);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-xl);
 		background:
@@ -500,17 +601,15 @@
 	}
 
 	.rich-text-editor.is-expanded .rich-text-editor__shell {
-		height: calc(100vh - (var(--spacing-lg) * 2));
-		padding: var(--spacing-lg);
+		height: calc(100dvh - (var(--spacing-xs) * 2));
+		padding: var(--spacing-sm);
 		box-shadow: var(--shadow-xl);
 	}
 
 	.rich-text-editor__hero {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
+		display: grid;
 		gap: var(--spacing-md);
-		padding: var(--spacing-md);
+		padding: var(--spacing-sm);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		background: linear-gradient(135deg, var(--color-background) 0%, var(--color-surface) 100%);
@@ -541,7 +640,7 @@
 	.rich-text-editor__hero-actions {
 		display: grid;
 		gap: var(--spacing-sm);
-		justify-items: end;
+		justify-items: start;
 	}
 
 	.rich-text-editor__metrics {
@@ -561,6 +660,7 @@
 	}
 
 	.rich-text-editor__expand {
+		width: 100%;
 		padding: var(--spacing-sm) var(--spacing-md);
 		border: 1px solid var(--color-primary);
 		border-radius: var(--radius-md);
@@ -569,21 +669,17 @@
 		font-weight: 600;
 	}
 
-	.rich-text-editor__workspace {
-		display: grid;
-		gap: var(--spacing-md);
-	}
-
-	.rich-text-editor.is-expanded .rich-text-editor__workspace {
-		grid-template-columns: minmax(0, 1fr) 20rem;
-		min-height: 0;
-		flex: 1;
-	}
-
-	.rich-text-editor__canvas {
+	.rich-text-editor__workspace,
+	.rich-text-editor__canvas,
+	.rich-text-editor__workspace-controls,
+	.rich-text-editor__toolbar-stack {
 		display: grid;
 		gap: var(--spacing-md);
 		min-height: 0;
+	}
+
+	.rich-text-editor.is-expanded .rich-text-editor__canvas {
+		grid-template-rows: auto minmax(0, 1fr);
 	}
 
 	.rich-text-editor__header {
@@ -595,31 +691,13 @@
 		background: var(--color-background);
 	}
 
-	.rich-text-editor__tabs,
-	.rich-text-editor__toolbar {
-		display: flex;
-		flex-wrap: wrap;
+	.rich-text-editor__panel-toggles {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
 		gap: var(--spacing-xs);
 	}
 
-	.rich-text-editor__toolbar {
-		align-items: flex-end;
-	}
-
-	.rich-text-editor__group {
-		display: flex;
-		gap: var(--spacing-xs);
-		flex-wrap: wrap;
-		padding: var(--spacing-xs);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
-	}
-
-	.rich-text-editor__group--highlight {
-		background: linear-gradient(180deg, var(--color-background) 0%, var(--color-surface) 100%);
-	}
-
+	.rich-text-editor__panel-toggle,
 	.rich-text-editor__tab,
 	.rich-text-editor__toolbar button,
 	.rich-text-editor__quick-card,
@@ -638,10 +716,49 @@
 			color var(--transition-fast);
 	}
 
+	.rich-text-editor__panel-toggle {
+		padding: var(--spacing-sm);
+		font-weight: 600;
+		text-align: left;
+	}
+
+	.rich-text-editor__tabs,
+	.rich-text-editor__toolbar {
+		display: flex;
+		gap: var(--spacing-xs);
+		overflow-x: auto;
+		scrollbar-width: thin;
+	}
+
+	.rich-text-editor__tabs {
+		padding-bottom: 0.1rem;
+	}
+
+	.rich-text-editor__toolbar {
+		align-items: flex-end;
+		flex-wrap: wrap;
+	}
+
+	.rich-text-editor__group {
+		display: flex;
+		gap: var(--spacing-xs);
+		flex-wrap: wrap;
+		padding: var(--spacing-xs);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background: var(--color-surface);
+	}
+
+	.rich-text-editor__group--highlight {
+		background: linear-gradient(180deg, var(--color-background) 0%, var(--color-surface) 100%);
+	}
+
+	.rich-text-editor__panel-toggle:hover,
 	.rich-text-editor__tab:hover,
 	.rich-text-editor__tab.is-active,
 	.rich-text-editor__toolbar button:hover,
-	.rich-text-editor__quick-card:hover {
+	.rich-text-editor__quick-card:hover,
+	.rich-text-editor__panel-toggle[aria-expanded='true'] {
 		background: var(--color-background-secondary);
 		border-color: var(--color-primary);
 	}
@@ -660,7 +777,7 @@
 
 	.rich-text-editor__quick-actions {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+		grid-template-columns: 1fr;
 		gap: var(--spacing-sm);
 	}
 
@@ -685,12 +802,12 @@
 	.rich-text-editor__surface,
 	.rich-text-editor__preview,
 	.rich-text-editor__source {
-		min-height: 24rem;
+		min-height: 18rem;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-md);
 		background: var(--color-background);
 		color: var(--color-text);
-		padding: var(--spacing-lg);
+		padding: var(--spacing-md);
 		box-shadow: var(--shadow-sm);
 	}
 
@@ -821,10 +938,6 @@
 		align-content: start;
 	}
 
-	.rich-text-editor:not(.is-expanded) .rich-text-editor__sidebar {
-		display: none;
-	}
-
 	.rich-text-editor__panel {
 		display: grid;
 		gap: var(--spacing-xs);
@@ -857,26 +970,53 @@
 		font-size: 0.95rem;
 	}
 
-	@media (max-width: 959px) {
+	@media (min-width: 960px) {
 		.rich-text-editor.is-expanded {
-			padding: var(--spacing-sm);
+			padding: var(--spacing-lg);
 		}
 
 		.rich-text-editor.is-expanded .rich-text-editor__shell {
-			height: calc(100vh - (var(--spacing-sm) * 2));
-			padding: var(--spacing-md);
+			height: calc(100dvh - (var(--spacing-lg) * 2));
+			padding: var(--spacing-lg);
 		}
 
 		.rich-text-editor__hero {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: start;
+			padding: var(--spacing-md);
 		}
 
 		.rich-text-editor__hero-actions {
-			justify-items: start;
+			justify-items: end;
+		}
+
+		.rich-text-editor__expand {
+			width: auto;
+		}
+
+		.rich-text-editor__tabs {
+			flex-wrap: wrap;
+			overflow: visible;
+		}
+
+		.rich-text-editor__quick-actions {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+
+		.rich-text-editor__surface,
+		.rich-text-editor__preview,
+		.rich-text-editor__source {
+			min-height: 24rem;
+			padding: var(--spacing-lg);
 		}
 
 		.rich-text-editor.is-expanded .rich-text-editor__workspace {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr) 20rem;
+		}
+
+		.rich-text-editor__sidebar {
+			position: sticky;
+			top: 0;
 		}
 	}
 </style>
