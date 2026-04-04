@@ -44,8 +44,49 @@
 		action: () => void;
 		icon: string;
 		badge?: string;
+		searchTerms?: string[];
 		onPreview?: () => void;
 		onPreviewEnd?: () => void;
+	}
+
+	function normalizeSearchValue(value: string) {
+		return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+	}
+
+	function tokenizeSearchValue(value: string) {
+		return value
+			.toLowerCase()
+			.split(/[^a-z0-9]+/)
+			.filter(Boolean);
+	}
+
+	function matchesCommand(command: Command, searchQuery: string) {
+		const trimmedQuery = searchQuery.trim();
+
+		if (!trimmedQuery) {
+			return true;
+		}
+
+		const searchableFields = [
+			command.id,
+			command.label,
+			command.description,
+			command.badge ?? '',
+			...(command.searchTerms ?? [])
+		];
+		const normalizedQuery = normalizeSearchValue(trimmedQuery);
+		const normalizedFields = normalizeSearchValue(searchableFields.join(' '));
+
+		if (normalizedFields.includes(normalizedQuery)) {
+			return true;
+		}
+
+		const queryTokens = tokenizeSearchValue(trimmedQuery);
+		const fieldTokens = searchableFields.flatMap(tokenizeSearchValue);
+
+		return queryTokens.every((queryToken) =>
+			fieldTokens.some((fieldToken) => fieldToken.includes(queryToken))
+		);
 	}
 
 	function setTheme(preference: ThemePreference) {
@@ -76,7 +117,8 @@
 		label: `Browse ${guideCollection.name}`,
 		description: `${guideCollection.publishedCount} published guides in ${guideCollection.name}`,
 		action: () => goto(guideCollection.href),
-		icon: '🧭'
+		icon: '🧭',
+		searchTerms: [guideCollection.slug, guideCollection.href, guideCollection.name]
 	}));
 
 	$: guideCommands = guideCollections.flatMap((guideCollection) =>
@@ -85,7 +127,8 @@
 			label: guide.title,
 			description: `Open ${guideCollection.name}`,
 			action: () => goto(guide.href),
-			icon: '📄'
+			icon: '📄',
+			searchTerms: [guide.href, guideCollection.slug, guideCollection.name]
 		}))
 	);
 
@@ -122,14 +165,16 @@
 			label: 'Sign In',
 			description: 'Go to login page',
 			action: () => goto('/auth/login'),
-			icon: '🔐'
+			icon: '🔐',
+			searchTerms: ['login', 'log in', 'signin', 'sign-in']
 		},
 		{
 			id: 'signup',
 			label: 'Sign Up',
 			description: 'Create a new account',
 			action: () => goto('/auth/signup'),
-			icon: '✨'
+			icon: '✨',
+			searchTerms: ['register', 'signup', 'sign-up']
 		},
 		{
 			id: 'theme-light',
@@ -172,11 +217,11 @@
 		}
 	] as Command[];
 
-	$: filteredCommands = commands.filter(
-		(cmd) =>
-			cmd.label.toLowerCase().includes(query.toLowerCase()) ||
-			cmd.description.toLowerCase().includes(query.toLowerCase())
-	);
+	$: filteredCommands = commands.filter((command) => matchesCommand(command, query));
+
+	$: if (filteredCommands.length === 0 || selectedIndex >= filteredCommands.length) {
+		selectedIndex = 0;
+	}
 
 	$: if (show && !previousShow) {
 		// Only reset when transitioning from closed to open

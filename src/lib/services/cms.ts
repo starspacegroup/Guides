@@ -123,7 +123,7 @@ export async function getContentTypeBySlug(
  */
 export async function getPublicGuideCollections(
 	db: D1Database,
-	itemsPerType = 3
+	itemsPerType: number | null = 3
 ): Promise<PublicGuideCollection[]> {
 	await syncContentTypes(db);
 
@@ -133,13 +133,24 @@ export async function getPublicGuideCollections(
 	const collections = await Promise.all(
 		publicTypes.map(async (contentType) => {
 			const href = contentType.settings.routePrefix || `/${contentType.slug}`;
+			const firstPageSize = itemsPerType ?? 1;
 			const result = await listContentItems(db, contentType.id, {
 				status: 'published',
 				page: 1,
-				pageSize: itemsPerType,
+				pageSize: firstPageSize,
 				sortBy: contentType.settings.defaultSort || 'published_at',
 				sortDirection: contentType.settings.defaultSortDirection || 'desc'
 			});
+			const finalResult =
+				itemsPerType === null && result.total > firstPageSize
+					? await listContentItems(db, contentType.id, {
+						status: 'published',
+						page: 1,
+						pageSize: result.total,
+						sortBy: contentType.settings.defaultSort || 'published_at',
+						sortDirection: contentType.settings.defaultSortDirection || 'desc'
+					})
+					: result;
 
 			return {
 				slug: contentType.slug,
@@ -147,8 +158,8 @@ export async function getPublicGuideCollections(
 				description: contentType.description || '',
 				icon: contentType.icon,
 				href,
-				publishedCount: result.total,
-				items: result.items.map((item) => ({
+				publishedCount: finalResult.total,
+				items: finalResult.items.map((item) => ({
 					title: item.title,
 					href: `${href}/${item.slug}`,
 					publishedAt: item.publishedAt

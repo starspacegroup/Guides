@@ -90,5 +90,23 @@ describe('Layout Server Load', () => {
 			expect(result.hasAIProviders).toBe(false);
 			expect(result.guideCollections).toEqual([]);
 		});
+
+		it('should load all public guides for the command palette', async () => {
+			const mockFetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: vi.fn().mockResolvedValue({ hasProviders: false })
+			});
+			const mockDb = {};
+			const cms = await import('$lib/services/cms');
+			const { load } = await import('../../src/routes/+layout.server');
+
+			await load({
+				locals: { user: { id: 'user-123' } },
+				fetch: mockFetch,
+				platform: { env: { DB: mockDb } }
+			} as any);
+
+			expect(cms.getPublicGuideCollections).toHaveBeenCalledWith(mockDb, null);
+		});
 	});
 });

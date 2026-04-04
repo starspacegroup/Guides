@@ -6,11 +6,28 @@ import CommandPalette from './CommandPalette.svelte';
 
 const guideCollections = [
 	{
+		slug: 'ui-patterns',
 		name: 'User Interface',
+		description: 'Patterns for UI behaviour',
+		icon: '🎛️',
 		href: '/user-interface',
+		publishedCount: 3,
 		items: [
-			{ title: 'Theme Toggles', href: '/user-interface/theme-toggles' },
-			{ title: 'Command Palette Patterns', href: '/user-interface/command-palette-patterns' }
+			{
+				title: 'Theme Toggles',
+				href: '/user-interface/theme-toggles',
+				publishedAt: '2026-04-01T00:00:00.000Z'
+			},
+			{
+				title: 'Command Palette Patterns',
+				href: '/user-interface/command-palette-patterns',
+				publishedAt: '2026-04-02T00:00:00.000Z'
+			},
+			{
+				title: 'Action Icons Example',
+				href: '/ui-patterns/theme-toggle-action-icons',
+				publishedAt: '2026-04-03T00:00:00.000Z'
+			}
 		]
 	}
 ];
@@ -101,6 +118,44 @@ describe('CommandPalette', () => {
 		);
 
 		expect(labels.some((label) => label?.includes('chat'))).toBe(true);
+	});
+
+	it('should match commands when the query omits spaces and punctuation', async () => {
+		const { container } = render(CommandPalette, {
+			props: { show: true, hasAIProviders: true, guideCollections }
+		});
+		const input = container.querySelector('.search-input') as HTMLInputElement;
+
+		await fireEvent.input(input, { target: { value: 'signin' } });
+
+		let labels = Array.from(container.querySelectorAll('.command')).map((cmd) =>
+			cmd.querySelector('.command-label')?.textContent?.toLowerCase()
+		);
+
+		expect(labels.some((label) => label?.includes('sign in'))).toBe(true);
+
+		await fireEvent.input(input, { target: { value: 'commandpalette' } });
+
+		labels = Array.from(container.querySelectorAll('.command')).map((cmd) =>
+			cmd.querySelector('.command-label')?.textContent?.toLowerCase()
+		);
+
+		expect(labels.some((label) => label?.includes('command palette patterns'))).toBe(true);
+	});
+
+	it('should match guide commands by url slug terms', async () => {
+		const { container } = render(CommandPalette, {
+			props: { show: true, hasAIProviders: true, guideCollections }
+		});
+		const input = container.querySelector('.search-input') as HTMLInputElement;
+
+		await fireEvent.input(input, { target: { value: 'toggle' } });
+
+		const labels = Array.from(container.querySelectorAll('.command')).map((cmd) =>
+			cmd.querySelector('.command-label')?.textContent?.trim()
+		);
+
+		expect(labels.some((label) => label?.includes('Action Icons Example'))).toBe(true);
 	});
 
 	// Note: This test validates the no-results UI structure exists

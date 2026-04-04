@@ -18,7 +18,7 @@ export const load: LayoutServerLoad = async ({ locals, fetch, platform }) => {
 	const db = platform?.env?.DB;
 	if (db) {
 		try {
-			guideCollections = await getPublicGuideCollections(db);
+			guideCollections = await getPublicGuideCollections(db, null);
 		} catch (error) {
 			console.error('Failed to load public guide collections:', error);
 		}
