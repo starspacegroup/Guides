@@ -275,6 +275,25 @@
 		refreshItems();
 	}
 
+	function getPublicCollectionHref(): string {
+		const routePrefix = contentType.settings?.routePrefix?.trim();
+		if (routePrefix) {
+			return routePrefix.startsWith('/') ? routePrefix : `/${routePrefix}`;
+		}
+
+		return `/${contentType.slug}`;
+	}
+
+	function getItemPublicHref(item: { slug?: string | null; }): string | null {
+		if (contentType.settings?.isPublic === false || !item?.slug) {
+			return null;
+		}
+
+		const baseHref = getPublicCollectionHref().replace(/\/$/, '');
+		const normalizedSlug = item.slug.replace(/^\/+/, '');
+		return `${baseHref}/${normalizedSlug}`;
+	}
+
 	function getStatusColor(status: string): string {
 		switch (status) {
 			case 'published':
@@ -462,13 +481,26 @@
 				</thead>
 				<tbody>
 					{#each items as item}
+						{@const publicHref = getItemPublicHref(item)}
 						<tr>
 							<td class="td-title">
-								<span class="item-title">{item.title}</span>
-								<span class="item-slug"
-									>/{contentType.settings?.routePrefix?.replace(/^\//, '') ||
-										contentType.slug}/{item.slug}</span
-								>
+								{#if publicHref}
+									<a
+										class="item-title item-title-link"
+										href={publicHref}
+										target="_blank"
+										rel="noreferrer"
+									>
+										{item.title}
+									</a>
+									<a class="item-slug item-slug-link" href={publicHref} target="_blank" rel="noreferrer">
+										{publicHref}
+									</a>
+								{:else}
+									<span class="item-title">{item.title}</span>
+									<span class="item-slug">{getPublicCollectionHref()}/{item.slug}</span>
+									<span class="item-visibility-note">Private content</span>
+								{/if}
 							</td>
 							<td>
 								<span class="status-badge" style="--badge-color: {getStatusColor(item.status)}">
@@ -478,6 +510,28 @@
 							<td class="td-date">{formatDate(item.createdAt)}</td>
 							<td class="td-date">{formatDate(item.updatedAt)}</td>
 							<td class="td-actions">
+								{#if publicHref}
+									<a
+										class="btn-icon"
+										href={publicHref}
+										target="_blank"
+										rel="noreferrer"
+										aria-label={`View ${item.title}`}
+										title="View live page"
+									>
+										<svg
+											width="16"
+											height="16"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+										>
+											<path d="M7 17 17 7" />
+											<path d="M7 7h10v10" />
+										</svg>
+									</a>
+								{/if}
 								<button class="btn-icon" title="Edit" on:click={() => openEditModal(item)}>
 									<svg
 										width="16"
@@ -1075,11 +1129,49 @@
 		font-weight: 500;
 	}
 
+	.item-title-link,
+	.item-slug-link {
+		text-decoration: none;
+		transition:
+			color var(--transition-fast),
+			text-decoration-color var(--transition-fast);
+	}
+
+	.item-title-link {
+		color: var(--color-text);
+		text-decoration-color: transparent;
+	}
+
+	.item-title-link:hover,
+	.item-title-link:focus-visible {
+		color: var(--color-primary);
+		text-decoration: underline;
+	}
+
 	.item-slug {
 		display: block;
 		font-size: 0.75rem;
 		color: var(--color-text-secondary);
 		margin-top: 0.125rem;
+	}
+
+	.item-slug-link:hover,
+	.item-slug-link:focus-visible {
+		color: var(--color-text);
+		text-decoration: underline;
+	}
+
+	.item-visibility-note {
+		display: inline-flex;
+		margin-top: var(--spacing-xs);
+		padding: 0.125rem var(--spacing-xs);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		background: var(--color-surface);
 	}
 
 	.td-date {
@@ -1096,6 +1188,10 @@
 	.td-actions {
 		text-align: right;
 		white-space: nowrap;
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		gap: var(--spacing-xs);
 	}
 
 	.status-badge {
