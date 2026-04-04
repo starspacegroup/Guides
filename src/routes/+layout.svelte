@@ -6,11 +6,14 @@
 	import Navigation from '$lib/components/Navigation.svelte';
 	import { showCommandPalette, toggleCommandPalette } from '$lib/stores/commandPalette';
 	import { resolvedTheme } from '$lib/stores/theme';
+	import type { PublicGuideCollection } from '$lib/cms/types';
 	import { onMount } from 'svelte';
 	import '../app.css';
 	import type { PageData } from './$types';
 
-	export let data: PageData;
+	export let data = {} as PageData & {
+		guideCollections?: PublicGuideCollection[];
+	};
 
 	// Pages where we don't show the footer (full-screen experiences)
 	$: hideFooter =
@@ -54,7 +57,11 @@
 		<Footer />
 	{/if}
 
-	<CommandPalette bind:show={$showCommandPalette} hasAIProviders={data.hasAIProviders} />
+	<CommandPalette
+		bind:show={$showCommandPalette}
+		hasAIProviders={data.hasAIProviders}
+		guideCollections={data.guideCollections}
+	/>
 </div>
 
 <style>

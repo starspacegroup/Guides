@@ -45,7 +45,7 @@ export interface ContentFieldDefinition {
 	/** Default value */
 	defaultValue?: unknown;
 	/** Options for select/multiselect fields */
-	options?: { label: string; value: string }[];
+	options?: { label: string; value: string; }[];
 	/** Placeholder text for input */
 	placeholder?: string;
 	/** Validation rules */
@@ -223,6 +223,24 @@ export interface PaginatedResult<T> {
 	page: number;
 	pageSize: number;
 	totalPages: number;
+}
+
+/** Public guide link surfaced in browse UIs like the home page and command palette */
+export interface PublicGuideLink {
+	title: string;
+	href: string;
+	publishedAt: string | null;
+}
+
+/** Public guide collection surfaced in browse UIs like the home page and command palette */
+export interface PublicGuideCollection {
+	slug: string;
+	name: string;
+	description: string;
+	icon: string;
+	href: string;
+	publishedCount: number;
+	items: PublicGuideLink[];
 }
 
 /** Query filters for listing content items */

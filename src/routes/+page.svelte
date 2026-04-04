@@ -1,26 +1,23 @@
 <script lang="ts">
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
-	import { contentTypeRegistry } from '$lib/cms/registry';
+	import type { PublicGuideCollection } from '$lib/cms/types';
+
+	export let data: {
+		guideCollections?: PublicGuideCollection[];
+	} = {};
 
 	const collectionLabels: Record<string, string> = {
 		article: 'Editorial collection',
 		layout: 'Product systems'
 	};
 
-	const guideTypes = contentTypeRegistry
-		.filter((contentType) => contentType.settings.isPublic)
-		.map((contentType, index) => ({
-			name: contentType.name,
-			description: contentType.description,
-			href: contentType.settings.routePrefix,
-			label: collectionLabels[contentType.icon] ?? 'Guide collection',
-			highlights: [
-				`${contentType.fields.length} structured sections`,
-				contentType.settings.hasTags ? 'Tagged for browsing' : 'Single stream',
-				contentType.settings.hasAuthor ? 'Published with bylines' : 'Team-authored'
-			],
-			accent: index % 2 === 0 ? 'aurora' : 'signal'
-		}));
+	$: guideTypes = (data.guideCollections || []).map((guideCollection, index) => ({
+		...guideCollection,
+		label: collectionLabels[guideCollection.icon] ?? 'Guide collection',
+		countLabel: `${guideCollection.publishedCount} published guides`,
+		previewItems: guideCollection.items.slice(0, 2),
+		accent: index % 2 === 0 ? 'aurora' : 'signal'
+	}));
 </script>
 
 <SharingMeta
@@ -63,54 +60,71 @@
 			<p class="section-title">Browse the collections currently available on the site.</p>
 		</div>
 
-		<div class="card-grid">
-			{#each guideTypes as guideType}
-				<article class={`guide-card ${guideType.accent}`}>
-					<div class="card-header">
-						<p class="card-label">{guideType.label}</p>
-						<code>{guideType.href}</code>
-					</div>
-					<h2>{guideType.name}</h2>
+		{#if guideTypes.length > 0}
+			<div class="card-grid">
+				{#each guideTypes as guideType}
+					<article class={`guide-card ${guideType.accent}`}>
+						<div class="card-header">
+							<p class="card-label">{guideType.label}</p>
+							<a class="card-meta-link" href={guideType.href}>View collection</a>
+						</div>
+						<h2>
+							<a class="card-title-link" href={guideType.href}>{guideType.name}</a>
+						</h2>
 					<p class="card-description">{guideType.description}</p>
 					<ul class="card-highlights" aria-label={`${guideType.name} highlights`}>
-						{#each guideType.highlights as highlight}
-							<li>{highlight}</li>
+						<li class="count-pill">{guideType.countLabel}</li>
+						{#each guideType.previewItems as item}
+							<li>
+								<a class="highlight-link" href={item.href}>{item.title}</a>
+							</li>
 						{/each}
 					</ul>
 					<a class="card-link" href={guideType.href} aria-label={`Browse ${guideType.name}`}>
 						Browse {guideType.name}
 					</a>
-				</article>
-			{/each}
-		</div>
+					</article>
+				{/each}
+			</div>
+		{:else}
+			<div class="empty-state">
+				<p class="empty-title">Published guide collections will appear here.</p>
+				<p class="empty-copy">
+					Once guides are published, this page will surface the live collections instead of
+					placeholder sections.
+				</p>
+			</div>
+		{/if}
 	</section>
 </section>
 
 <style>
 	.landing {
-		max-width: 1100px;
+		width: min(100%, 1440px);
 		margin: 0 auto;
-		padding: var(--spacing-2xl) var(--spacing-md);
+		padding: var(--spacing-lg) var(--spacing-sm) var(--spacing-2xl);
 		display: grid;
-		gap: var(--spacing-2xl);
+		gap: var(--spacing-lg);
 	}
 
 	.hero {
 		display: grid;
-		grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
-		gap: var(--spacing-lg);
-		padding: var(--spacing-2xl);
+		grid-template-columns: 1fr;
+		gap: var(--spacing-md);
+		padding: var(--spacing-lg);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		background:
 			radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 45%),
 			radial-gradient(circle at 90% 20%, color-mix(in srgb, var(--color-secondary) 12%, transparent), transparent 40%),
 			var(--color-surface);
+		overflow: hidden;
 	}
 
 	.hero-copy {
 		display: grid;
 		align-content: start;
+		gap: var(--spacing-sm);
 	}
 
 	.eyebrow {
@@ -122,21 +136,22 @@
 	}
 
 	h1 {
-		margin: 0 0 var(--spacing-md);
-		font-size: clamp(2rem, 4vw, 3rem);
-		line-height: 1.15;
+		margin: 0;
+		font-size: clamp(1.85rem, 9vw, 3.25rem);
+		line-height: 1.05;
+		max-width: 12ch;
 	}
 
 	.lede {
 		margin: 0;
-		max-width: 70ch;
+		max-width: 38ch;
 		color: var(--color-text-secondary);
-		line-height: 1.65;
+		line-height: 1.55;
 	}
 
 	.hero-panel {
 		align-self: stretch;
-		padding: var(--spacing-lg);
+		padding: var(--spacing-md);
 		border-radius: var(--radius-lg);
 		background: color-mix(in srgb, var(--color-background) 40%, var(--color-surface));
 		border: 1px solid color-mix(in srgb, var(--color-border) 85%, var(--color-primary));
@@ -160,12 +175,18 @@
 
 	.actions {
 		display: flex;
+		flex-direction: column;
 		gap: var(--spacing-sm);
-		margin-top: var(--spacing-lg);
+		margin-top: var(--spacing-sm);
 		flex-wrap: wrap;
 	}
 
 	.button {
+		display: inline-flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 2.75rem;
+		width: 100%;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-md);
 		padding: var(--spacing-sm) var(--spacing-md);
@@ -201,20 +222,21 @@
 
 	.section-title {
 		margin: 0;
-		font-size: clamp(1.4rem, 2vw, 1.9rem);
+		font-size: clamp(1.3rem, 6vw, 2.25rem);
 		line-height: 1.25;
+		max-width: 18ch;
 	}
 
 	.card-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		grid-template-columns: 1fr;
 		gap: var(--spacing-md);
 	}
 
 	.guide-card {
 		display: grid;
-		gap: var(--spacing-md);
-		padding: var(--spacing-lg);
+		gap: var(--spacing-sm);
+		padding: var(--spacing-md);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		background:
@@ -252,7 +274,7 @@
 	.card-header {
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
+		align-items: flex-start;
 		gap: var(--spacing-sm);
 		flex-wrap: wrap;
 	}
@@ -265,10 +287,27 @@
 		color: var(--color-text-secondary);
 	}
 
+	.card-meta-link {
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
 	.guide-card h2 {
 		margin: 0;
-		font-size: 1.35rem;
+		font-size: 1.2rem;
 		line-height: 1.2;
+	}
+
+	.card-title-link {
+		color: var(--color-text);
+		text-decoration: none;
+	}
+
+	.card-title-link:hover,
+	.card-meta-link:hover,
+	.highlight-link:hover {
+		color: var(--color-primary);
 	}
 
 	.card-description {
@@ -291,15 +330,26 @@
 		border-radius: var(--radius-pill, 999px);
 		background: color-mix(in srgb, var(--color-background) 65%, var(--color-surface));
 		border: 1px solid color-mix(in srgb, var(--color-border) 88%, var(--color-primary));
-		font-size: 0.9rem;
+		font-size: 0.82rem;
 		line-height: 1.4;
+	}
+
+	.card-highlights li.count-pill {
+		font-weight: 600;
+	}
+
+	.highlight-link {
+		display: inline-flex;
+		color: var(--color-text);
+		text-decoration: none;
 	}
 
 	.card-link {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: fit-content;
+		width: 100%;
+		min-height: 2.75rem;
 		padding: var(--spacing-sm) var(--spacing-md);
 		border-radius: var(--radius-md);
 		border: 1px solid var(--color-border);
@@ -309,18 +359,102 @@
 		background: color-mix(in srgb, var(--color-background) 78%, var(--color-surface));
 	}
 
-	code {
-		width: fit-content;
-		padding: 0.15rem 0.4rem;
-		border-radius: var(--radius-sm);
-		background: var(--color-background);
-		border: 1px solid var(--color-border);
+	.empty-state {
+		padding: var(--spacing-lg);
+		border: 1px dashed var(--color-border);
+		border-radius: var(--radius-lg);
+		background: color-mix(in srgb, var(--color-surface) 90%, var(--color-background));
 	}
 
-	@media (max-width: 700px) {
+	.empty-title {
+		margin: 0 0 var(--spacing-xs);
+		font-weight: 600;
+	}
+
+	.empty-copy {
+		margin: 0;
+		color: var(--color-text-secondary);
+	}
+
+	@media (min-width: 700px) {
+		.landing {
+			padding: var(--spacing-xl) var(--spacing-md) var(--spacing-2xl);
+			gap: var(--spacing-xl);
+		}
+
 		.hero {
-			grid-template-columns: 1fr;
 			padding: var(--spacing-lg);
+		}
+
+		.actions {
+			flex-direction: row;
+		}
+
+		.button,
+		.card-link {
+			width: fit-content;
+		}
+
+		.card-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.guide-card {
+			padding: var(--spacing-lg);
+			gap: var(--spacing-md);
+		}
+
+		.guide-card h2 {
+			font-size: 1.35rem;
+		}
+
+		.card-highlights li {
+			font-size: 0.9rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.landing {
+			padding: var(--spacing-2xl) var(--spacing-lg) calc(var(--spacing-2xl) * 1.25);
+		}
+
+		.hero {
+			grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.9fr);
+			gap: var(--spacing-xl);
+			padding: calc(var(--spacing-2xl) * 0.95);
+		}
+
+		.hero-copy {
+			gap: var(--spacing-md);
+		}
+
+		h1 {
+			font-size: clamp(3rem, 4.4vw, 4.8rem);
+			max-width: 10ch;
+		}
+
+		.lede {
+			max-width: 54ch;
+			font-size: 1.05rem;
+		}
+
+		.hero-panel {
+			padding: var(--spacing-lg);
+		}
+
+		.card-grid {
+			grid-template-columns: repeat(2, minmax(320px, 1fr));
+			gap: var(--spacing-lg);
+		}
+
+		.section-title {
+			max-width: none;
+		}
+	}
+
+	@media (min-width: 1320px) {
+		.card-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 
 		.card-header {

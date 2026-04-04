@@ -1,11 +1,24 @@
-import { contentTypeRegistry } from '$lib/cms/registry';
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import Page from '../../src/routes/+page.svelte';
 
+const guideCollections = [
+	{
+		name: 'User Interface',
+		description: 'Section guides for UI implementation details and design decisions',
+		href: '/user-interface',
+		icon: 'layout',
+		publishedCount: 2,
+		items: [
+			{ title: 'Theme Toggles', href: '/user-interface/theme-toggles' },
+			{ title: 'Command Palette Patterns', href: '/user-interface/command-palette-patterns' }
+		]
+	}
+];
+
 describe('Home page', () => {
 	it('renders public guide copy instead of CMS authoring instructions', () => {
-		render(Page);
+		render(Page, { props: { data: { guideCollections } } });
 
 		expect(
 			screen.getByRole('heading', {
@@ -21,20 +34,39 @@ describe('Home page', () => {
 		expect(screen.queryByRole('link', { name: /manage sections/i })).not.toBeInTheDocument();
 	});
 
-	it('renders a browse card for each registered guide type', () => {
-		render(Page);
+	it('renders only guide collections with published guides and previews real guide titles', () => {
+		render(Page, { props: { data: { guideCollections } } });
 
-		for (const contentType of contentTypeRegistry) {
-			expect(screen.getByRole('heading', { level: 2, name: contentType.name })).toBeTruthy();
-			expect(screen.getByText(contentType.description)).toBeTruthy();
+		expect(screen.getByRole('heading', { level: 2, name: 'User Interface' })).toBeTruthy();
+		expect(
+			screen.getByText('Section guides for UI implementation details and design decisions')
+		).toBeTruthy();
+		expect(screen.getByText('2 published guides')).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'View collection' })).toHaveAttribute(
+			'href',
+			'/user-interface'
+		);
+		expect(screen.getByRole('link', { name: 'Theme Toggles' })).toHaveAttribute(
+			'href',
+			'/user-interface/theme-toggles'
+		);
+		expect(screen.getByRole('link', { name: 'Command Palette Patterns' })).toHaveAttribute(
+			'href',
+			'/user-interface/command-palette-patterns'
+		);
+		expect(
+			screen.getByRole('link', {
+				name: /browse user interface/i
+			})
+		).toHaveAttribute('href', '/user-interface');
+		expect(screen.queryByText('/user-interface')).not.toBeInTheDocument();
+		expect(screen.queryByRole('heading', { level: 2, name: 'Blog Posts' })).not.toBeInTheDocument();
+	});
 
-			const browseLink = screen.getByRole('link', {
-				name: new RegExp(`browse ${contentType.name}`, 'i')
-			});
+	it('renders an empty state when no published guide collections exist', () => {
+		render(Page, { props: { data: { guideCollections: [] } } });
 
-			expect(browseLink).toHaveAttribute('href', contentType.settings.routePrefix);
-			expect(screen.getByText(contentType.settings.routePrefix)).toBeTruthy();
-		}
+		expect(screen.getByText(/published guide collections will appear here/i)).toBeTruthy();
 	});
 });
 

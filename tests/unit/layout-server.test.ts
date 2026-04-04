@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('$lib/services/cms', () => ({
+	getPublicGuideCollections: vi.fn().mockResolvedValue([]),
+	syncContentTypes: vi.fn().mockResolvedValue(undefined)
+}));
+
 /**
  * Tests for Layout Server Load
  * TDD: Tests for root layout data loading
@@ -27,11 +32,13 @@ describe('Layout Server Load', () => {
 			const { load } = await import('../../src/routes/+layout.server');
 			const result = (await load({
 				locals: { user: mockUser },
-				fetch: mockFetch
-			} as any)) as { user: typeof mockUser | null; hasAIProviders: boolean };
+				fetch: mockFetch,
+				platform: { env: { DB: {} } }
+			} as any)) as { user: typeof mockUser | null; hasAIProviders: boolean; guideCollections: []; };
 
 			expect(result.user).toEqual(mockUser);
 			expect(result.hasAIProviders).toBe(true);
+			expect(result.guideCollections).toEqual([]);
 			expect(mockFetch).toHaveBeenCalledWith('/api/admin/ai-keys/status');
 		});
 
@@ -44,11 +51,13 @@ describe('Layout Server Load', () => {
 			const { load } = await import('../../src/routes/+layout.server');
 			const result = (await load({
 				locals: {},
-				fetch: mockFetch
-			} as any)) as { user: null; hasAIProviders: boolean };
+				fetch: mockFetch,
+				platform: { env: { DB: {} } }
+			} as any)) as { user: null; hasAIProviders: boolean; guideCollections: []; };
 
 			expect(result.user).toBeNull();
 			expect(result.hasAIProviders).toBe(false);
+			expect(result.guideCollections).toEqual([]);
 		});
 
 		it('should handle AI provider check failure gracefully', async () => {
@@ -60,10 +69,12 @@ describe('Layout Server Load', () => {
 			const { load } = await import('../../src/routes/+layout.server');
 			const result = (await load({
 				locals: { user: { id: 'user-123' } },
-				fetch: mockFetch
-			} as any)) as { hasAIProviders: boolean };
+				fetch: mockFetch,
+				platform: { env: { DB: {} } }
+			} as any)) as { hasAIProviders: boolean; guideCollections: []; };
 
 			expect(result.hasAIProviders).toBe(false);
+			expect(result.guideCollections).toEqual([]);
 		});
 
 		it('should handle fetch error gracefully', async () => {
@@ -72,10 +83,12 @@ describe('Layout Server Load', () => {
 			const { load } = await import('../../src/routes/+layout.server');
 			const result = (await load({
 				locals: { user: { id: 'user-123' } },
-				fetch: mockFetch
-			} as any)) as { hasAIProviders: boolean };
+				fetch: mockFetch,
+				platform: { env: { DB: {} } }
+			} as any)) as { hasAIProviders: boolean; guideCollections: []; };
 
 			expect(result.hasAIProviders).toBe(false);
+			expect(result.guideCollections).toEqual([]);
 		});
 	});
 });

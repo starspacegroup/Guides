@@ -3,6 +3,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
+	import type { PublicGuideCollection } from '$lib/cms/types';
 	import {
 		resolvedTheme,
 		systemTheme,
@@ -13,6 +14,7 @@
 
 	export let show = false;
 	export let hasAIProviders = false;
+	export let guideCollections: PublicGuideCollection[] = [];
 
 	let searchInput: HTMLInputElement;
 	let commandsContainer: HTMLDivElement;
@@ -69,6 +71,24 @@
 		}
 	}
 
+	$: collectionCommands = guideCollections.map((guideCollection) => ({
+		id: `collection-${guideCollection.slug}`,
+		label: `Browse ${guideCollection.name}`,
+		description: `${guideCollection.publishedCount} published guides in ${guideCollection.name}`,
+		action: () => goto(guideCollection.href),
+		icon: '🧭'
+	}));
+
+	$: guideCommands = guideCollections.flatMap((guideCollection) =>
+		guideCollection.items.map((guide) => ({
+			id: `guide-${guide.href}`,
+			label: guide.title,
+			description: `Open ${guideCollection.name}`,
+			action: () => goto(guide.href),
+			icon: '📄'
+		}))
+	);
+
 	$: commands = [
 		{
 			id: 'home',
@@ -88,13 +108,8 @@
 					}
 				]
 			: []),
-		{
-			id: 'sections',
-			label: 'Browse User Interface Guides',
-			description: 'Open the user-interface section',
-			action: () => goto('/user-interface'),
-			icon: '🧭'
-		},
+		...collectionCommands,
+		...guideCommands,
 		{
 			id: 'admin-cms',
 			label: 'Open Admin CMS',

@@ -121,7 +121,7 @@
 
 <style>
 	.cms-list-page {
-		max-width: 900px;
+		max-width: 1600px;
 		margin: 0 auto;
 		padding: var(--spacing-xl) var(--spacing-md);
 	}
@@ -299,6 +299,22 @@
 	@media (min-width: 768px) {
 		.cms-blog-grid {
 			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 1100px) {
+		.cms-list-page {
+			padding: var(--spacing-2xl) var(--spacing-lg);
+		}
+
+		.cms-blog-grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	@media (min-width: 1400px) {
+		.cms-blog-grid {
+			grid-template-columns: repeat(4, 1fr);
 		}
 	}
 </style>

@@ -4,6 +4,17 @@ import { get } from 'svelte/store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CommandPalette from './CommandPalette.svelte';
 
+const guideCollections = [
+	{
+		name: 'User Interface',
+		href: '/user-interface',
+		items: [
+			{ title: 'Theme Toggles', href: '/user-interface/theme-toggles' },
+			{ title: 'Command Palette Patterns', href: '/user-interface/command-palette-patterns' }
+		]
+	}
+];
+
 describe('CommandPalette', () => {
 	beforeEach(() => {
 		// Mock goto function
@@ -42,9 +53,20 @@ describe('CommandPalette', () => {
 	});
 
 	it('should display all commands by default', () => {
-		const { container } = render(CommandPalette, { props: { show: true } });
+		const { container } = render(CommandPalette, { props: { show: true, guideCollections } });
 		const commands = container.querySelectorAll('.command');
 		expect(commands.length).toBeGreaterThan(0);
+	});
+
+	it('should include real guide browse and guide item commands', () => {
+		const { container } = render(CommandPalette, { props: { show: true, guideCollections } });
+		const commandLabels = Array.from(container.querySelectorAll('.command-label')).map(
+			(el) => el.textContent
+		);
+
+		expect(commandLabels.some((label) => label?.includes('Browse User Interface'))).toBe(true);
+		expect(commandLabels.some((label) => label?.includes('Theme Toggles'))).toBe(true);
+		expect(commandLabels.some((label) => label?.includes('Command Palette Patterns'))).toBe(true);
 	});
 
 	it('should include chat command when AI providers are available', () => {

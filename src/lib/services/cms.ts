@@ -18,6 +18,7 @@ import type {
 	CreateContentItemInput,
 	CreateContentTypeInput,
 	PaginatedResult,
+	PublicGuideCollection,
 	UpdateContentItemInput,
 	UpdateContentTypeInput
 } from '$lib/cms/types';
@@ -115,6 +116,48 @@ export async function getContentTypeBySlug(
 		.first<ContentType>();
 
 	return row ? parseContentType(row) : null;
+}
+
+/**
+ * Get public guide collections that actually have published items.
+ */
+export async function getPublicGuideCollections(
+	db: D1Database,
+	itemsPerType = 3
+): Promise<PublicGuideCollection[]> {
+	await syncContentTypes(db);
+
+	const contentTypes = await getContentTypes(db);
+	const publicTypes = contentTypes.filter((contentType) => contentType.settings.isPublic);
+
+	const collections = await Promise.all(
+		publicTypes.map(async (contentType) => {
+			const href = contentType.settings.routePrefix || `/${contentType.slug}`;
+			const result = await listContentItems(db, contentType.id, {
+				status: 'published',
+				page: 1,
+				pageSize: itemsPerType,
+				sortBy: contentType.settings.defaultSort || 'published_at',
+				sortDirection: contentType.settings.defaultSortDirection || 'desc'
+			});
+
+			return {
+				slug: contentType.slug,
+				name: contentType.name,
+				description: contentType.description || '',
+				icon: contentType.icon,
+				href,
+				publishedCount: result.total,
+				items: result.items.map((item) => ({
+					title: item.title,
+					href: `${href}/${item.slug}`,
+					publishedAt: item.publishedAt
+				}))
+			};
+		})
+	);
+
+	return collections.filter((collection) => collection.publishedCount > 0);
 }
 
 /**
@@ -272,7 +315,7 @@ export async function listContentItems(
 	const countResult = await db
 		.prepare(`SELECT COUNT(*) as count FROM content_items WHERE ${whereClause}`)
 		.bind(...params)
-		.first<{ count: number }>();
+		.first<{ count: number; }>();
 
 	const total = countResult?.count || 0;
 
@@ -476,7 +519,7 @@ export async function getContentTypeById(
 export async function getAllContentTypeSlugs(db: D1Database): Promise<string[]> {
 	const result = await db
 		.prepare('SELECT slug FROM content_types ORDER BY sort_order ASC')
-		.all<{ slug: string }>();
+		.all<{ slug: string; }>();
 
 	return (result.results || []).map((row) => row.slug);
 }
@@ -488,7 +531,7 @@ export async function isContentTypeSlug(db: D1Database, slug: string): Promise<b
 	const row = await db
 		.prepare('SELECT id FROM content_types WHERE slug = ?')
 		.bind(slug)
-		.first<{ id: string }>();
+		.first<{ id: string; }>();
 
 	return row !== null;
 }
@@ -506,7 +549,7 @@ export async function createContentTypeInDB(
 	const existing = await db
 		.prepare('SELECT id FROM content_types WHERE slug = ?')
 		.bind(slug)
-		.first<{ id: string }>();
+		.first<{ id: string; }>();
 
 	if (existing) {
 		return null; // Slug already taken
@@ -520,7 +563,7 @@ export async function createContentTypeInDB(
 	// Get next sort_order
 	const maxOrder = await db
 		.prepare('SELECT MAX(sort_order) as max_order FROM content_types')
-		.first<{ max_order: number | null }>();
+		.first<{ max_order: number | null; }>();
 	const sortOrder = (maxOrder?.max_order ?? -1) + 1;
 
 	const row = await db
@@ -603,12 +646,12 @@ export async function updateContentTypeInDB(
 export async function deleteContentTypeFromDB(
 	db: D1Database,
 	id: string
-): Promise<{ success: boolean; reason?: string }> {
+): Promise<{ success: boolean; reason?: string; }> {
 	// Check if the type exists and whether it's a system type
 	const existing = await db
 		.prepare('SELECT id, is_system FROM content_types WHERE id = ?')
 		.bind(id)
-		.first<{ id: string; is_system: number }>();
+		.first<{ id: string; is_system: number; }>();
 
 	if (!existing) {
 		return { success: false, reason: 'Content type not found' };
