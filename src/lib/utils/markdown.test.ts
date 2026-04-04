@@ -24,7 +24,20 @@ Use **clear** copy and _helpful_ guidance.`);
     const html = renderMarkdownToHtml('Use `aria-describedby`.\n\n```ts\nconst valid = true;\n```');
 
     expect(html).toContain('<p>Use <code>aria-describedby</code>.</p>');
-    expect(html).toContain('<pre><code>const valid = true;</code></pre>');
+    expect(html).toContain('<pre data-language="ts"><code class="language-ts">const valid = true;</code></pre>');
+  });
+
+  it('renders markdown images and tables', () => {
+    const html = renderMarkdownToHtml(
+      '![Diagram](https://example.com/diagram.png "System diagram")\n\n| Feature | Status |\n| --- | --- |\n| Images | Ready |\n| Tables | Ready |'
+    );
+
+    expect(html).toContain(
+      '<figure><img src="https://example.com/diagram.png" alt="Diagram" title="System diagram"></figure>'
+    );
+    expect(html).toContain('<table>');
+    expect(html).toContain('<th>Feature</th>');
+    expect(html).toContain('<td>Tables</td>');
   });
 
   it('escapes raw html while keeping markdown links safe', () => {

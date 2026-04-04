@@ -5,6 +5,7 @@
   create/edit modals, and delete confirmation.
 -->
 <script lang="ts">
+	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 	import SharingMeta from '$lib/components/SharingMeta.svelte';
 	import type { PageData } from './$types';
 
@@ -646,14 +647,12 @@
 										rows="3"
 									></textarea>
 								{:else if field.type === 'richtext'}
-									<textarea
-										id="field-{field.name}"
+									<RichTextEditor
+										label={field.label}
 										bind:value={formFields[field.name]}
-										placeholder={field.placeholder || ''}
-										rows="10"
-										class="richtext-field"
-									></textarea>
-									<span class="field-help">Supports Markdown formatting</span>
+										placeholder={field.placeholder || 'Write the main content here...'}
+										helpText={field.helpText || 'Supports headings, lists, quotes, links, inline code, and code blocks.'}
+									/>
 								{:else if field.type === 'boolean'}
 									<label class="checkbox-label">
 										<input
@@ -1346,11 +1345,6 @@
 		border-radius: var(--radius-sm);
 		background: var(--color-surface);
 		cursor: pointer;
-	}
-
-	.richtext-field {
-		font-family: 'Courier New', monospace;
-		line-height: 1.5;
 	}
 
 	.json-field {
