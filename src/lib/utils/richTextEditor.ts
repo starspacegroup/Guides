@@ -40,11 +40,55 @@ function serializeInline(node: Node): string {
       const href = element.getAttribute('href');
       return href && content ? `[${content}](${href})` : content;
     }
+    case 'img': {
+      const src = element.getAttribute('src');
+      if (!src) {
+        return '';
+      }
+
+      const alt = element.getAttribute('alt') ?? '';
+      const title = element.getAttribute('title');
+      return title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`;
+    }
     case 'br':
       return '\n';
     default:
       return content;
   }
+}
+
+function escapeTableCell(cell: string): string {
+  return cell.replace(/\|/g, '\\|');
+}
+
+function serializeTable(table: HTMLElement): string[] {
+  const rows = Array.from(table.querySelectorAll('tr')).map((row) =>
+    Array.from(row.children)
+      .filter((cell): cell is HTMLElement => cell instanceof HTMLElement)
+      .map((cell) => escapeTableCell(serializeInlineChildren(Array.from(cell.childNodes))))
+  );
+
+  if (rows.length === 0 || rows[0].length === 0) {
+    return [];
+  }
+
+  const header = `| ${rows[0].join(' | ')} |`;
+  const divider = `| ${rows[0].map(() => '---').join(' | ')} |`;
+  const body = rows.slice(1).map((row) => `| ${row.join(' | ')} |`);
+
+  return [header, divider, ...body];
+}
+
+function detectCodeLanguage(element: HTMLElement): string {
+  const codeElement = element.querySelector('code');
+  const explicitLanguage = element.getAttribute('data-language') || codeElement?.getAttribute('data-language');
+  if (explicitLanguage) {
+    return explicitLanguage.trim();
+  }
+
+  const className = codeElement?.className ?? '';
+  const languageMatch = className.match(/language-([a-z0-9_-]+)/i);
+  return languageMatch?.[1] ?? '';
 }
 
 function serializeInlineChildren(nodes: Node[]): string {
@@ -127,13 +171,32 @@ function serializeBlock(node: Node): string[] {
         ? [content.split('\n').map((line) => `> ${line}`).join('\n')]
         : [];
     }
+    case 'figure': {
+      const image = element.querySelector('img');
+      if (!image) {
+        return Array.from(element.childNodes).flatMap(serializeBlock);
+      }
+
+      const src = image.getAttribute('src');
+      if (!src) {
+        return [];
+      }
+
+      const alt = image.getAttribute('alt') ?? '';
+      const title = image.getAttribute('title');
+      return [title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`];
+    }
+    case 'table':
+      return serializeTable(element);
     case 'ul':
       return serializeList(element, false);
     case 'ol':
       return serializeList(element, true);
     case 'pre': {
       const code = (element.textContent ?? '').replace(/\r\n?/g, '\n').replace(/\n+$/g, '');
-      return code ? [`\`\`\`\n${code}\n\`\`\``] : [];
+      const language = detectCodeLanguage(element);
+      const fence = language ? `\`\`\`${language}` : '\`\`\`';
+      return code ? [`${fence}\n${code}\n\`\`\``] : [];
     }
     case 'hr':
       return ['---'];

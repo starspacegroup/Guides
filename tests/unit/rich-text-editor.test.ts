@@ -12,7 +12,8 @@ describe('RichTextEditor', () => {
     render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body'
+        label: 'Body',
+        startExpanded: true
       }
     });
 
@@ -22,6 +23,7 @@ describe('RichTextEditor', () => {
     expect(screen.getByRole('button', { name: /insert image/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert table/i })).toBeTruthy();
     expect(screen.getByLabelText(/code block language/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /exit full-page editor/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /preview/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /markdown/i })).toBeTruthy();
   });
@@ -30,7 +32,8 @@ describe('RichTextEditor', () => {
     const { container } = render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body'
+        label: 'Body',
+        startExpanded: true
       }
     });
 
@@ -52,7 +55,8 @@ describe('RichTextEditor', () => {
     render(RichTextEditor, {
       props: {
         value: 'Use this:\n\n```ts\nconst enabled = true;\n```',
-        label: 'Body'
+        label: 'Body',
+        startExpanded: true
       }
     });
 
@@ -69,7 +73,8 @@ describe('RichTextEditor', () => {
     const { container } = render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body'
+        label: 'Body',
+        startExpanded: true
       }
     });
 

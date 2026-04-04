@@ -11,6 +11,21 @@
 		layout: 'Product systems'
 	};
 
+	const libraryFacts = [
+		{
+			title: 'Collection pages',
+			copy: 'Each topic lives at its own landing page so readers can browse one subject at a time.'
+		},
+		{
+			title: 'Shareable URLs',
+			copy: 'Collections and individual guides both keep clean paths that are easy to send around.'
+		},
+		{
+			title: 'Editorial formats',
+			copy: 'The same system supports release notes, long-form guides, and product decision writeups.'
+		}
+	] as const;
+
 	$: guideTypes = (data.guideCollections || []).map((guideCollection, index) => ({
 		...guideCollection,
 		label: collectionLabels[guideCollection.icon] ?? 'Guide collection',
@@ -45,12 +60,20 @@
 		</div>
 
 		<div class="hero-panel">
-			<p class="panel-label">Inside the library</p>
-			<ul class="panel-list">
-				<li>Topic-specific collections with their own landing pages</li>
-				<li>Clean route structure for sharing and discovery</li>
-				<li>Consistent formats for long-form guides and updates</li>
-			</ul>
+			<p class="panel-label">Library structure</p>
+			<h2 class="panel-title">How the library works</h2>
+			<p class="panel-copy">
+				Every topic has a public collection page, and every guide keeps a direct URL for
+				sharing, indexing, and repeat visits.
+			</p>
+			<dl class="panel-facts">
+				{#each libraryFacts as fact}
+					<div class="panel-fact">
+						<dt>{fact.title}</dt>
+						<dd>{fact.copy}</dd>
+					</div>
+				{/each}
+			</dl>
 		</div>
 	</div>
 
@@ -150,27 +173,58 @@
 	}
 
 	.hero-panel {
-		align-self: stretch;
+		align-self: start;
+		display: grid;
+		gap: var(--spacing-sm);
 		padding: var(--spacing-md);
 		border-radius: var(--radius-lg);
 		background: color-mix(in srgb, var(--color-background) 40%, var(--color-surface));
 		border: 1px solid color-mix(in srgb, var(--color-border) 85%, var(--color-primary));
+		box-shadow: var(--shadow-sm);
 	}
 
 	.panel-label {
-		margin: 0 0 var(--spacing-sm);
+		margin: 0;
 		font-size: 0.8rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--color-text-secondary);
 	}
 
-	.panel-list {
+	.panel-title {
 		margin: 0;
-		padding-left: 1.1rem;
+		font-size: clamp(1.2rem, 4vw, 1.8rem);
+		line-height: 1.15;
+		max-width: 14ch;
+	}
+
+	.panel-copy {
+		margin: 0;
+		color: var(--color-text-secondary);
+		line-height: 1.6;
+	}
+
+	.panel-facts {
+		margin: 0;
+		padding: 0;
 		display: grid;
 		gap: var(--spacing-sm);
-		line-height: 1.6;
+	}
+
+	.panel-fact {
+		padding-top: var(--spacing-sm);
+		border-top: 1px solid color-mix(in srgb, var(--color-border) 92%, var(--color-primary));
+	}
+
+	.panel-fact dt {
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+
+	.panel-fact dd {
+		margin: var(--spacing-xs) 0 0;
+		color: var(--color-text-secondary);
+		line-height: 1.55;
 	}
 
 	.actions {
@@ -440,6 +494,10 @@
 
 		.hero-panel {
 			padding: var(--spacing-lg);
+		}
+
+		.panel-title {
+			max-width: none;
 		}
 
 		.card-grid {

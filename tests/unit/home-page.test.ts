@@ -34,6 +34,22 @@ describe('Home page', () => {
 		expect(screen.queryByRole('link', { name: /manage sections/i })).not.toBeInTheDocument();
 	});
 
+	it('explains how the library is organized with concrete structure cues', () => {
+		render(Page, { props: { data: { guideCollections } } });
+
+		expect(screen.getByText(/how the library works/i)).toBeTruthy();
+		expect(
+			screen.getByText(/every topic has a public collection page, and every guide keeps a direct url/i)
+		).toBeTruthy();
+		expect(screen.getByText(/collection pages/i)).toBeTruthy();
+		expect(screen.getByText(/shareable urls/i)).toBeTruthy();
+		expect(screen.getByText(/editorial formats/i)).toBeTruthy();
+		expect(screen.queryByText(/inside the library/i)).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(/topic-specific collections with their own landing pages/i)
+		).not.toBeInTheDocument();
+	});
+
 	it('renders only guide collections with published guides and previews real guide titles', () => {
 		render(Page, { props: { data: { guideCollections } } });
 

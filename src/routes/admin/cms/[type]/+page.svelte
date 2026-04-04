@@ -651,7 +651,8 @@
 										label={field.label}
 										bind:value={formFields[field.name]}
 										placeholder={field.placeholder || 'Write the main content here...'}
-										helpText={field.helpText || 'Supports headings, lists, quotes, links, inline code, and code blocks.'}
+										helpText={field.helpText || 'Compose in a full-page workspace with images, tables, links, and language-aware code blocks.'}
+										startExpanded={true}
 									/>
 								{:else if field.type === 'boolean'}
 									<label class="checkbox-label">

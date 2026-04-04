@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import Page from '../../src/routes/[contentType]/[slug]/+page.svelte';
 
 describe('Content item page markdown rendering', () => {
-  it('renders markdown body as HTML for blog-style content', () => {
+  it('renders markdown body inside the editorial blog-item layout', () => {
     const { container } = render(Page, {
       props: {
         data: {
@@ -25,19 +25,30 @@ describe('Content item page markdown rendering', () => {
             seoImage: null,
             publishedAt: '2026-04-03T00:00:00.000Z',
             fields: {
+              category: 'Forms',
+              excerpt: 'Validation should respond at intentional moments instead of firing prematurely.',
               body: '# Rule\n\n- After blur\n- On submit',
               read_time: 6
             }
           },
-          tags: []
+          tags: [{ slug: 'forms', name: 'Forms' }]
         }
       }
     });
+
+    expect(container.querySelector('.cms-item-shell')).toBeTruthy();
+    expect(container.querySelector('.cms-blog-article-main')).toBeTruthy();
+    expect(container.querySelector('.cms-blog-article-intro')).toBeTruthy();
 
     const content = container.querySelector('.cms-content');
     expect(content?.innerHTML).toContain('<h1>Rule</h1>');
     expect(content?.innerHTML).toContain('<ul>');
     expect(content?.textContent).toContain('After blur');
     expect(content?.textContent).not.toContain('# Rule');
+
+    expect(container.querySelector('.cms-blog-article-excerpt')?.textContent).toContain(
+      'Validation should respond at intentional moments'
+    );
+    expect(container.querySelector('.cms-tag')?.textContent).toContain('Forms');
   });
 });
