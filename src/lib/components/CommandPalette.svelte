@@ -23,14 +23,6 @@
 	let previousShow = false;
 	let previewTheme: string | null = null;
 
-	let currentPreference: ThemePreference;
-	let currentSystemTheme: 'light' | 'dark';
-	let currentResolvedTheme: 'light' | 'dark';
-
-	themePreference.subscribe((value) => (currentPreference = value));
-	systemTheme.subscribe((value) => (currentSystemTheme = value));
-	resolvedTheme.subscribe((value) => (currentResolvedTheme = value));
-
 	onDestroy(() => {
 		if (browser) {
 			document.body.style.overflow = '';
@@ -91,7 +83,7 @@
 
 	function setTheme(preference: ThemePreference) {
 		themePreference.set(preference);
-		applyTheme(preference === 'system' ? currentSystemTheme : preference);
+		applyTheme(preference === 'system' ? $systemTheme : preference);
 	}
 
 	function applyTheme(theme: 'light' | 'dark') {
@@ -108,7 +100,7 @@
 	function endPreview() {
 		if (previewTheme !== null) {
 			previewTheme = null;
-			applyTheme(currentResolvedTheme);
+			applyTheme($resolvedTheme);
 		}
 	}
 
@@ -179,40 +171,40 @@
 		{
 			id: 'theme-light',
 			label: 'Light Theme',
-			description: `Switch to light mode${currentSystemTheme === 'light' ? ' (System preset)' : ''}`,
+			description: `Switch to light mode${$systemTheme === 'light' ? ' (System preset)' : ''}`,
 			action: () => {
 				setTheme('light');
 				show = false;
 			},
 			icon: '☀️',
-			badge: currentPreference === 'light' ? '✓ Active' : undefined,
+			badge: $themePreference === 'light' ? '✓ Active' : undefined,
 			onPreview: () => previewThemeChange('light'),
 			onPreviewEnd: endPreview
 		},
 		{
 			id: 'theme-dark',
 			label: 'Dark Theme',
-			description: `Switch to dark mode${currentSystemTheme === 'dark' ? ' (System preset)' : ''}`,
+			description: `Switch to dark mode${$systemTheme === 'dark' ? ' (System preset)' : ''}`,
 			action: () => {
 				setTheme('dark');
 				show = false;
 			},
 			icon: '🌙',
-			badge: currentPreference === 'dark' ? '✓ Active' : undefined,
+			badge: $themePreference === 'dark' ? '✓ Active' : undefined,
 			onPreview: () => previewThemeChange('dark'),
 			onPreviewEnd: endPreview
 		},
 		{
 			id: 'theme-system',
 			label: 'System Theme',
-			description: `Follow system preference (currently ${currentSystemTheme})`,
+			description: `Follow system preference (currently ${$systemTheme})`,
 			action: () => {
 				setTheme('system');
 				show = false;
 			},
 			icon: '💻',
-			badge: currentPreference === 'system' ? '✓ Active' : undefined,
-			onPreview: () => previewThemeChange(currentSystemTheme),
+			badge: $themePreference === 'system' ? '✓ Active' : undefined,
+			onPreview: () => previewThemeChange($systemTheme),
 			onPreviewEnd: endPreview
 		}
 	] as Command[];

@@ -1,12 +1,16 @@
-import { browser } from '$app/environment';
 import { derived, writable } from 'svelte/store';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
+const canUseBrowserApis =
+	typeof window !== 'undefined' &&
+	typeof window.matchMedia === 'function' &&
+	typeof localStorage !== 'undefined';
+
 // Get system theme preference
 function getSystemTheme(): ResolvedTheme {
-	if (browser && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+	if (canUseBrowserApis && window.matchMedia('(prefers-color-scheme: dark)').matches) {
 		return 'dark';
 	}
 	return 'light';
@@ -14,7 +18,7 @@ function getSystemTheme(): ResolvedTheme {
 
 // Initialize theme preference from localStorage
 function getInitialThemePreference(): ThemePreference {
-	if (browser) {
+	if (canUseBrowserApis) {
 		const stored = localStorage.getItem('theme-preference') as ThemePreference;
 		if (stored === 'light' || stored === 'dark' || stored === 'system') {
 			return stored;
@@ -41,7 +45,7 @@ export const resolvedTheme = derived(
 );
 
 // Subscribe to preference changes and update localStorage
-if (browser) {
+if (canUseBrowserApis) {
 	themePreference.subscribe((value) => {
 		localStorage.setItem('theme-preference', value);
 	});

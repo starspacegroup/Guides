@@ -5,15 +5,10 @@
 	export let variant: 'fixed' | 'inline' | 'dropdown' = 'fixed';
 	export let simpleToggle = false; // If true, just toggle between light/dark
 
-	let currentTheme: 'light' | 'dark';
-	resolvedTheme.subscribe((value) => {
-		currentTheme = value;
-	});
-
 	function toggleTheme() {
 		if (simpleToggle) {
 			// Simple toggle between light and dark
-			const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+			const newTheme = $resolvedTheme === 'light' ? 'dark' : 'light';
 			themePreference.set(newTheme);
 		} else {
 			// Cycle through light, dark, system
@@ -32,10 +27,10 @@
 	class:dropdown={variant === 'dropdown'}
 	on:click={toggleTheme}
 	aria-label="Toggle theme"
-	title="Toggle {currentTheme === 'light' ? 'dark' : 'light'} mode"
+	title="Toggle {$resolvedTheme === 'light' ? 'dark' : 'light'} mode"
 >
 	{#if simpleToggle}
-		{#if currentTheme === 'dark'}
+		{#if $resolvedTheme === 'dark'}
 			<!-- Sun icon for dark mode (shows what you'll get) -->
 			<svg
 				width="20"
@@ -85,7 +80,7 @@
 			<line x1="8" y1="21" x2="16" y2="21"></line>
 			<line x1="12" y1="17" x2="12" y2="21"></line>
 		</svg>
-	{:else if currentTheme === 'light'}
+	{:else if $resolvedTheme === 'light'}
 		<svg
 			width="20"
 			height="20"

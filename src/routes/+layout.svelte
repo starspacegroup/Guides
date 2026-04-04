@@ -6,6 +6,12 @@
 	import Navigation from '$lib/components/Navigation.svelte';
 	import { showCommandPalette, toggleCommandPalette } from '$lib/stores/commandPalette';
 	import { resolvedTheme } from '$lib/stores/theme';
+	import {
+		applyDocumentTheme,
+		canUseDocument,
+		markAppHydrated,
+		shouldToggleCommandPaletteShortcut
+	} from '$lib/utils/layout-client';
 	import type { PublicGuideCollection } from '$lib/cms/types';
 	import { onMount } from 'svelte';
 	import '../app.css';
@@ -21,23 +27,16 @@
 		$page.url.pathname.startsWith('/admin') ||
 		$page.url.pathname.startsWith('/setup');
 
-	// Subscribe to theme changes and apply to DOM
-	if (browser) {
-		resolvedTheme.subscribe((theme) => {
-			document.documentElement.setAttribute('data-theme', theme);
-		});
+	$: if (browser || canUseDocument()) {
+		applyDocumentTheme($resolvedTheme);
 	}
 
 	onMount(() => {
-		document.documentElement.setAttribute('data-app-hydrated', 'true');
+		markAppHydrated();
 
 		// Listen for keyboard shortcuts (Cmd/Ctrl + K, Cmd/Ctrl + Shift + P)
 		const handleKeydown = (e: KeyboardEvent) => {
-			const isModifierPressed = e.metaKey || e.ctrlKey;
-			const key = e.key.toLowerCase();
-			const isPaletteShortcut = isModifierPressed && (key === 'k' || (e.shiftKey && key === 'p'));
-
-			if (isPaletteShortcut) {
+			if (shouldToggleCommandPaletteShortcut(e)) {
 				e.preventDefault();
 				toggleCommandPalette();
 			}
