@@ -1,8 +1,7 @@
 <!--
-  Dynamic CMS Content Item Page
+	Dynamic CMS Content Item Page
 
-  Renders a single published content item.
-  Uses the content type's itemTemplate setting for layout selection.
+	Uses the content type's itemTemplate setting for layout selection.
 -->
 <script lang="ts">
 	import type { PageData } from './$types';
@@ -122,9 +121,9 @@
 					</div>
 
 					{#if bodyHeadings.length > 0}
-						<aside class="cms-article-sidebar" aria-label="On this page">
+						<aside class="cms-article-sidebar" aria-label="Code examples">
 							<nav class="cms-article-toc" aria-label="Table of contents">
-								<p class="cms-article-toc-label">On this page</p>
+								<p class="cms-article-toc-label">Code examples</p>
 								<ul class="cms-article-toc-list">
 									{#each bodyHeadings as heading}
 										<li class:sub-item={heading.level === 3}>

@@ -53,6 +53,8 @@ describe('Content item page markdown rendering', () => {
     expect(container.querySelector('.cms-blog-article-main')?.classList.contains('has-hero')).toBe(false);
     expect(container.querySelector('.cms-blog-article-hero')).toBeFalsy();
     expect(container.querySelector('.cms-article-toc')).toBeTruthy();
+    expect(container.querySelector('.cms-article-sidebar')?.getAttribute('aria-label')).toBe('Code examples');
+    expect(container.querySelector('.cms-article-toc-label')?.textContent).toContain('Code examples');
     expect(container.querySelector('.cms-article-toc a[href="#why"]')?.textContent).toContain('Why');
     expect(container.querySelector('.cms-article-toc a[href="#must"]')?.textContent).toContain('Must');
 
