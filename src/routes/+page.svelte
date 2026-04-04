@@ -13,16 +13,16 @@
 
 	const libraryFacts = [
 		{
-			title: 'Collection pages',
-			copy: 'Each topic lives at its own landing page so readers can browse one subject at a time.'
+			title: 'Curated collections',
+			copy: 'Each topic groups together the patterns, principles, and reference guides worth reusing.'
 		},
 		{
-			title: 'Shareable URLs',
-			copy: 'Collections and individual guides both keep clean paths that are easy to send around.'
+			title: 'Real product patterns',
+			copy: 'The library captures practical approaches shaped by shipped interfaces, workflows, and systems.'
 		},
 		{
-			title: 'Editorial formats',
-			copy: 'The same system supports release notes, long-form guides, and product decision writeups.'
+			title: 'Shareable references',
+			copy: 'Every collection and guide keeps a direct URL so teams can revisit, cite, and build on the work.'
 		}
 	] as const;
 
@@ -50,8 +50,8 @@
 			<p class="eyebrow">guides.starspace.group</p>
 			<h1>Software guides for the systems *Space ships</h1>
 			<p class="lede">
-				Browse the guide library by topic, with public collections for release notes, product
-				updates, and detailed user interface decisions.
+				Explore a curated library of practical guidance for building the future of software,
+				from interface patterns to product decisions and release-ready systems.
 			</p>
 			<div class="actions">
 				<a class="button primary" href="#guide-types">Browse Guide Types</a>
@@ -61,10 +61,10 @@
 
 		<div class="hero-panel">
 			<p class="panel-label">Library structure</p>
-			<h2 class="panel-title">How the library works</h2>
+			<h2 class="panel-title">What you'll find here</h2>
 			<p class="panel-copy">
-				Every topic has a public collection page, and every guide keeps a direct URL for
-				sharing, indexing, and repeat visits.
+				Each collection brings together working patterns, product decisions, and
+				implementation guidance intended to help teams build better software on purpose.
 			</p>
 			<dl class="panel-facts">
 				{#each libraryFacts as fact}

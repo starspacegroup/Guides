@@ -26,7 +26,9 @@ describe('Home page', () => {
 				name: /software guides for the systems \*space ships/i
 			})
 		).toBeTruthy();
-		expect(screen.getByText(/browse the guide library by topic/i)).toBeTruthy();
+		expect(
+			screen.getByText(/explore a curated library of practical guidance for building the future of software/i)
+		).toBeTruthy();
 		expect(screen.queryByText(/publish practical guides/i)).not.toBeInTheDocument();
 		expect(screen.queryByText(/create a section/i)).not.toBeInTheDocument();
 		expect(screen.queryByText(/write a guide/i)).not.toBeInTheDocument();
@@ -37,13 +39,13 @@ describe('Home page', () => {
 	it('explains how the library is organized with concrete structure cues', () => {
 		render(Page, { props: { data: { guideCollections } } });
 
-		expect(screen.getByText(/how the library works/i)).toBeTruthy();
+		expect(screen.getByText(/what you'll find here/i)).toBeTruthy();
 		expect(
-			screen.getByText(/every topic has a public collection page, and every guide keeps a direct url/i)
+			screen.getByText(/each collection brings together working patterns, product decisions, and implementation guidance/i)
 		).toBeTruthy();
-		expect(screen.getByText(/collection pages/i)).toBeTruthy();
-		expect(screen.getByText(/shareable urls/i)).toBeTruthy();
-		expect(screen.getByText(/editorial formats/i)).toBeTruthy();
+		expect(screen.getByText(/curated collections/i)).toBeTruthy();
+		expect(screen.getByText(/real product patterns/i)).toBeTruthy();
+		expect(screen.getByText(/shareable references/i)).toBeTruthy();
 		expect(screen.queryByText(/inside the library/i)).not.toBeInTheDocument();
 		expect(
 			screen.queryByText(/topic-specific collections with their own landing pages/i)
