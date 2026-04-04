@@ -1,6 +1,7 @@
+import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
-async function waitForAppHydration(page: Parameters<typeof test>[0]['page']) {
+async function waitForAppHydration(page: Page) {
 	await page.waitForFunction(
 		() => document.documentElement.getAttribute('data-app-hydrated') === 'true',
 		{ timeout: 15000 }
