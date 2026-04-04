@@ -20,15 +20,21 @@ function escapeAttribute(value: string): string {
   return escapeHtml(value).replaceAll('`', '&#96;');
 }
 
+function replaceUnderscoreEmphasis(markdown: string, replacement: string): string {
+  return markdown.replace(/(^|[^\w])_([^_\s](?:[^_]*?[^_\s])?)_(?=[^\w]|$)/g, `$1${replacement}`);
+}
+
 function normalizeHeadingText(markdown: string): string {
-  return markdown
-    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1$2')
-    .replace(/(^|[^_])_([^_]+)_(?!_)/g, '$1$2')
-    .trim();
+  return replaceUnderscoreEmphasis(
+    markdown
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1$2')
+      .trim(),
+    '$2'
+  );
 }
 
 function slugifyHeading(text: string): string {
@@ -158,7 +164,7 @@ function renderInline(markdown: string): string {
 
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
-  html = html.replace(/(^|[^_])_([^_]+)_(?!_)/g, '$1<em>$2</em>');
+  html = replaceUnderscoreEmphasis(html, '<em>$2</em>');
 
   html = imageSegments.reduce(
     (output, segment, index) => output.replace(`@@IMAGESEGMENT${index}@@`, segment),

@@ -72,4 +72,22 @@ Use **clear** copy and _helpful_ guidance.`);
     expect(html).toContain('[Bad](javascript:alert(1))');
     expect(html).not.toContain('javascript:alert(1)"');
   });
+
+  it('does not treat intraword underscores as emphasis', () => {
+    const markdown = `# Telemetry
+
+- theme_toggle_clicked
+- theme_changed
+- theme_preference_source`;
+
+    const html = renderMarkdownToHtml(markdown);
+    const headings = getMarkdownHeadings(markdown);
+
+    expect(html).toContain('<li>theme_toggle_clicked</li>');
+    expect(html).toContain('<li>theme_changed</li>');
+    expect(html).toContain('<li>theme_preference_source</li>');
+    expect(html).not.toContain('<em>toggle</em>');
+    expect(html).not.toContain('<em>preference</em>');
+    expect(headings).toEqual([{ level: 1, text: 'Telemetry', id: 'telemetry' }]);
+  });
 });
