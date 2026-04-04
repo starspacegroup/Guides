@@ -9,11 +9,33 @@
 		{ name: 'Delta', seats: 9 }
 	];
 
-	let sortBy: SortKey = 'name';
-	let sortDirection: SortDirection = 'asc';
-	let page = 1;
 	const pageSize = 2;
 	type AriaSort = 'ascending' | 'descending' | 'none';
+
+	function readSearchParam(name: string): string | null {
+		if (typeof window === 'undefined') {
+			return null;
+		}
+
+		return new URLSearchParams(window.location.search).get(name);
+	}
+
+	function getInitialSortBy(): SortKey {
+		return readSearchParam('sort') === 'seats' ? 'seats' : 'name';
+	}
+
+	function getInitialSortDirection(): SortDirection {
+		return readSearchParam('direction') === 'desc' ? 'desc' : 'asc';
+	}
+
+	function getInitialPage(): number {
+		const value = Number(readSearchParam('page'));
+		return Number.isInteger(value) && value > 0 ? value : 1;
+	}
+
+	let sortBy: SortKey = getInitialSortBy();
+	let sortDirection: SortDirection = getInitialSortDirection();
+	let page = getInitialPage();
 
 	function toggleSort(column: SortKey) {
 		if (sortBy === column) {
@@ -35,21 +57,36 @@
 	$: nameSort = (sortBy === 'name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none') as AriaSort;
 	$: seatsSort = (sortBy === 'seats' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none') as AriaSort;
 	$: totalPages = Math.ceil(sortedRows.length / pageSize);
+	$: page = Math.min(Math.max(page, 1), totalPages);
 	$: visibleRows = sortedRows.slice((page - 1) * pageSize, page * pageSize);
+	$: syncTableState(sortBy, sortDirection, page);
+
+	function syncTableState(activeSort: SortKey, activeDirection: SortDirection, currentPage: number) {
+		if (typeof window === 'undefined' || typeof window.history?.replaceState !== 'function') {
+			return;
+		}
+
+		const nextUrl = new URL(window.location.href);
+		nextUrl.searchParams.set('sort', activeSort);
+		nextUrl.searchParams.set('direction', activeDirection);
+		nextUrl.searchParams.set('page', String(currentPage));
+		window.history.replaceState({}, '', nextUrl);
+	}
 </script>
 
 <section class="table-demo" data-header-demo="table-sorting-pagination">
 	<div class="table-demo__frame">
+		<p class="table-demo__summary">Sorted by {sortBy} ({sortDirection}), page {page} of {totalPages}.</p>
 		<table>
 			<thead>
 				<tr>
 					<th aria-sort={nameSort}>
-						<button type="button" on:click={() => toggleSort('name')}>
+						<button type="button" aria-label="Sort by name" on:click={() => toggleSort('name')}>
 							Name
 						</button>
 					</th>
 					<th aria-sort={seatsSort}>
-						<button type="button" on:click={() => toggleSort('seats')}>
+						<button type="button" aria-label="Sort by seats" on:click={() => toggleSort('seats')}>
 							Seats
 						</button>
 					</th>
@@ -89,6 +126,11 @@
 	.table-demo table {
 		width: 100%;
 		border-collapse: collapse;
+	}
+
+	.table-demo__summary {
+		font-size: 0.85rem;
+		color: var(--color-text-secondary);
 	}
 
 	.table-demo th,

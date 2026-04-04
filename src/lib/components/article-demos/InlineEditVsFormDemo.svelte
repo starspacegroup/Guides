@@ -1,12 +1,40 @@
 <script lang="ts">
 	let displayName = 'Mona Geller';
 	let draftName = displayName;
+	let profileDraft = {
+		name: displayName,
+		team: 'Growth Design',
+		role: 'Product Designer'
+	};
 	let editingInline = false;
 	let fullEditorOpen = false;
 
 	function saveInlineEdit() {
 		displayName = draftName.trim() || displayName;
 		editingInline = false;
+	}
+
+	function openFullEditor() {
+		profileDraft = {
+			name: displayName,
+			team: profileDraft.team,
+			role: profileDraft.role
+		};
+		fullEditorOpen = true;
+	}
+
+	function saveFullEditor() {
+		displayName = profileDraft.name.trim() || displayName;
+		fullEditorOpen = false;
+	}
+
+	function cancelFullEditor() {
+		profileDraft = {
+			name: displayName,
+			team: 'Growth Design',
+			role: 'Product Designer'
+		};
+		fullEditorOpen = false;
 	}
 </script>
 
@@ -37,19 +65,32 @@
 			<div class="inline-edit-demo__row inline-edit-demo__row--stack">
 				<div>
 					<p class="inline-edit-demo__eyebrow">Dedicated form</p>
-					<p>Use a full editor when multiple related fields must change together.</p>
+					<p>Use a full editor when multiple related fields, validation, and confirmation need one save point.</p>
 				</div>
-				<button type="button" on:click={() => (fullEditorOpen = !fullEditorOpen)}>
+				<button type="button" on:click={fullEditorOpen ? cancelFullEditor : openFullEditor}>
 					{fullEditorOpen ? 'Hide full editor' : 'Open full editor'}
 				</button>
 			</div>
 
 			{#if fullEditorOpen}
-				<div class="inline-edit-demo__full-form">
-					<span>Name</span>
-					<span>Team</span>
-					<span>Role</span>
-				</div>
+				<form class="inline-edit-demo__full-form" on:submit|preventDefault={saveFullEditor}>
+					<label class="inline-edit-demo__field">
+						<span>Name</span>
+						<input bind:value={profileDraft.name} aria-label="Name" />
+					</label>
+					<label class="inline-edit-demo__field">
+						<span>Team</span>
+						<input bind:value={profileDraft.team} aria-label="Team" />
+					</label>
+					<label class="inline-edit-demo__field">
+						<span>Role</span>
+						<input bind:value={profileDraft.role} aria-label="Role" />
+					</label>
+					<div class="inline-edit-demo__actions">
+						<button type="submit">Save profile changes</button>
+						<button type="button" on:click={cancelFullEditor}>Cancel form edits</button>
+					</div>
+				</form>
 			{/if}
 		</div>
 	</div>
@@ -109,8 +150,15 @@
 		gap: 0.65rem;
 	}
 
+	.inline-edit-demo__field {
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.85rem;
+		color: var(--color-text-secondary);
+	}
+
 	.inline-edit-demo__inline-form input,
-	.inline-edit-demo__full-form span {
+	.inline-edit-demo__full-form input {
 		padding: 0.75rem 0.85rem;
 		border-radius: 0.8rem;
 		border: 1px solid var(--color-border);

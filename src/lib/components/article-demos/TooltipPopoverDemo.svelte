@@ -1,7 +1,41 @@
 <script lang="ts">
+	import { tick } from 'svelte';
+
 	let showTooltip = false;
 	let showPopover = false;
+	let popoverTrigger: HTMLButtonElement | null = null;
+	let firstPopoverAction: HTMLButtonElement | null = null;
+
+	const tooltipId = 'tooltip-popover-demo-tooltip';
+	const popoverId = 'tooltip-popover-demo-panel';
+
+	async function togglePopover() {
+		showPopover = !showPopover;
+
+		if (showPopover) {
+			await tick();
+			firstPopoverAction?.focus();
+		}
+	}
+
+	function closePopover() {
+		if (!showPopover) {
+			return;
+		}
+
+		showPopover = false;
+		popoverTrigger?.focus();
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closePopover();
+		}
+	}
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <section class="tooltip-popover-demo" data-header-demo="tooltip-vs-popover">
 	<div class="tooltip-popover-demo__frame">
@@ -10,6 +44,8 @@
 			<div class="tooltip-popover-demo__anchor">
 				<button
 					type="button"
+					aria-label="Show tooltip help"
+					aria-describedby={tooltipId}
 					on:mouseenter={() => (showTooltip = true)}
 					on:mouseleave={() => (showTooltip = false)}
 					on:focus={() => (showTooltip = true)}
@@ -18,7 +54,7 @@
 					?
 				</button>
 				{#if showTooltip}
-					<div role="tooltip" class="tooltip-popover-demo__tooltip">One short sentence. No actions.</div>
+					<div id={tooltipId} role="tooltip" class="tooltip-popover-demo__tooltip">One short sentence. No actions.</div>
 				{/if}
 			</div>
 		</div>
@@ -26,12 +62,19 @@
 		<div class="tooltip-popover-demo__column">
 			<p class="tooltip-popover-demo__eyebrow">Popover</p>
 			<div class="tooltip-popover-demo__anchor">
-				<button type="button" aria-expanded={showPopover} on:click={() => (showPopover = !showPopover)}>
-					Formatting
+				<button
+					bind:this={popoverTrigger}
+					type="button"
+					aria-label="Formatting options"
+					aria-expanded={showPopover}
+					aria-controls={popoverId}
+					on:click={togglePopover}
+				>
+					Formatting options
 				</button>
 				{#if showPopover}
-					<div class="tooltip-popover-demo__popover" role="dialog" aria-label="Formatting actions">
-						<button type="button">Bold</button>
+					<div id={popoverId} class="tooltip-popover-demo__popover" role="dialog" aria-label="Formatting actions">
+						<button bind:this={firstPopoverAction} type="button">Bold</button>
 						<button type="button">Link</button>
 					</div>
 				{/if}
