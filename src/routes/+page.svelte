@@ -11,6 +11,11 @@
 		layout: 'Product systems'
 	};
 
+	const accentVariants = ['aurora', 'signal', 'ember'] as const;
+
+	const pluralize = (count: number, singular: string, plural = `${singular}s`) =>
+		`${count} ${count === 1 ? singular : plural}`;
+
 	const libraryFacts = [
 		{
 			title: 'Curated collections',
@@ -31,8 +36,18 @@
 		label: collectionLabels[guideCollection.icon] ?? 'Guide collection',
 		countLabel: `${guideCollection.publishedCount} published guides`,
 		previewItems: guideCollection.items.slice(0, 2),
-		accent: index % 2 === 0 ? 'aurora' : 'signal'
+		firstItem: guideCollection.items[0] ?? null,
+		remainingItemCount: Math.max(guideCollection.items.length - 2, 0),
+		accent: accentVariants[index % accentVariants.length]
 	}));
+
+	$: libraryStats = [
+		pluralize(guideTypes.length, 'live collection'),
+		pluralize(
+			guideTypes.reduce((total, guideType) => total + guideType.publishedCount, 0),
+			'published guide'
+		)
+	];
 </script>
 
 <SharingMeta
@@ -78,8 +93,22 @@
 
 	<section class="guide-types" id="guide-types" aria-label="Guide types">
 		<div class="section-copy">
-			<p class="section-label">Guide Types</p>
-			<p class="section-title">Browse the collections currently available on the site.</p>
+			<div>
+				<p class="section-label">Guide Types</p>
+				<p class="section-title">Browse the collections currently available on the site.</p>
+				<p class="section-support">
+					Each collection card now gives you a fast overview, a preview of notable guides, and
+					a direct way into the first guide when you already know where to start.
+				</p>
+			</div>
+
+			{#if guideTypes.length > 0}
+				<ul class="section-stats" aria-label="Collection overview">
+					{#each libraryStats as stat}
+						<li>{stat}</li>
+					{/each}
+				</ul>
+			{/if}
 		</div>
 
 		{#if guideTypes.length > 0}
@@ -87,24 +116,47 @@
 				{#each guideTypes as guideType}
 					<article class={`guide-card ${guideType.accent}`}>
 						<div class="card-header">
-							<p class="card-label">{guideType.label}</p>
+							<div class="card-heading-group">
+								<p class="card-label">{guideType.label}</p>
+								<p class="card-count">{guideType.countLabel}</p>
+							</div>
 							<a class="card-meta-link" href={guideType.href}>View collection</a>
 						</div>
-						<h2>
-							<a class="card-title-link" href={guideType.href}>{guideType.name}</a>
-						</h2>
-					<p class="card-description">{guideType.description}</p>
-					<ul class="card-highlights" aria-label={`${guideType.name} highlights`}>
-						<li class="count-pill">{guideType.countLabel}</li>
-						{#each guideType.previewItems as item}
-							<li>
-								<a class="highlight-link" href={item.href}>{item.title}</a>
-							</li>
-						{/each}
-					</ul>
-					<a class="card-link" href={guideType.href} aria-label={`Browse ${guideType.name}`}>
-						Browse {guideType.name}
-					</a>
+
+						<div class="card-body">
+							<h2>
+								<a class="card-title-link" href={guideType.href}>{guideType.name}</a>
+							</h2>
+							<p class="card-description">{guideType.description}</p>
+						</div>
+
+						<div class="card-preview">
+							<p class="card-preview-label">Inside this collection</p>
+							<ul class="card-highlights" aria-label={`${guideType.name} highlights`}>
+								{#each guideType.previewItems as item}
+									<li>
+										<a class="highlight-link" href={item.href}>{item.title}</a>
+									</li>
+								{/each}
+							</ul>
+							{#if guideType.remainingItemCount > 0}
+								<p class="card-preview-more">
+									+{guideType.remainingItemCount}
+									{guideType.remainingItemCount === 1 ? ' more guide' : ' more guides'}
+								</p>
+							{/if}
+						</div>
+
+						<div class="card-actions">
+							<a class="card-link card-link-primary" href={guideType.href} aria-label={`Browse ${guideType.name}`}>
+								Browse collection
+							</a>
+							{#if guideType.firstItem}
+								<a class="card-link card-link-secondary" href={guideType.firstItem.href}>
+									Start with {guideType.firstItem.title}
+								</a>
+							{/if}
+						</div>
 					</article>
 				{/each}
 			</div>
@@ -262,7 +314,7 @@
 
 	.section-copy {
 		display: grid;
-		gap: var(--spacing-xs);
+		gap: var(--spacing-md);
 	}
 
 	.section-label {
@@ -280,6 +332,32 @@
 		max-width: 18ch;
 	}
 
+	.section-support {
+		margin: var(--spacing-sm) 0 0;
+		max-width: 62ch;
+		color: var(--color-text-secondary);
+		line-height: 1.65;
+	}
+
+	.section-stats {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-sm);
+	}
+
+	.section-stats li {
+		padding: 0.45rem 0.8rem;
+		border-radius: var(--radius-pill, 999px);
+		border: 1px solid color-mix(in srgb, var(--color-border) 86%, var(--color-primary));
+		background: color-mix(in srgb, var(--color-background) 68%, var(--color-surface));
+		font-size: 0.82rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
 	.card-grid {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -287,6 +365,7 @@
 	}
 
 	.guide-card {
+		position: relative;
 		display: grid;
 		gap: var(--spacing-sm);
 		padding: var(--spacing-md);
@@ -300,6 +379,24 @@
 			),
 			var(--color-surface);
 		box-shadow: var(--shadow-sm);
+		overflow: hidden;
+		transition:
+			transform var(--transition-base),
+			border-color var(--transition-base),
+			box-shadow var(--transition-base);
+	}
+
+	.guide-card::before {
+		content: '';
+		position: absolute;
+		inset: 0 auto auto 0;
+		width: 100%;
+		height: 0.2rem;
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--color-primary) 78%, transparent),
+			color-mix(in srgb, var(--color-secondary) 68%, transparent)
+		);
 	}
 
 	.guide-card.aurora {
@@ -324,12 +421,28 @@
 			var(--color-surface);
 	}
 
+	.guide-card.ember {
+		background:
+			radial-gradient(circle at top right, color-mix(in srgb, var(--color-warning) 18%, transparent), transparent 36%),
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--color-surface) 92%, var(--color-background)) 0%,
+				var(--color-surface) 100%
+			),
+			var(--color-surface);
+	}
+
 	.card-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-start;
 		gap: var(--spacing-sm);
 		flex-wrap: wrap;
+	}
+
+	.card-heading-group {
+		display: grid;
+		gap: var(--spacing-xs);
 	}
 
 	.card-label {
@@ -340,10 +453,22 @@
 		color: var(--color-text-secondary);
 	}
 
+	.card-count {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
 	.card-meta-link {
 		font-size: 0.82rem;
 		font-weight: 600;
 		color: var(--color-text);
+	}
+
+	.card-body {
+		display: grid;
+		gap: var(--spacing-sm);
 	}
 
 	.guide-card h2 {
@@ -369,32 +494,57 @@
 		color: var(--color-text-secondary);
 	}
 
+	.card-preview {
+		display: grid;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-sm);
+		border-radius: calc(var(--radius-lg) - 0.2rem);
+		border: 1px solid color-mix(in srgb, var(--color-border) 90%, var(--color-primary));
+		background: color-mix(in srgb, var(--color-background) 64%, var(--color-surface));
+	}
+
+	.card-preview-label {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
 	.card-highlights {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
 		gap: var(--spacing-xs);
 	}
 
 	.card-highlights li {
-		padding: 0.35rem 0.65rem;
-		border-radius: var(--radius-pill, 999px);
-		background: color-mix(in srgb, var(--color-background) 65%, var(--color-surface));
+		padding: 0.55rem 0.75rem;
+		border-radius: var(--radius-md);
+		background: color-mix(in srgb, var(--color-background) 78%, var(--color-surface));
 		border: 1px solid color-mix(in srgb, var(--color-border) 88%, var(--color-primary));
 		font-size: 0.82rem;
 		line-height: 1.4;
 	}
 
-	.card-highlights li.count-pill {
-		font-weight: 600;
-	}
-
 	.highlight-link {
 		display: inline-flex;
+		width: 100%;
 		color: var(--color-text);
 		text-decoration: none;
+	}
+
+	.card-preview-more {
+		margin: 0;
+		font-size: 0.82rem;
+		color: var(--color-text-secondary);
+	}
+
+	.card-actions {
+		display: grid;
+		gap: var(--spacing-sm);
 	}
 
 	.card-link {
@@ -410,6 +560,26 @@
 		font-weight: 600;
 		color: var(--color-text);
 		background: color-mix(in srgb, var(--color-background) 78%, var(--color-surface));
+	}
+
+	.card-link-primary {
+		background: var(--color-text);
+		border-color: var(--color-text);
+		color: var(--color-background);
+	}
+
+	.card-link-primary:hover {
+		color: var(--color-background);
+		background: color-mix(in srgb, var(--color-text) 86%, var(--color-primary));
+		border-color: color-mix(in srgb, var(--color-text) 86%, var(--color-primary));
+	}
+
+	.card-link-secondary {
+		background: transparent;
+	}
+
+	.card-link-secondary:hover {
+		background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
 	}
 
 	.empty-state {
@@ -457,6 +627,10 @@
 			gap: var(--spacing-md);
 		}
 
+		.card-actions {
+			grid-template-columns: repeat(2, minmax(0, max-content));
+		}
+
 		.guide-card h2 {
 			font-size: 1.35rem;
 		}
@@ -496,6 +670,11 @@
 			max-width: 40rem;
 		}
 
+		.section-copy {
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: end;
+		}
+
 		.panel-title {
 			max-width: none;
 		}
@@ -517,6 +696,14 @@
 
 		.card-header {
 			align-items: flex-start;
+		}
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.guide-card:hover {
+			transform: translateY(-0.2rem);
+			border-color: color-mix(in srgb, var(--color-border) 55%, var(--color-primary));
+			box-shadow: var(--shadow-lg);
 		}
 	}
 </style>

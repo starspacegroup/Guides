@@ -16,6 +16,22 @@ const guideCollections = [
 	}
 ];
 
+const multipleGuideCollections = [
+	...guideCollections,
+	{
+		name: 'Payments',
+		description: 'Guides for payment state handling, reconciliation, and recovery paths',
+		href: '/payments',
+		icon: 'article',
+		publishedCount: 3,
+		items: [
+			{ title: 'Retry Flows', href: '/payments/retry-flows' },
+			{ title: 'Ledger Reconciliation', href: '/payments/ledger-reconciliation' },
+			{ title: 'Refund States', href: '/payments/refund-states' }
+		]
+	}
+];
+
 describe('Home page', () => {
 	it('renders public guide copy instead of CMS authoring instructions', () => {
 		render(Page, { props: { data: { guideCollections } } });
@@ -60,7 +76,7 @@ describe('Home page', () => {
 		expect(
 			screen.getByText('Section guides for UI implementation details and design decisions')
 		).toBeTruthy();
-		expect(screen.getByText('2 published guides')).toBeTruthy();
+		expect(screen.getAllByText('2 published guides')).toHaveLength(2);
 		expect(screen.getByRole('link', { name: 'View collection' })).toHaveAttribute(
 			'href',
 			'/user-interface'
@@ -78,8 +94,20 @@ describe('Home page', () => {
 				name: /browse user interface/i
 			})
 		).toHaveAttribute('href', '/user-interface');
+		expect(screen.getByRole('link', { name: /start with theme toggles/i })).toHaveAttribute(
+			'href',
+			'/user-interface/theme-toggles'
+		);
 		expect(screen.queryByText('/user-interface')).not.toBeInTheDocument();
 		expect(screen.queryByRole('heading', { level: 2, name: 'Blog Posts' })).not.toBeInTheDocument();
+	});
+
+	it('surfaces section-level collection stats for faster browsing context', () => {
+		render(Page, { props: { data: { guideCollections: multipleGuideCollections } } });
+
+		expect(screen.getByText('2 live collections')).toBeTruthy();
+		expect(screen.getByText('5 published guides')).toBeTruthy();
+		expect(screen.getAllByText(/inside this collection/i)).toHaveLength(2);
 	});
 
 	it('renders an empty state when no published guide collections exist', () => {
