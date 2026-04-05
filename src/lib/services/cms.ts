@@ -25,6 +25,23 @@ import type {
 import { generateSlug, parseContentItem, parseContentTag, parseContentType } from '$lib/cms/utils';
 import type { D1Database } from '@cloudflare/workers-types';
 
+function getPreferredGuideItemSort(contentType: ContentTypeParsed): {
+	sortBy: string;
+	sortDirection: 'asc' | 'desc';
+} {
+	if (contentType.purpose === 'guide_section') {
+		return {
+			sortBy: 'sort_order',
+			sortDirection: 'asc'
+		};
+	}
+
+	return {
+		sortBy: contentType.settings.defaultSort || 'published_at',
+		sortDirection: contentType.settings.defaultSortDirection || 'desc'
+	};
+}
+
 /**
  * Sync content type definitions from the code registry to D1.
  * Inserts new types and updates changed ones. Safe to call on every request.
@@ -173,12 +190,13 @@ export async function getPublicGuideCollections(
 		publicTypes.map(async (contentType) => {
 			const href = contentType.settings.routePrefix || `/${contentType.slug}`;
 			const firstPageSize = itemsPerType ?? 1;
+			const preferredSort = getPreferredGuideItemSort(contentType);
 			const result = await listContentItems(db, contentType.id, {
 				status: 'published',
 				page: 1,
 				pageSize: firstPageSize,
-				sortBy: contentType.settings.defaultSort || 'published_at',
-				sortDirection: contentType.settings.defaultSortDirection || 'desc'
+				sortBy: preferredSort.sortBy,
+				sortDirection: preferredSort.sortDirection
 			});
 			const finalResult =
 				itemsPerType === null && result.total > firstPageSize
@@ -186,8 +204,8 @@ export async function getPublicGuideCollections(
 						status: 'published',
 						page: 1,
 						pageSize: result.total,
-						sortBy: contentType.settings.defaultSort || 'published_at',
-						sortDirection: contentType.settings.defaultSortDirection || 'desc'
+						sortBy: preferredSort.sortBy,
+						sortDirection: preferredSort.sortDirection
 					})
 					: result;
 

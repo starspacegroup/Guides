@@ -36,6 +36,13 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 		throw error(404, 'Content type not found');
 	}
 
+	const sortBy = contentType.purpose === 'guide_section'
+		? 'sort_order'
+		: contentType.settings.defaultSort || 'published_at';
+	const sortDirection = contentType.purpose === 'guide_section'
+		? 'asc'
+		: contentType.settings.defaultSortDirection || 'desc';
+
 	// Parse query params
 	const filters: ContentItemFilters = {
 		status: 'published', // Public routes only show published items
@@ -43,8 +50,8 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 		tagSlug: url.searchParams.get('tag') || undefined,
 		page: parseInt(url.searchParams.get('page') || '1'),
 		pageSize: contentType.settings.listPageSize || 12,
-		sortBy: contentType.settings.defaultSort || 'published_at',
-		sortDirection: contentType.settings.defaultSortDirection || 'desc'
+		sortBy,
+		sortDirection
 	};
 
 	const result = await listContentItems(db, contentType.id, filters);

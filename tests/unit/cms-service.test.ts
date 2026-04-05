@@ -135,10 +135,26 @@ describe('CMS Service', () => {
 				.mockResolvedValueOnce({
 					results: [
 						{
+							id: 'item-2',
+							content_type_id: 'ct-guides',
+							slug: 'second-item',
+							title: 'Second item',
+							status: 'published',
+							fields: '{}',
+							seo_title: null,
+							seo_description: null,
+							seo_image: null,
+							author_id: null,
+							published_at: '2024-01-10',
+							sort_order: 0,
+							created_at: '2024-01-01',
+							updated_at: '2024-01-01'
+						},
+						{
 							id: 'item-1',
 							content_type_id: 'ct-guides',
-							slug: 'modal-dialogs',
-							title: 'Modal Dialogs',
+							slug: 'first-item',
+							title: 'First item',
 							status: 'published',
 							fields: '{}',
 							seo_title: null,
@@ -146,6 +162,7 @@ describe('CMS Service', () => {
 							seo_image: null,
 							author_id: null,
 							published_at: '2024-01-01',
+							sort_order: 1,
 							created_at: '2024-01-01',
 							updated_at: '2024-01-01'
 						}
@@ -159,6 +176,8 @@ describe('CMS Service', () => {
 			expect(collections).toHaveLength(1);
 			expect(collections[0].slug).toBe('ui-patterns');
 			expect(collections[0].href).toBe('/ui-patterns');
+			expect(collections[0].items.map((item) => item.title)).toEqual(['Second item', 'First item']);
+			expect(mockDB.prepare).toHaveBeenCalledWith(expect.stringContaining('ORDER BY sort_order ASC'));
 		});
 	});
 

@@ -193,6 +193,29 @@ describe('[contentType] page server load', () => {
 		expect(result.items).toHaveLength(1);
 	});
 
+	it('should use manual sort order for guide section list pages', async () => {
+		const { load } = await import('../../src/routes/[contentType]/+page.server.js');
+		const mockDB = createMockDB();
+		mockDB._allQueue.push({ results: [mockContentTypeRow] });
+		mockDB._firstQueue.push({ id: 'ct-1' });
+		mockDB._firstQueue.push({
+			...mockContentTypeRow,
+			purpose: 'guide_section',
+			settings:
+				'{"listPageSize":12,"defaultSort":"published_at","defaultSortDirection":"desc","hasTags":true}'
+		});
+		mockDB._firstQueue.push({ count: 1 });
+		mockDB._allQueue.push({ results: [mockContentItemRow] });
+
+		await load({
+			params: { contentType: 'blog' },
+			platform: { env: { DB: mockDB } },
+			url: new URL('http://localhost/blog')
+		} as any);
+
+		expect(mockDB.prepare).toHaveBeenCalledWith(expect.stringContaining('ORDER BY sort_order ASC'));
+	});
+
 	it('should parse search, tag, and page query params', async () => {
 		const { load } = await import('../../src/routes/[contentType]/+page.server.js');
 		const mockDB = createMockDB();
