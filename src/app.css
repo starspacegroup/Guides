@@ -49,6 +49,15 @@
 	--color-demo-theme-toggle-dark-icon-background: #0b1020;
 	--color-demo-theme-toggle-dark-icon-foreground: #c3d0ff;
 	--color-demo-theme-toggle-dark-icon-shadow: rgb(75 101 190 / 0.34);
+	--color-title-selection-surface: color-mix(in srgb, var(--color-surface) 88%, var(--color-background));
+	--color-title-selection-border: color-mix(in srgb, var(--color-primary) 34%, var(--color-border));
+	--color-title-selection-glow: color-mix(in srgb, var(--color-primary) 24%, transparent);
+	--color-title-rainbow-1: color-mix(in srgb, var(--color-primary) 74%, var(--color-secondary));
+	--color-title-rainbow-2: color-mix(in srgb, var(--color-secondary) 78%, var(--color-error));
+	--color-title-rainbow-3: color-mix(in srgb, var(--color-error) 74%, var(--color-warning));
+	--color-title-rainbow-4: color-mix(in srgb, var(--color-warning) 78%, var(--color-success));
+	--color-title-rainbow-5: color-mix(in srgb, var(--color-success) 72%, var(--color-primary));
+	--color-title-rainbow-6: color-mix(in srgb, var(--color-primary) 42%, var(--color-secondary));
 
 	/* Spacing */
 	--spacing-xs: 0.25rem;
@@ -233,6 +242,106 @@ button {
 	max-width: 1280px;
 	margin: 0 auto;
 	padding: 0 var(--spacing-md);
+}
+
+.rainbow-title {
+	position: relative;
+	user-select: none;
+	cursor: crosshair;
+	outline: none;
+	text-wrap: balance;
+	-webkit-user-select: none;
+
+	/* Keep the title feeling solid even after the text is split into spans. */
+	filter: drop-shadow(0 0.15rem 0.6rem color-mix(in srgb, var(--color-title-selection-glow) 45%, transparent));
+}
+
+.rainbow-title:focus-visible {
+	outline: 2px solid var(--color-primary);
+	outline-offset: 0.18em;
+	border-radius: var(--radius-sm);
+}
+
+.rainbow-title__char {
+	position: relative;
+	display: inline-block;
+	color: inherit;
+	transition:
+		color var(--transition-fast),
+		transform var(--transition-fast),
+		opacity var(--transition-fast),
+		text-shadow var(--transition-fast),
+		filter var(--transition-fast);
+	will-change: color, transform;
+	white-space: pre;
+	z-index: 0;
+}
+
+.rainbow-title__word {
+	display: inline-block;
+	white-space: nowrap;
+}
+
+.rainbow-title__char::after {
+	content: '';
+	position: absolute;
+	left: -0.04em;
+	right: -0.04em;
+	bottom: -0.03em;
+	height: 0.35em;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--rainbow-char-color) 28%, var(--color-title-selection-surface));
+	border: 1px solid color-mix(in srgb, var(--rainbow-char-color) 42%, var(--color-title-selection-border));
+	opacity: 0;
+	transform: scaleX(0.35);
+	transition:
+		opacity var(--transition-fast),
+		transform var(--transition-fast);
+	z-index: -1;
+}
+
+.rainbow-title--selected .rainbow-title__char:not(.is-selected) {
+	opacity: 0.28;
+	filter: blur(0.01em);
+	transform: scale(0.98);
+}
+
+.rainbow-title__char.is-selected {
+	color: var(--rainbow-char-color);
+	text-shadow: 0 0 0.9rem color-mix(in srgb, var(--rainbow-char-color) 24%, var(--color-title-selection-glow));
+	transform: translateY(var(--rainbow-char-lift)) scale(1.06);
+	z-index: 1;
+	animation: rainbow-title-bob 700ms ease;
+	animation-delay: calc(var(--rainbow-char-order, 0) * 26ms);
+	animation-fill-mode: both;
+}
+
+.rainbow-title__char.is-selected::after {
+	opacity: 1;
+	transform: scaleX(1);
+}
+
+@keyframes rainbow-title-bob {
+	0% {
+		transform: translateY(0) scale(0.96);
+	}
+	60% {
+		transform: translateY(calc(var(--rainbow-char-lift) * 1.15)) scale(1.08);
+	}
+	100% {
+		transform: translateY(var(--rainbow-char-lift)) scale(1.06);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rainbow-title__char,
+	.rainbow-title__char::after {
+		transition: none;
+	}
+
+	.rainbow-title__char.is-selected {
+		animation: none;
+	}
 }
 
 @media (min-width: 640px) {

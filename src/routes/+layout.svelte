@@ -6,6 +6,7 @@
 	import Navigation from '$lib/components/Navigation.svelte';
 	import { showCommandPalette, toggleCommandPalette } from '$lib/stores/commandPalette';
 	import { resolvedTheme } from '$lib/stores/theme';
+	import { rainbowTitleRegion } from '$lib/utils/rainbow-title';
 	import {
 		applyDocumentTheme,
 		canUseDocument,
@@ -50,7 +51,7 @@
 <div class="app">
 	<Navigation user={data.user} onCommandPaletteClick={toggleCommandPalette} />
 
-	<main>
+	<main use:rainbowTitleRegion>
 		<slot />
 	</main>
 
