@@ -594,6 +594,8 @@ describe('CMS API /api/cms/[type] - Branch Coverage', () => {
 			mockDB._firstQueue.push(mockContentTypeRow);
 			// createContentItem: get content type
 			mockDB._firstQueue.push(mockContentTypeRow);
+			// createContentItem: next sort order
+			mockDB._firstQueue.push({ next_sort_order: 0 });
 			// createContentItem: check slug uniqueness
 			mockDB._firstQueue.push(null);
 			// createContentItem: insert
@@ -618,6 +620,8 @@ describe('CMS API /api/cms/[type] - Branch Coverage', () => {
 			mockDB._firstQueue.push(mockContentTypeRow);
 			// createContentItem: get content type
 			mockDB._firstQueue.push(mockContentTypeRow);
+			// createContentItem: next sort order
+			mockDB._firstQueue.push({ next_sort_order: 0 });
 			// createContentItem: check slug uniqueness
 			mockDB._firstQueue.push(null);
 			// createContentItem: insert fails
@@ -1766,6 +1770,8 @@ describe('CMS Service - Additional Coverage', () => {
 			const mockDB = createMockDB();
 			// get content type by slug
 			mockDB._firstQueue.push(mockContentTypeRow);
+			// next sort order
+			mockDB._firstQueue.push({ next_sort_order: 0 });
 			// check slug uniqueness: slug exists
 			mockDB._firstQueue.push({ id: 'existing-item' });
 			// insert with unique slug
@@ -1790,6 +1796,8 @@ describe('CMS Service - Additional Coverage', () => {
 			const mockDB = createMockDB();
 			// get content type
 			mockDB._firstQueue.push(mockContentTypeRow);
+			// next sort order
+			mockDB._firstQueue.push({ next_sort_order: 0 });
 			// check slug: no duplicate
 			mockDB._firstQueue.push(null);
 			// insert

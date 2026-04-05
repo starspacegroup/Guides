@@ -18,6 +18,7 @@ function createItem(slug: string, body: string, headerDemo?: string): ContentIte
 		seoImage: null,
 		authorId: null,
 		publishedAt: null,
+		sortOrder: 0,
 		createdAt: '2026-04-04T00:00:00.000Z',
 		updatedAt: '2026-04-04T00:00:00.000Z'
 	};

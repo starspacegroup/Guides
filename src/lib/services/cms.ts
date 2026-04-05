@@ -232,6 +232,13 @@ export async function createContentItem(
 	const status = input.status || 'draft';
 	const fieldsJson = JSON.stringify(input.fields);
 	const publishedAt = status === 'published' ? new Date().toISOString() : null;
+	const nextSortOrderResult = await db
+		.prepare(
+			'SELECT COALESCE(MAX(sort_order), -1) + 1 as next_sort_order FROM content_items WHERE content_type_id = ?'
+		)
+		.bind(contentType.id)
+		.first<{ next_sort_order: number; }>();
+	const nextSortOrder = nextSortOrderResult?.next_sort_order ?? 0;
 
 	// Check slug uniqueness within this content type
 	const existingSlug = await db
@@ -244,8 +251,8 @@ export async function createContentItem(
 		const uniqueSlug = `${slug}-${crypto.randomUUID().slice(0, 8)}`;
 		const row = await db
 			.prepare(
-				`INSERT INTO content_items (id, content_type_id, slug, title, status, fields, seo_title, seo_description, seo_image, author_id, published_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				`INSERT INTO content_items (id, content_type_id, slug, title, status, fields, seo_title, seo_description, seo_image, author_id, published_at, sort_order)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 RETURNING *`
 			)
 			.bind(
@@ -259,7 +266,8 @@ export async function createContentItem(
 				input.seoDescription || null,
 				input.seoImage || null,
 				input.authorId || null,
-				publishedAt
+				publishedAt,
+				nextSortOrder
 			)
 			.first<ContentItem>();
 
@@ -268,8 +276,8 @@ export async function createContentItem(
 
 	const row = await db
 		.prepare(
-			`INSERT INTO content_items (id, content_type_id, slug, title, status, fields, seo_title, seo_description, seo_image, author_id, published_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`INSERT INTO content_items (id, content_type_id, slug, title, status, fields, seo_title, seo_description, seo_image, author_id, published_at, sort_order)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			 RETURNING *`
 		)
 		.bind(
@@ -283,7 +291,8 @@ export async function createContentItem(
 			input.seoDescription || null,
 			input.seoImage || null,
 			input.authorId || null,
-			publishedAt
+			publishedAt,
+			nextSortOrder
 		)
 		.first<ContentItem>();
 
@@ -372,6 +381,7 @@ export async function listContentItems(
 	// Get items
 	// Allowlist the sort column to prevent SQL injection
 	const allowedSortColumns = [
+		'sort_order',
 		'created_at',
 		'updated_at',
 		'published_at',
@@ -400,6 +410,45 @@ export async function listContentItems(
 		pageSize,
 		totalPages: Math.ceil(total / pageSize)
 	};
+}
+
+/**
+ * Persist a manual item order for a content type.
+ */
+export async function reorderContentItems(
+	db: D1Database,
+	contentTypeId: string,
+	itemIds: string[]
+): Promise<boolean> {
+	if (itemIds.length === 0) {
+		return false;
+	}
+
+	const placeholders = itemIds.map(() => '?').join(', ');
+	const countResult = await db
+		.prepare(
+			`SELECT COUNT(*) as count FROM content_items WHERE content_type_id = ? AND id IN (${placeholders})`
+		)
+		.bind(contentTypeId, ...itemIds)
+		.first<{ count: number; }>();
+
+	if ((countResult?.count || 0) !== itemIds.length) {
+		return false;
+	}
+
+	await db.batch(
+		itemIds.map((itemId, index) =>
+			db
+				.prepare(
+					`UPDATE content_items
+					 SET sort_order = ?, updated_at = CURRENT_TIMESTAMP
+					 WHERE id = ? AND content_type_id = ?`
+				)
+				.bind(index, itemId, contentTypeId)
+		)
+	);
+
+	return true;
 }
 
 /**

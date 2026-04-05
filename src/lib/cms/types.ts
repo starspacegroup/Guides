@@ -169,6 +169,7 @@ export interface ContentItem {
 	seo_image: string | null;
 	author_id: string | null;
 	published_at: string | null;
+	sort_order: number;
 	created_at: string;
 	updated_at: string;
 }
@@ -186,6 +187,7 @@ export interface ContentItemParsed {
 	seoImage: string | null;
 	authorId: string | null;
 	publishedAt: string | null;
+	sortOrder: number;
 	createdAt: string;
 	updatedAt: string;
 }

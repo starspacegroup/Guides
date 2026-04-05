@@ -30,6 +30,10 @@
 	let deletingItem: any = null;
 	let isLoading = false;
 	let errors: Record<string, string> = {};
+	let draggedIndex: number | null = null;
+	let activeDropIndex: number | null = null;
+	let isPointerDragging = false;
+	let isSavingOrder = false;
 
 	// Form fields
 	let formTitle = '';
@@ -126,6 +130,8 @@
 			const qp = new URLSearchParams();
 			if (statusFilter) qp.set('status', statusFilter);
 			if (searchQuery) qp.set('search', searchQuery);
+			qp.set('sortBy', 'sort_order');
+			qp.set('sortDirection', 'asc');
 			const qs = qp.toString() ? `?${qp.toString()}` : '';
 			const res = await fetch(`/api/cms/${contentType.slug}${qs}`);
 			if (res.ok) {
@@ -275,6 +281,144 @@
 		refreshItems();
 	}
 
+	function clearReorderState() {
+		draggedIndex = null;
+		activeDropIndex = null;
+		isPointerDragging = false;
+	}
+
+	function getInsertionIndex(fromIndex: number, dropIndex: number): number {
+		return dropIndex > fromIndex ? dropIndex - 1 : dropIndex;
+	}
+
+	function moveItem<T>(list: T[], fromIndex: number, toIndex: number): T[] {
+		const nextItems = [...list];
+		const [movedItem] = nextItems.splice(fromIndex, 1);
+		nextItems.splice(toIndex, 0, movedItem);
+		return nextItems;
+	}
+
+	function beginReorder(index: number) {
+		errors = { ...errors, general: '' };
+		draggedIndex = index;
+		activeDropIndex = index;
+	}
+
+	function handleDragStart(index: number) {
+		beginReorder(index);
+	}
+
+	function handleDragEnd() {
+		if (!isPointerDragging) {
+			clearReorderState();
+		}
+	}
+
+	function updateActiveDropIndex(index: number) {
+		if (draggedIndex === null || isSavingOrder) {
+			return;
+		}
+
+		activeDropIndex = index;
+	}
+
+	function findDropIndexFromPoint(clientX: number, clientY: number): number | null {
+		const element = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+		const dropSlot = element?.closest('[data-drop-index]') as HTMLElement | null;
+		if (!dropSlot?.dataset.dropIndex) {
+			return null;
+		}
+
+		const parsedIndex = Number.parseInt(dropSlot.dataset.dropIndex, 10);
+		return Number.isNaN(parsedIndex) ? null : parsedIndex;
+	}
+
+	function handleHandlePointerDown(event: PointerEvent, index: number) {
+		if (event.pointerType === 'mouse' || isSavingOrder) {
+			return;
+		}
+
+		event.preventDefault();
+		beginReorder(index);
+		isPointerDragging = true;
+	}
+
+	function handleWindowPointerMove(event: PointerEvent) {
+		if (!isPointerDragging || draggedIndex === null) {
+			return;
+		}
+
+		const nextDropIndex = findDropIndexFromPoint(event.clientX, event.clientY);
+		if (nextDropIndex !== null) {
+			activeDropIndex = nextDropIndex;
+		}
+	}
+
+	async function persistItemOrder(nextItems: any[]) {
+		const previousItems = items;
+		isSavingOrder = true;
+		items = nextItems.map((item, index) => ({ ...item, sortOrder: index }));
+
+		try {
+			const res = await fetch(`/api/cms/${contentType.slug}/reorder`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ itemIds: nextItems.map((item) => item.id) })
+			});
+
+			if (!res.ok) {
+				throw new Error('Failed to save order');
+			}
+		} catch (err) {
+			items = previousItems;
+			errors = { ...errors, general: 'Failed to update item order' };
+		} finally {
+			isSavingOrder = false;
+			clearReorderState();
+		}
+	}
+
+	async function commitReorder(dropIndex: number | null) {
+		if (draggedIndex === null || dropIndex === null || isSavingOrder) {
+			clearReorderState();
+			return;
+		}
+
+		const insertionIndex = getInsertionIndex(draggedIndex, dropIndex);
+		if (insertionIndex === draggedIndex) {
+			clearReorderState();
+			return;
+		}
+
+		const nextItems = moveItem(items, draggedIndex, insertionIndex);
+		await persistItemOrder(nextItems);
+	}
+
+	async function handleWindowPointerUp(event: PointerEvent) {
+		if (!isPointerDragging) {
+			return;
+		}
+
+		const nextDropIndex = findDropIndexFromPoint(event.clientX, event.clientY) ?? activeDropIndex;
+		await commitReorder(nextDropIndex);
+	}
+
+	function handleWindowPointerCancel() {
+		if (isPointerDragging) {
+			clearReorderState();
+		}
+	}
+
+	function isDropSlotActive(index: number): boolean {
+		if (draggedIndex === null || activeDropIndex !== index) {
+			return false;
+		}
+
+		return getInsertionIndex(draggedIndex, index) !== draggedIndex;
+	}
+
+	$: canReorderItems = !statusFilter && !searchQuery && currentPage === 1 && totalPages === 1;
+
 	function getPublicCollectionHref(): string {
 		const routePrefix = contentType.settings?.routePrefix?.trim();
 		if (routePrefix) {
@@ -355,6 +499,12 @@
 	noindex={true}
 />
 
+<svelte:window
+	on:pointermove={handleWindowPointerMove}
+	on:pointerup={handleWindowPointerUp}
+	on:pointercancel={handleWindowPointerCancel}
+/>
+
 <div class="cms-manage">
 	<!-- Header -->
 	<div class="page-header">
@@ -425,6 +575,10 @@
 		</div>
 	{/if}
 
+	{#if errors.general && !showCreateModal && !showEditModal && !showDeleteConfirm}
+		<div class="error-banner page-error">{errors.general}</div>
+	{/if}
+
 	<!-- Filters -->
 	<div class="filters-bar">
 		<div class="filters-left">
@@ -445,7 +599,13 @@
 		<span class="items-count">{totalItems} item{totalItems !== 1 ? 's' : ''}</span>
 	</div>
 
-	<!-- Items Table -->
+	{#if canReorderItems}
+		<p class="reorder-hint">Drag a card by its handle. On touch devices, drag the handle until the drop line appears, then release to place it.</p>
+	{:else}
+		<p class="reorder-hint reorder-hint-muted">Clear filters and stay on the first page to reorder items.</p>
+	{/if}
+
+	<!-- Items List -->
 	{#if items.length === 0}
 		<div class="empty-state">
 			<svg
@@ -468,29 +628,65 @@
 			</button>
 		</div>
 	{:else}
-		<div class="items-table-wrap">
-			<table class="items-table">
-				<thead>
-					<tr>
-						<th>Title</th>
-						<th>Status</th>
-						<th>Created</th>
-						<th>Updated</th>
-						<th class="th-actions">Actions</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each items as item}
-						{@const publicHref = getItemPublicHref(item)}
-						<tr>
-							<td class="td-title">
+		<div class="items-list-wrap">
+			<div class="items-list-head" aria-hidden="true">
+				<span>Title</span>
+				<span>Status</span>
+				<span>Created</span>
+				<span>Updated</span>
+				<span class="items-list-head-actions">Actions</span>
+			</div>
+			<div class="items-list" role="list" aria-label="Sortable content items">
+				{#each items as item, index (item.id)}
+					<button
+						type="button"
+						class="drop-slot"
+						class:active={canReorderItems && isDropSlotActive(index)}
+						data-drop-index={index}
+						aria-label={`Drop before ${item.title}`}
+						disabled={!canReorderItems || isSavingOrder}
+						on:dragenter|preventDefault={() => updateActiveDropIndex(index)}
+						on:dragover|preventDefault={() => updateActiveDropIndex(index)}
+						on:drop|preventDefault={() => commitReorder(index)}
+						on:click={() => draggedIndex !== null && commitReorder(index)}
+					>
+						{#if canReorderItems && isDropSlotActive(index)}
+							<span class="drop-slot-label">Drop here</span>
+						{/if}
+					</button>
+
+					{@const publicHref = getItemPublicHref(item)}
+					<article
+						class="item-card"
+						class:dragging={draggedIndex === index}
+						class:reorder-disabled={!canReorderItems}
+						role="listitem"
+						data-sortable-item
+						draggable={canReorderItems && !isSavingOrder}
+						on:dragstart={() => handleDragStart(index)}
+						on:dragend={handleDragEnd}
+					>
+						<div class="item-main">
+							<button
+								type="button"
+								class="drag-handle"
+								aria-label={`Reorder ${item.title}`}
+								title="Drag to reorder"
+								disabled={!canReorderItems || isSavingOrder}
+								on:pointerdown={(event) => handleHandlePointerDown(event, index)}
+							>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<circle cx="9" cy="6" r="1.25" />
+									<circle cx="15" cy="6" r="1.25" />
+									<circle cx="9" cy="12" r="1.25" />
+									<circle cx="15" cy="12" r="1.25" />
+									<circle cx="9" cy="18" r="1.25" />
+									<circle cx="15" cy="18" r="1.25" />
+								</svg>
+							</button>
+							<div class="item-primary">
 								{#if publicHref}
-									<a
-										class="item-title item-title-link"
-										href={publicHref}
-										target="_blank"
-										rel="noreferrer"
-									>
+									<a class="item-title item-title-link" href={publicHref} target="_blank" rel="noreferrer">
 										{item.title}
 									</a>
 									<a class="item-slug item-slug-link" href={publicHref} target="_blank" rel="noreferrer">
@@ -501,74 +697,73 @@
 									<span class="item-slug">{getPublicCollectionHref()}/{item.slug}</span>
 									<span class="item-visibility-note">Private content</span>
 								{/if}
-							</td>
-							<td>
-								<span class="status-badge" style="--badge-color: {getStatusColor(item.status)}">
-									{item.status}
-								</span>
-							</td>
-							<td class="td-date">{formatDate(item.createdAt)}</td>
-							<td class="td-date">{formatDate(item.updatedAt)}</td>
-							<td class="td-actions">
-								{#if publicHref}
-									<a
-										class="btn-icon"
-										href={publicHref}
-										target="_blank"
-										rel="noreferrer"
-										aria-label={`View ${item.title}`}
-										title="View live page"
-									>
-										<svg
-											width="16"
-											height="16"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-										>
-											<path d="M7 17 17 7" />
-											<path d="M7 7h10v10" />
-										</svg>
-									</a>
-								{/if}
-								<button class="btn-icon" title="Edit" on:click={() => openEditModal(item)}>
-									<svg
-										width="16"
-										height="16"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-									>
-										<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-										<path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-									</svg>
-								</button>
-								<button
-									class="btn-icon btn-icon-danger"
-									title="Delete"
-									on:click={() => confirmDelete(item)}
+							</div>
+						</div>
+
+						<div class="item-meta">
+							<div class="item-meta-cell">
+								<span class="item-meta-label">Status</span>
+								<span class="status-badge" style="--badge-color: {getStatusColor(item.status)}">{item.status}</span>
+							</div>
+							<div class="item-meta-cell">
+								<span class="item-meta-label">Created</span>
+								<span class="td-date">{formatDate(item.createdAt)}</span>
+							</div>
+							<div class="item-meta-cell">
+								<span class="item-meta-label">Updated</span>
+								<span class="td-date">{formatDate(item.updatedAt)}</span>
+							</div>
+						</div>
+
+						<div class="item-actions">
+							{#if publicHref}
+								<a
+									class="btn-icon"
+									href={publicHref}
+									target="_blank"
+									rel="noreferrer"
+									aria-label={`View ${item.title}`}
+									title="View live page"
 								>
-									<svg
-										width="16"
-										height="16"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-									>
-										<polyline points="3 6 5 6 21 6" />
-										<path
-											d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-										/>
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M7 17 17 7" />
+										<path d="M7 7h10v10" />
 									</svg>
-								</button>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+								</a>
+							{/if}
+							<button class="btn-icon" title="Edit" on:click={() => openEditModal(item)}>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+									<path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+								</svg>
+							</button>
+							<button class="btn-icon btn-icon-danger" title="Delete" on:click={() => confirmDelete(item)}>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<polyline points="3 6 5 6 21 6" />
+									<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+								</svg>
+							</button>
+						</div>
+					</article>
+				{/each}
+
+				<button
+					type="button"
+					class="drop-slot"
+					class:active={canReorderItems && isDropSlotActive(items.length)}
+					data-drop-index={items.length}
+					aria-label="Drop at end of list"
+					disabled={!canReorderItems || isSavingOrder}
+					on:dragenter|preventDefault={() => updateActiveDropIndex(items.length)}
+					on:dragover|preventDefault={() => updateActiveDropIndex(items.length)}
+					on:drop|preventDefault={() => commitReorder(items.length)}
+					on:click={() => draggedIndex !== null && commitReorder(items.length)}
+				>
+					{#if canReorderItems && isDropSlotActive(items.length)}
+						<span class="drop-slot-label">Drop here</span>
+					{/if}
+				</button>
+			</div>
 		</div>
 
 		<!-- Pagination -->
@@ -1080,48 +1275,151 @@
 		margin-bottom: var(--spacing-lg);
 	}
 
-	/* Items Table */
-	.items-table-wrap {
-		overflow-x: auto;
+	/* Items List */
+	.page-error {
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.reorder-hint {
+		margin-bottom: var(--spacing-md);
+		font-size: 0.8125rem;
+		color: var(--color-text-secondary);
+	}
+
+	.reorder-hint-muted {
+		opacity: 0.85;
+	}
+
+	.items-list-wrap {
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
+		background: var(--color-background);
 	}
 
-	.items-table {
-		width: 100%;
-		border-collapse: collapse;
-	}
-
-	.items-table th {
-		text-align: left;
+	.items-list-head {
+		display: none;
 		padding: var(--spacing-sm) var(--spacing-md);
+		gap: var(--spacing-md);
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: var(--color-text-secondary);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
+		color: var(--color-text-secondary);
 		background: var(--color-surface);
 		border-bottom: 1px solid var(--color-border);
 	}
 
-	.items-table td {
-		padding: var(--spacing-sm) var(--spacing-md);
-		font-size: 0.875rem;
-		color: var(--color-text);
-		border-bottom: 1px solid var(--color-border);
-		vertical-align: middle;
+	.items-list-head-actions {
+		text-align: right;
 	}
 
-	.items-table tbody tr:last-child td {
-		border-bottom: none;
+	.items-list {
+		padding: var(--spacing-sm);
 	}
 
-	.items-table tbody tr:hover {
+	.drop-slot {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 1rem;
+		padding: 0;
+		margin: 0;
+		border: none;
+		background: transparent;
+		border-radius: var(--radius-sm);
+		cursor: default;
+	}
+
+	.drop-slot::before {
+		content: '';
+		width: 100%;
+		height: 2px;
+		border-radius: 999px;
+		background: transparent;
+		transition: background-color var(--transition-fast), transform var(--transition-fast);
+	}
+
+	.drop-slot.active::before {
+		background: var(--color-primary);
+		transform: scaleY(1.5);
+	}
+
+	.drop-slot:disabled {
+		cursor: not-allowed;
+	}
+
+	.drop-slot-label {
+		position: absolute;
+		padding: 0.125rem var(--spacing-xs);
+		border-radius: var(--radius-sm);
+		background: var(--color-background);
+		color: var(--color-primary);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		opacity: 0;
+		transform: translateY(-0.75rem);
+		transition: opacity var(--transition-fast);
+	}
+
+	.drop-slot.active .drop-slot-label {
+		opacity: 1;
+	}
+
+	.item-card {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-md);
+		padding: var(--spacing-md);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-background);
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast);
+	}
+
+	.item-card + .drop-slot {
+		margin-top: var(--spacing-xs);
+	}
+
+	.item-card.dragging {
+		opacity: 0.45;
+		border-color: var(--color-primary);
+		box-shadow: var(--shadow-md);
+	}
+
+	.item-card.reorder-disabled .drag-handle {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	.item-main {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--spacing-sm);
+	}
+
+	.drag-handle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		flex-shrink: 0;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
 		background: var(--color-surface);
+		color: var(--color-text-secondary);
+		cursor: grab;
+		touch-action: none;
 	}
 
-	.td-title {
-		max-width: 300px;
+	.drag-handle:active {
+		cursor: grabbing;
+	}
+
+	.item-primary {
+		min-width: 0;
+		flex: 1;
 	}
 
 	.item-title {
@@ -1180,18 +1478,91 @@
 		color: var(--color-text-secondary);
 	}
 
-	.th-actions {
-		width: 100px;
-		text-align: right;
+	.item-meta {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--spacing-sm);
 	}
 
-	.td-actions {
-		text-align: right;
-		white-space: nowrap;
+	.item-meta-cell {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.1875rem;
+		padding: var(--spacing-sm);
+		border-radius: var(--radius-md);
+		background: var(--color-surface);
+	}
+
+	.item-meta-label {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+	}
+
+	.item-actions {
 		display: flex;
 		justify-content: flex-end;
 		align-items: center;
 		gap: var(--spacing-xs);
+	}
+
+	@media (min-width: 760px) {
+		.items-list-head {
+			display: grid;
+			grid-template-columns: minmax(0, 2.2fr) minmax(120px, 0.7fr) minmax(120px, 0.7fr) minmax(120px, 0.7fr) auto;
+			align-items: center;
+		}
+
+		.item-card {
+			grid-template-columns: minmax(0, 2.2fr) minmax(0, 2.1fr) auto;
+			align-items: center;
+		}
+
+		.item-meta {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+
+		.item-meta-cell {
+			background: transparent;
+			padding: 0;
+		}
+
+		.item-actions {
+			justify-content: flex-end;
+		}
+	}
+
+	@media (max-width: 759px) {
+		.page-header {
+			flex-direction: column;
+		}
+
+		.page-header-actions,
+		.filters-bar,
+		.filters-left {
+			width: 100%;
+		}
+
+		.filters-bar,
+		.filters-left {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.search-input {
+			max-width: none;
+		}
+
+		.item-meta {
+			grid-template-columns: 1fr;
+		}
+
+		.item-actions {
+			justify-content: flex-start;
+		}
 	}
 
 	.status-badge {

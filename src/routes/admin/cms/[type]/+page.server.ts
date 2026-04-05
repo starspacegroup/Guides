@@ -24,8 +24,8 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 	const status = url.searchParams.get('status') || '';
 	const search = url.searchParams.get('search') || '';
 	const page = url.searchParams.get('page') || '1';
-	const sortBy = url.searchParams.get('sortBy') || '';
-	const sortDirection = url.searchParams.get('sortDirection') || '';
+	const sortBy = url.searchParams.get('sortBy') || 'sort_order';
+	const sortDirection = url.searchParams.get('sortDirection') || 'asc';
 
 	const qp = new URLSearchParams();
 	if (status) qp.set('status', status);

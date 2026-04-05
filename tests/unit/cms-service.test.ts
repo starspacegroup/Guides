@@ -240,6 +240,7 @@ describe('CMS Service', () => {
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
 			});
+			mockDB.first.mockResolvedValueOnce({ next_sort_order: 0 });
 			// For slug uniqueness check
 			mockDB.first.mockResolvedValueOnce(null);
 			// For the insert returning
@@ -300,6 +301,7 @@ describe('CMS Service', () => {
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
 			});
+			mockDB.first.mockResolvedValueOnce({ next_sort_order: 0 });
 			mockDB.first.mockResolvedValueOnce(null); // slug check
 			mockDB.first.mockResolvedValueOnce({
 				id: 'ci-1',
@@ -438,6 +440,7 @@ describe('CMS Service', () => {
 			expect(result.page).toBe(1);
 			expect(result.pageSize).toBe(10);
 			expect(result.totalPages).toBe(1);
+			expect(result.items[0].sortOrder).toBeDefined();
 		});
 
 		it('should filter by status', async () => {
@@ -471,6 +474,83 @@ describe('CMS Service', () => {
 				call[0].includes('status')
 			);
 			expect(prepareCall).toBeTruthy();
+		});
+
+		it('should allow manual item ordering by sort order', async () => {
+			const { listContentItems } = await import('../../src/lib/services/cms.js');
+
+			mockDB.first.mockResolvedValueOnce({ count: 2 });
+			mockDB.all.mockResolvedValueOnce({
+				results: [
+					{
+						id: 'ci-2',
+						content_type_id: 'ct-1',
+						slug: 'second',
+						title: 'Second',
+						status: 'published',
+						fields: '{}',
+						seo_title: null,
+						seo_description: null,
+						seo_image: null,
+						author_id: null,
+						published_at: '2024-01-02',
+						sort_order: 0,
+						created_at: '2024-01-02',
+						updated_at: '2024-01-02'
+					},
+					{
+						id: 'ci-1',
+						content_type_id: 'ct-1',
+						slug: 'first',
+						title: 'First',
+						status: 'published',
+						fields: '{}',
+						seo_title: null,
+						seo_description: null,
+						seo_image: null,
+						author_id: null,
+						published_at: '2024-01-01',
+						sort_order: 1,
+						created_at: '2024-01-01',
+						updated_at: '2024-01-01'
+					}
+				]
+			});
+
+			const result = await listContentItems(mockDB, 'ct-1', {
+				sortBy: 'sort_order',
+				sortDirection: 'asc'
+			});
+
+			expect(result.items.map((item) => item.id)).toEqual(['ci-2', 'ci-1']);
+			expect(result.items.map((item) => item.sortOrder)).toEqual([0, 1]);
+			expect(mockDB.prepare).toHaveBeenCalledWith(expect.stringContaining('ORDER BY sort_order ASC'));
+		});
+	});
+
+	describe('reorderContentItems', () => {
+		it('should rewrite sort order for the provided content type items', async () => {
+			const { reorderContentItems } = await import('../../src/lib/services/cms.js');
+
+			mockDB.first.mockResolvedValueOnce({ count: 2 });
+			mockDB.batch.mockResolvedValue([{ success: true }, { success: true }]);
+
+			const reordered = await reorderContentItems(mockDB, 'ct-1', ['ci-2', 'ci-1']);
+
+			expect(reordered).toBe(true);
+			expect(mockDB.batch).toHaveBeenCalledTimes(1);
+			expect(mockDB.prepare).toHaveBeenCalledWith(expect.stringContaining('SET sort_order = ?'));
+		});
+
+		it('should reject item ids that do not all belong to the content type', async () => {
+			const { reorderContentItems } = await import('../../src/lib/services/cms.js');
+
+			mockDB.first.mockResolvedValueOnce({ count: 1 });
+
+			const reordered = await reorderContentItems(mockDB, 'ct-1', ['ci-2', 'ci-1']);
+
+			expect(reordered).toBe(false);
+			expect(mockDB.batch).not.toHaveBeenCalled();
 		});
 	});
 

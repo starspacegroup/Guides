@@ -95,6 +95,7 @@ describe('CMS Utils', () => {
 				seo_image: null,
 				author_id: 'user-1',
 				published_at: '2024-01-01T00:00:00Z',
+				sort_order: 0,
 				created_at: '2024-01-01T00:00:00Z',
 				updated_at: '2024-01-01T00:00:00Z'
 			};
@@ -107,6 +108,7 @@ describe('CMS Utils', () => {
 			expect(parsed.fields).toEqual({ body: 'Hello!' });
 			expect(parsed.seoTitle).toBe('Hello World - Blog');
 			expect(parsed.authorId).toBe('user-1');
+			expect(parsed.sortOrder).toBe(0);
 		});
 	});
 

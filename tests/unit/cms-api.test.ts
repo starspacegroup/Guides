@@ -257,6 +257,8 @@ describe('CMS API - Content Items', () => {
 				created_at: '2024-01-01',
 				updated_at: '2024-01-01'
 			});
+			// next sort order
+			mockDB.first.mockResolvedValueOnce({ next_sort_order: 0 });
 			// slug check
 			mockDB.first.mockResolvedValueOnce(null);
 			// insert

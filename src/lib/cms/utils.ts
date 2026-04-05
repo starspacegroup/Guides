@@ -66,6 +66,7 @@ export function parseContentItem(row: ContentItem): ContentItemParsed {
 		seoImage: row.seo_image,
 		authorId: row.author_id,
 		publishedAt: row.published_at,
+		sortOrder: row.sort_order ?? 0,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at
 	};
