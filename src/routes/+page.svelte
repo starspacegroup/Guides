@@ -109,12 +109,7 @@
 	<section class="guide-types" id="guide-types" aria-label="Guide types">
 		<div class="section-copy">
 			<div>
-				<p class="section-label">Guide Types</p>
-				<p class="section-title">Browse the collections currently available on the site.</p>
-				<p class="section-support">
-					Each collection card now gives you a fast overview, a preview of notable guides, and
-					a direct way into the first guide when you already know where to start.
-				</p>
+				<p class="section-title">Guide Collections</p>
 			</div>
 
 			{#if guideTypes.length > 0}
@@ -170,7 +165,7 @@
 						</div>
 
 						<div class="card-preview">
-							<p class="card-preview-label">Inside this collection</p>
+							<p class="card-preview-label">More in this collection</p>
 							{#if guideType.previewItems.length > 0}
 								<ul class="card-highlights" aria-label={`${guideType.name} highlights`}>
 									{#each guideType.previewItems as item}

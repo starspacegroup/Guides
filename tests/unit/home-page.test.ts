@@ -85,7 +85,7 @@ describe('Home page', () => {
 		render(Page, { props: { data: { guideCollections } } });
 
 		const recommendedLabel = screen.getByText('Recommended starting point');
-		const insideLabel = screen.getByText(/inside this collection/i);
+		const insideLabel = screen.getByText(/more in this collection/i);
 		const highlightsList = screen.getByRole('list', { name: 'User Interface highlights' });
 
 		expect(screen.getByRole('heading', { level: 2, name: 'User Interface' })).toBeTruthy();
@@ -127,9 +127,10 @@ describe('Home page', () => {
 	it('surfaces section-level collection stats for faster browsing context', () => {
 		render(Page, { props: { data: { guideCollections: multipleGuideCollections } } });
 
+		expect(screen.getByText('Guide Collections')).toBeTruthy();
 		expect(screen.getByText('2 live collections')).toBeTruthy();
 		expect(screen.getByText('5 published guides')).toBeTruthy();
-		expect(screen.getAllByText(/inside this collection/i)).toHaveLength(2);
+		expect(screen.getAllByText(/more in this collection/i)).toHaveLength(2);
 	});
 
 	it('renders an empty state when no published guide collections exist', () => {
