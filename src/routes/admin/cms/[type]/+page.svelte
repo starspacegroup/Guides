@@ -533,7 +533,7 @@
 					Tags
 				</button>
 			{/if}
-			<button class="btn btn-primary" on:click={openCreateModal}>
+			<a class="btn btn-primary" href="/admin/cms/{contentType.slug}/new">
 				<svg
 					width="16"
 					height="16"
@@ -546,7 +546,7 @@
 					<line x1="5" y1="12" x2="19" y2="12" />
 				</svg>
 				New {contentType.name.replace(/s$/, '')}
-			</button>
+			</a>
 		</div>
 	</div>
 
@@ -623,9 +623,9 @@
 			</svg>
 			<h3>No items yet</h3>
 			<p>Create your first {contentType.name.replace(/s$/, '').toLowerCase()} to get started.</p>
-			<button class="btn btn-primary" on:click={openCreateModal}>
+			<a class="btn btn-primary" href="/admin/cms/{contentType.slug}/new">
 				Create {contentType.name.replace(/s$/, '')}
-			</button>
+			</a>
 		</div>
 	{:else}
 		<div class="items-list-wrap">
@@ -731,12 +731,12 @@
 									</svg>
 								</a>
 							{/if}
-							<button class="btn-icon" title="Edit" on:click={() => openEditModal(item)}>
+							<a class="btn-icon" title="Edit" aria-label="Edit item" href="/admin/cms/{contentType.slug}/{item.id}">
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
 									<path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" />
 								</svg>
-							</button>
+							</a>
 							<button class="btn-icon btn-icon-danger" title="Delete" on:click={() => confirmDelete(item)}>
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<polyline points="3 6 5 6 21 6" />
@@ -901,7 +901,6 @@
 										bind:value={formFields[field.name]}
 										placeholder={field.placeholder || 'Write the main content here...'}
 										helpText={field.helpText || 'Compose in a full-page workspace with images, tables, links, and language-aware code blocks.'}
-										startExpanded={true}
 									/>
 								{:else if field.type === 'boolean'}
 									<label class="checkbox-label">

@@ -1,6 +1,6 @@
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
-import type { D1Database, KVNamespace, Queue } from '@cloudflare/workers-types';
+import type { D1Database, KVNamespace, Queue, R2Bucket } from '@cloudflare/workers-types';
 
 declare global {
 	namespace App {
@@ -19,6 +19,7 @@ declare global {
 			env: {
 				DB: D1Database;
 				KV: KVNamespace;
+				MEDIA_BUCKET?: R2Bucket;
 				QUEUE: Queue;
 				TURNSTILE_SECRET_KEY: string;
 				GITHUB_CLIENT_ID?: string;

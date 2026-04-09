@@ -192,4 +192,53 @@ describe('Content item page markdown rendering', () => {
     expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
     expect(container.querySelector('[data-preview-theme="dark"]')).toBeTruthy();
   });
+
+  it('shows an admin edit link on the frontend for admin users', () => {
+    render(Page, {
+      props: {
+        data: {
+          ...createPageData({
+            contentType: createContentType(),
+            item: createContentItem(),
+            tags: []
+          }),
+          user: {
+            id: 'admin-user',
+            login: 'admin',
+            email: 'admin@example.com',
+            isAdmin: true,
+            isOwner: false
+          }
+        }
+      }
+    });
+
+    expect(screen.getByRole('link', { name: /edit this guide/i })).toHaveAttribute(
+      'href',
+      '/admin/cms/ui-patterns/item-1'
+    );
+  });
+
+  it('does not show the frontend edit link for non-admin users', () => {
+    render(Page, {
+      props: {
+        data: {
+          ...createPageData({
+            contentType: createContentType(),
+            item: createContentItem(),
+            tags: []
+          }),
+          user: {
+            id: 'member-user',
+            login: 'member',
+            email: 'member@example.com',
+            isAdmin: false,
+            isOwner: false
+          }
+        }
+      }
+    });
+
+    expect(screen.queryByRole('link', { name: /edit this guide/i })).toBeNull();
+  });
 });

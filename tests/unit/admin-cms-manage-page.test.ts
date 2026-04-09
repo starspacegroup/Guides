@@ -113,4 +113,16 @@ describe('Admin CMS manage page', () => {
     ).toBeInTheDocument();
     expect(container.querySelectorAll('[data-drop-index]')).toHaveLength(3);
   });
+
+  it('links create and edit actions to dedicated item editor routes', () => {
+    const { container } = render(AdminCmsManagePage, { props: { data: baseData as any } });
+
+    expect(screen.getByRole('link', { name: /new ui pattern/i })).toHaveAttribute(
+      'href',
+      '/admin/cms/ui-patterns/new'
+    );
+
+    const editLink = container.querySelector('a[href="/admin/cms/ui-patterns/item-1"]');
+    expect(editLink).toHaveAttribute('href', '/admin/cms/ui-patterns/item-1');
+  });
 });

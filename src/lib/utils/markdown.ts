@@ -100,6 +100,12 @@ function parseImageSyntax(markdown: string): { alt: string; src: string; title: 
   };
 }
 
+function renderImageFigure(image: { alt: string; src: string; title: string | null; }): string {
+  const titleAttribute = image.title ? ` title="${escapeAttribute(image.title)}"` : '';
+  const figcaption = image.title ? `<figcaption>${escapeHtml(image.title)}</figcaption>` : '';
+  return `<figure><img src="${escapeAttribute(image.src)}" alt="${escapeAttribute(image.alt)}"${titleAttribute}>${figcaption}</figure>`;
+}
+
 function isTableDelimiter(line: string): boolean {
   const trimmed = line.trim();
   return /^\|?(\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?$/.test(trimmed);
@@ -140,10 +146,7 @@ function renderInline(markdown: string): string {
     }
 
     const placeholder = `@@IMAGESEGMENT${imageSegments.length}@@`;
-    const titleAttribute = image.title ? ` title="${escapeAttribute(image.title)}"` : '';
-    imageSegments.push(
-      `<figure><img src="${escapeAttribute(image.src)}" alt="${escapeAttribute(image.alt)}"${titleAttribute}></figure>`
-    );
+    imageSegments.push(renderImageFigure(image));
     return placeholder;
   });
 
@@ -241,10 +244,7 @@ export function renderMarkdownToHtml(markdown: string | null | undefined): strin
 
     const image = parseImageSyntax(trimmedLine);
     if (image) {
-      const titleAttribute = image.title ? ` title="${escapeAttribute(image.title)}"` : '';
-      blocks.push(
-        `<figure><img src="${escapeAttribute(image.src)}" alt="${escapeAttribute(image.alt)}"${titleAttribute}></figure>`
-      );
+      blocks.push(renderImageFigure(image));
       index += 1;
       continue;
     }

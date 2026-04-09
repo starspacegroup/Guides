@@ -21,6 +21,8 @@
 	$: bodyHtml = renderMarkdownToHtml(bodyMarkdown);
 	$: bodyHeadings = getMarkdownHeadings(bodyMarkdown).filter((heading) => heading.level >= 2 && heading.level <= 3);
 	$: headerDemo = resolveHeaderDemo(item?.fields?.header_demo);
+	$: canEditGuide = Boolean(data.user?.isAdmin || data.user?.isOwner);
+	$: editHref = `/admin/cms/${contentType.slug}/${item.id}`;
 
 	function formatDate(dateStr: string | null): string {
 		if (!dateStr) return '';
@@ -53,10 +55,17 @@
 />
 
 <div class="cms-item-page">
-	<!-- Back link -->
-	<a href={getRoutePrefix()} class="cms-back-link">
-		&larr; Back to {contentType.name}
-	</a>
+	<div class="cms-item-page-bar">
+		<a href={getRoutePrefix()} class="cms-back-link">
+			&larr; Back to {contentType.name}
+		</a>
+
+		{#if canEditGuide}
+			<a href={editHref} class="cms-edit-link" aria-label="Edit this guide">
+				Edit this guide
+			</a>
+		{/if}
+	</div>
 
 	<div class="cms-item-shell">
 		<!-- Blog item template -->
@@ -217,10 +226,32 @@
 		);
 	}
 
+	.cms-item-page-bar,
 	.cms-back-link,
+	.cms-edit-link,
 	.cms-item-shell {
 		position: relative;
 		z-index: 1;
+	}
+
+	.cms-item-page-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-lg);
+	}
+
+	@media (max-width: 700px) {
+		.cms-item-page-bar {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.cms-edit-link {
+			width: 100%;
+			min-height: 44px;
+		}
 	}
 
 	.cms-item-shell {
@@ -250,6 +281,33 @@
 		color: var(--color-primary);
 		border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
 		background: color-mix(in srgb, var(--color-surface-hover) 88%, var(--color-background));
+		transform: translateY(-1px);
+	}
+
+	.cms-edit-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--spacing-sm) var(--spacing-md);
+		border: 1px solid color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--color-surface) 86%, var(--color-background));
+		box-shadow: var(--shadow-sm);
+		color: var(--color-text);
+		text-decoration: none;
+		font-size: 0.875rem;
+		font-weight: 600;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast),
+			transform var(--transition-fast),
+			background-color var(--transition-fast);
+	}
+
+	.cms-edit-link:hover {
+		color: var(--color-primary);
+		border-color: var(--color-primary);
+		background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
 		transform: translateY(-1px);
 	}
 

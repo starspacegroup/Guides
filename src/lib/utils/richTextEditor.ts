@@ -183,7 +183,8 @@ function serializeBlock(node: Node): string[] {
       }
 
       const alt = image.getAttribute('alt') ?? '';
-      const title = image.getAttribute('title');
+      const figcaption = element.querySelector('figcaption')?.textContent?.trim();
+      const title = image.getAttribute('title') || figcaption;
       return [title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`];
     }
     case 'table':

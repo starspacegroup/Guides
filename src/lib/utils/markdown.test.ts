@@ -55,7 +55,7 @@ Use **clear** copy and _helpful_ guidance.`);
     );
 
     expect(html).toContain(
-      '<figure><img src="https://example.com/diagram.png" alt="Diagram" title="System diagram"></figure>'
+      '<figure><img src="https://example.com/diagram.png" alt="Diagram" title="System diagram"><figcaption>System diagram</figcaption></figure>'
     );
     expect(html).toContain('<table>');
     expect(html).toContain('<th>Feature</th>');

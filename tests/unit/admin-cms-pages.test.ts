@@ -382,3 +382,87 @@ describe('Admin CMS Type Management Page Server', () => {
 		expect(result.totalPages).toBe(3);
 	});
 });
+
+describe('Admin CMS Item Editor Page Server', () => {
+	let mockFetch: ReturnType<typeof vi.fn>;
+	let load: any;
+
+	beforeEach(async () => {
+		vi.resetModules();
+		mockFetch = vi.fn();
+		const module = await import('../../src/routes/admin/cms/[type]/[item]/+page.server.js');
+		load = module.load;
+	});
+
+	it('loads content type, item, and tags for an existing editor route', async () => {
+		const mockType = {
+			id: 'type-1',
+			slug: 'blog',
+			name: 'Blog Posts',
+			fields: [{ name: 'body', label: 'Body', type: 'richtext' }],
+			settings: { hasTags: true, hasSEO: true }
+		};
+		const mockItem = {
+			id: 'item-1',
+			title: 'Test Post',
+			slug: 'test-post',
+			status: 'draft',
+			fields: { body: 'Hello' },
+			tags: [{ id: 'tag-1', name: 'Design' }]
+		};
+		const mockTags = [{ id: 'tag-1', name: 'Design' }];
+
+		mockFetch
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ types: [mockType] })
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ item: mockItem })
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ tags: mockTags })
+			});
+
+		const result = await load({
+			fetch: mockFetch,
+			params: { type: 'blog', item: 'item-1' },
+			url: new URL('http://localhost/admin/cms/blog/item-1')
+		});
+
+		expect(result.contentType).toEqual(mockType);
+		expect(result.item).toEqual(mockItem);
+		expect(result.tags).toEqual(mockTags);
+		expect(result.isCreateMode).toBe(false);
+		expect(mockFetch).toHaveBeenNthCalledWith(2, '/api/cms/blog/item-1');
+	});
+
+	it('provides defaults for the new item route without fetching an item', async () => {
+		const mockType = {
+			id: 'type-1',
+			slug: 'blog',
+			name: 'Blog Posts',
+			fields: [],
+			settings: { hasTags: false, hasSEO: true }
+		};
+
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({ types: [mockType] })
+		});
+
+		const result = await load({
+			fetch: mockFetch,
+			params: { type: 'blog', item: 'new' },
+			url: new URL('http://localhost/admin/cms/blog/new')
+		});
+
+		expect(result.contentType).toEqual(mockType);
+		expect(result.item).toBeNull();
+		expect(result.tags).toEqual([]);
+		expect(result.isCreateMode).toBe(true);
+		expect(mockFetch).toHaveBeenCalledTimes(1);
+	});
+});

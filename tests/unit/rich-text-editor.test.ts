@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RichTextEditor from '../../src/lib/components/RichTextEditor.svelte';
@@ -20,6 +20,8 @@ describe('RichTextEditor', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.stubGlobal('matchMedia', mockMatchMedia(false));
+    vi.stubGlobal('fetch', vi.fn());
+    document.execCommand = vi.fn(() => true);
   });
 
   it('renders a desktop workspace with formatting controls and guide panels visible', () => {
@@ -28,8 +30,7 @@ describe('RichTextEditor', () => {
     render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
@@ -40,7 +41,6 @@ describe('RichTextEditor', () => {
     expect(screen.getByRole('button', { name: /insert image/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert table/i })).toBeTruthy();
     expect(screen.getByLabelText(/code block language/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /exit full-page editor/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /preview/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /markdown/i })).toBeTruthy();
   });
@@ -51,8 +51,7 @@ describe('RichTextEditor', () => {
     render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
@@ -69,32 +68,43 @@ describe('RichTextEditor', () => {
   it('exposes quick insert actions on mobile without opening the full toolset', async () => {
     vi.stubGlobal('matchMedia', mockMatchMedia(false));
 
-    const promptValues = ['https://example.com/mobile-photo.png', 'Mobile image', ''];
-    vi.spyOn(window, 'prompt').mockImplementation(() => promptValues.shift() ?? null);
-
     const { container } = render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
     expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
 
     await fireEvent.click(screen.getByRole('button', { name: /quick insert image/i }));
+    await waitFor(() => {
+      expect(container.querySelector('[aria-label="Use image URL"]')).toBeTruthy();
+    });
+    await fireEvent.click(container.querySelector('[aria-label="Use image URL"]') as HTMLButtonElement);
+    await fireEvent.input(container.querySelector('[aria-label="Image URL"]') as HTMLInputElement, {
+      target: { value: 'https://example.com/mobile-photo.png' }
+    });
+    await fireEvent.input(container.querySelector('[aria-label="Image alt text"]') as HTMLInputElement, {
+      target: { value: 'Mobile image' }
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /insert image from url/i }));
+    await waitFor(() => {
+      expect(container.querySelector('.rich-text-editor__media-studio')).toBeNull();
+    });
     await fireEvent.click(screen.getByRole('tab', { name: /markdown/i }));
 
     const source = container.querySelector('textarea.rich-text-editor__source') as HTMLTextAreaElement;
-    expect(source.value).toContain('![Mobile image](https://example.com/mobile-photo.png)');
+    await waitFor(() => {
+      expect(source.value).toContain('![Mobile image](https://example.com/mobile-photo.png)');
+    });
   });
 
   it('updates markdown source when the visual editor content changes', async () => {
     const { container } = render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
@@ -116,8 +126,7 @@ describe('RichTextEditor', () => {
     render(RichTextEditor, {
       props: {
         value: 'Use this:\n\n```ts\nconst enabled = true;\n```',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
@@ -125,19 +134,79 @@ describe('RichTextEditor', () => {
 
     const codeBlock = document.querySelector('.rich-text-editor__preview pre code');
     expect(codeBlock?.textContent).toContain('const enabled = true;');
+    expect(document.querySelector('.rich-text-editor__preview.cms-content')).toBeTruthy();
+  });
+
+  it('inserts an uploaded image with alt text and caption metadata', async () => {
+    vi.stubGlobal('matchMedia', mockMatchMedia(true));
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        url: 'https://cdn.example.com/uploads/photo.png',
+        storage: 'inline'
+      })
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { container } = render(RichTextEditor, {
+      props: {
+        value: '',
+        label: 'Body'
+      }
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: /insert image/i }));
+
+    await waitFor(() => {
+      expect(container.querySelector('[aria-label="Upload image file"]')).toBeTruthy();
+    });
+    const fileInput = container.querySelector('[aria-label="Upload image file"]') as HTMLInputElement;
+    const file = new File(['image-bytes'], 'photo.png', { type: 'image/png' });
+
+    await fireEvent.change(fileInput, {
+      target: {
+        files: [file]
+      }
+    });
+
+    await fireEvent.input(container.querySelector('[aria-label="Image alt text"]') as HTMLInputElement, {
+      target: { value: 'Cover image' }
+    });
+    await fireEvent.input(container.querySelector('[aria-label="Image caption"]') as HTMLInputElement, {
+      target: { value: 'System diagram' }
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: /insert uploaded image/i }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(container.querySelector('.rich-text-editor__media-studio')).toBeNull();
+    });
+    await fireEvent.click(screen.getByRole('tab', { name: /markdown/i }));
+
+    const source = container.querySelector('textarea.rich-text-editor__source') as HTMLTextAreaElement;
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/cms/uploads',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData)
+      })
+    );
+    await waitFor(() => {
+      expect(source.value).toContain(
+        '![Cover image](https://cdn.example.com/uploads/photo.png "System diagram")'
+      );
+    });
   });
 
   it('inserts image, table, and language-tagged code blocks from toolbar actions', async () => {
     vi.stubGlobal('matchMedia', mockMatchMedia(true));
 
-    const promptValues = ['https://example.com/photo.png', 'Cover image', 'System diagram'];
-    vi.spyOn(window, 'prompt').mockImplementation(() => promptValues.shift() ?? null);
-
     const { container } = render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
@@ -145,78 +214,102 @@ describe('RichTextEditor', () => {
       target: { value: 'python' }
     });
     await fireEvent.click(screen.getByRole('button', { name: /insert image/i }));
+    await waitFor(() => {
+      expect(container.querySelector('[aria-label="Use image URL"]')).toBeTruthy();
+    });
+    await fireEvent.click(container.querySelector('[aria-label="Use image URL"]') as HTMLButtonElement);
+    await fireEvent.input(container.querySelector('[aria-label="Image URL"]') as HTMLInputElement, {
+      target: { value: 'https://example.com/photo.png' }
+    });
+    await fireEvent.input(container.querySelector('[aria-label="Image alt text"]') as HTMLInputElement, {
+      target: { value: 'Cover image' }
+    });
+    await fireEvent.input(container.querySelector('[aria-label="Image caption"]') as HTMLInputElement, {
+      target: { value: 'System diagram' }
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /insert image from url/i }));
+    await waitFor(() => {
+      expect(container.querySelector('.rich-text-editor__media-studio')).toBeNull();
+    });
     await fireEvent.click(screen.getByRole('button', { name: /insert table/i }));
     await fireEvent.click(screen.getByRole('button', { name: /code block/i }));
     await fireEvent.click(screen.getByRole('tab', { name: /markdown/i }));
 
     const source = container.querySelector('textarea.rich-text-editor__source') as HTMLTextAreaElement;
-    expect(source.value).toContain('![Cover image](https://example.com/photo.png "System diagram")');
-    expect(source.value).toContain('| Column 1 | Column 2 |');
-    expect(source.value).toContain('```python');
+    await waitFor(() => {
+      expect(source.value).toContain('![Cover image](https://example.com/photo.png "System diagram")');
+      expect(source.value).toContain('| Column 1 | Column 2 |');
+      expect(source.value).toContain('```python');
+    });
   });
 
-  it('does not bubble expand toggle clicks to parent containers', async () => {
-    const parentClickSpy = vi.fn();
-    const target = document.createElement('div');
-    target.addEventListener('click', parentClickSpy);
-    document.body.appendChild(target);
+  it('shows an inline media error when uploads fail', async () => {
+    vi.stubGlobal('matchMedia', mockMatchMedia(true));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ message: 'Upload failed hard' })
+    }));
 
     render(RichTextEditor, {
-      target,
       props: {
         value: '',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
-    await fireEvent.click(screen.getByRole('button', { name: /exit full-page editor/i }));
+    await fireEvent.click(screen.getByRole('button', { name: /insert image/i }));
 
-    expect(parentClickSpy).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /open full-page editor/i })).toBeTruthy();
+    await waitFor(() => {
+      expect(document.querySelector('[aria-label="Upload image file"]')).toBeTruthy();
+    });
+    const fileInput = document.querySelector('[aria-label="Upload image file"]') as HTMLInputElement;
+    await fireEvent.change(fileInput, {
+      target: {
+        files: [new File(['image-bytes'], 'photo.png', { type: 'image/png' })]
+      }
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /insert uploaded image/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/upload failed hard/i)).toBeTruthy();
+    });
   });
 
-  it('collapses expanded mode on escape without bubbling to parent handlers', async () => {
-    const parentKeydownSpy = vi.fn();
-    const target = document.createElement('div');
-    target.addEventListener('keydown', parentKeydownSpy);
-    document.body.appendChild(target);
-
+  it('handles keyboard formatting shortcuts in the fullscreen workspace', async () => {
     render(RichTextEditor, {
-      target,
       props: {
         value: '',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
     await fireEvent.keyDown(screen.getByRole('textbox', { name: /body visual editor/i }), {
-      key: 'Escape'
+      key: 'b',
+      ctrlKey: true
     });
 
-    expect(parentKeydownSpy).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /open full-page editor/i })).toBeTruthy();
+    expect(document.execCommand).toHaveBeenCalledWith('bold', false, undefined);
   });
 
-  it('locks document scroll while expanded and restores it when collapsed', async () => {
+  it('locks document scroll for the fullscreen workspace and restores it on teardown', async () => {
     document.body.style.overflow = 'visible';
     document.documentElement.style.overflow = 'visible';
 
-    render(RichTextEditor, {
+    const view = render(RichTextEditor, {
       props: {
         value: '',
-        label: 'Body',
-        startExpanded: true
+        label: 'Body'
       }
     });
 
     expect(document.body.style.overflow).toBe('hidden');
     expect(document.documentElement.style.overflow).toBe('hidden');
 
-    await fireEvent.click(screen.getByRole('button', { name: /exit full-page editor/i }));
+    view.component.$destroy();
 
-    expect(document.body.style.overflow).toBe('visible');
-    expect(document.documentElement.style.overflow).toBe('visible');
+    await waitFor(() => {
+      expect(document.body.style.overflow).toBe('visible');
+      expect(document.documentElement.style.overflow).toBe('visible');
+    });
   });
 });
