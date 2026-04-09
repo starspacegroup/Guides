@@ -69,5 +69,6 @@ describe('Admin layout shell', () => {
 		const { container } = render(AdminLayout);
 
 		expect(container.querySelector('.admin-content')?.className).toContain('admin-content--full-bleed');
+		expect(container.querySelector('.admin-sidebar')).toBeNull();
 	});
 });

@@ -24,7 +24,7 @@ describe('RichTextEditor', () => {
     document.execCommand = vi.fn(() => true);
   });
 
-  it('renders a desktop workspace with the editor canvas and tools rail visible', () => {
+  it('renders a desktop workspace with a top toolbar and focused editor canvas', () => {
     vi.stubGlobal('matchMedia', mockMatchMedia(true));
 
     render(RichTextEditor, {
@@ -36,7 +36,7 @@ describe('RichTextEditor', () => {
 
     expect(screen.getByRole('toolbar', { name: /body formatting toolbar/i })).toBeTruthy();
     expect(screen.getByRole('textbox', { name: /body visual editor/i })).toBeTruthy();
-    expect(screen.getByRole('complementary', { name: /body editor tools/i })).toBeTruthy();
+    expect(screen.queryByRole('complementary', { name: /body editor tools/i })).toBeNull();
     expect(screen.getByRole('button', { name: /code block/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert image/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert table/i })).toBeTruthy();
@@ -44,6 +44,7 @@ describe('RichTextEditor', () => {
     expect(screen.getByRole('tab', { name: /preview/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /markdown/i })).toBeTruthy();
     expect(screen.getByText(/write in the visual canvas first/i)).toBeTruthy();
+    expect(screen.getByText(/shortcuts: ctrl\/cmd\+b/i)).toBeTruthy();
   });
 
   it('keeps secondary controls collapsed by default on mobile and reveals them on demand', async () => {
@@ -57,11 +58,10 @@ describe('RichTextEditor', () => {
     });
 
     expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
-    expect(screen.queryByRole('complementary', { name: /body editor tools/i })).toBeNull();
+    expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
 
     await fireEvent.click(screen.getByRole('button', { name: /show editor tools/i }));
     expect(screen.getByRole('toolbar', { name: /body formatting toolbar/i })).toBeTruthy();
-    expect(screen.getByRole('complementary', { name: /body editor tools/i })).toBeTruthy();
   });
 
   it('renders a mobile control bar with compact stats and panel states', async () => {

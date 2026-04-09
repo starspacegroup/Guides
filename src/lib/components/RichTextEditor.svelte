@@ -717,6 +717,149 @@
 					</div>
 				</div>
 
+				{#if isDesktopLayout || showFormattingTools || showMediaStudio}
+					<div class="rich-text-editor__control-deck">
+						{#if showFormattingTools}
+							<section class="rich-text-editor__panel rich-text-editor__panel--toolbar">
+								<div class="rich-text-editor__panel-header">
+									<h4>Formatting</h4>
+									<p>Keep the toolbar close to the text and let the canvas do the visual work.</p>
+								</div>
+								<div class="rich-text-editor__toolbar" role="toolbar" aria-label={`${label} formatting toolbar`}>
+									<div class="rich-text-editor__group">
+										<button type="button" on:click={() => execCommand('bold')} aria-label="Bold">Bold</button>
+										<button type="button" on:click={() => execCommand('italic')} aria-label="Italic">Italic</button>
+										<button type="button" on:click={createLink} aria-label="Insert link">Link</button>
+									</div>
+									<div class="rich-text-editor__group">
+										<button type="button" on:click={() => applyBlock('h2')} aria-label="Heading 2">H2</button>
+										<button type="button" on:click={() => applyBlock('h3')} aria-label="Heading 3">H3</button>
+										<button type="button" on:click={() => applyBlock('blockquote')} aria-label="Blockquote">Quote</button>
+									</div>
+									<div class="rich-text-editor__group">
+										<button type="button" on:click={() => execCommand('insertUnorderedList')} aria-label="Bulleted list">Bullets</button>
+										<button type="button" on:click={() => execCommand('insertOrderedList')} aria-label="Numbered list">Numbered</button>
+										<button type="button" on:click={insertInlineCode} aria-label="Inline code">Inline code</button>
+									</div>
+									<div class="rich-text-editor__group rich-text-editor__group--insert">
+										<label class="rich-text-editor__field rich-text-editor__language-picker">
+											<span>Code block language</span>
+											<select
+												bind:this={languagePickerElement}
+												aria-label="Code block language"
+												bind:value={codeLanguage}
+												on:change={handleLanguageChange}
+											>
+												{#each codeLanguageOptions as option}
+													<option value={option.value}>{option.label}</option>
+												{/each}
+											</select>
+										</label>
+										<button type="button" class="rich-text-editor__panel-toggle" on:click={insertCodeBlock} aria-label="Code block">Code block</button>
+										<button type="button" class="rich-text-editor__panel-toggle" on:click={() => openMediaPanel('upload')} aria-label="Insert image">Insert image</button>
+										<button type="button" class="rich-text-editor__panel-toggle" on:click={insertTable} aria-label="Insert table">Insert table</button>
+									</div>
+								</div>
+								<p class="rich-text-editor__shortcut-note">Shortcuts: Ctrl/Cmd+B for bold, Ctrl/Cmd+I for italic, Ctrl/Cmd+K for links.</p>
+							</section>
+						{/if}
+
+						{#if showMediaStudio}
+							<section class="rich-text-editor__panel rich-text-editor__media-studio" id={`${editorInstanceId}-media`} aria-label={`${label} media workflow`}>
+								<div class="rich-text-editor__media-studio-header">
+									<div>
+										<h4>Image studio</h4>
+										<p>Upload an image or point to a hosted URL without leaving the writing flow.</p>
+									</div>
+									<button type="button" class="rich-text-editor__panel-toggle" on:click={closeMediaPanel}>Close</button>
+								</div>
+
+								<div class="rich-text-editor__media-mode-switch">
+									<button
+										type="button"
+										class="rich-text-editor__tab"
+										class:is-active={mediaInsertMode === 'upload'}
+										on:click={() => setMediaInsertMode('upload')}
+									>
+										Upload
+									</button>
+									<button
+										type="button"
+										class="rich-text-editor__tab"
+										class:is-active={mediaInsertMode === 'url'}
+										on:click={() => setMediaInsertMode('url')}
+										aria-label="Use image URL"
+									>
+										Use image URL
+									</button>
+								</div>
+
+								<div class="rich-text-editor__media-grid">
+									{#if mediaInsertMode === 'upload'}
+										<label class="rich-text-editor__dropzone" class:is-drag-target={isDropTarget}>
+											<span class="rich-text-editor__dropzone-title">Upload image file</span>
+											<span class="rich-text-editor__dropzone-copy">
+												{#if selectedImageFile}
+													Ready to upload {selectedImageFile.name}.
+												{:else}
+													Drop a screenshot, paste an image, or browse from disk.
+												{/if}
+											</span>
+											<input
+												bind:this={fileInputElement}
+												class="rich-text-editor__sr-only"
+												type="file"
+												accept="image/*"
+												aria-label="Upload image file"
+												on:change={handleImageFileChange}
+											/>
+										</label>
+									{:else}
+										<label class="rich-text-editor__field">
+											<span>Image URL</span>
+											<input aria-label="Image URL" type="url" bind:value={imageUrl} placeholder="https://example.com/image.png" />
+										</label>
+									{/if}
+
+									<label class="rich-text-editor__field">
+										<span>Image alt text</span>
+										<input aria-label="Image alt text" type="text" bind:value={imageAlt} placeholder="Describe what the reader needs to understand" />
+									</label>
+
+									<label class="rich-text-editor__field">
+										<span>Image caption</span>
+										<input aria-label="Image caption" type="text" bind:value={imageCaption} placeholder="Optional caption shown under the image" />
+									</label>
+								</div>
+
+								<div class="rich-text-editor__media-actions">
+									<p class="rich-text-editor__media-status">
+										{#if mediaInsertMode === 'upload'}
+											Upload to the CMS media endpoint, then insert the responsive markdown image block.
+										{:else}
+											Use a hosted image URL when the asset already exists elsewhere.
+										{/if}
+									</p>
+									<div class="rich-text-editor__media-buttons">
+										<button type="button" class="rich-text-editor__panel-toggle" on:click={resetMediaState}>Reset</button>
+										{#if mediaInsertMode === 'upload'}
+											<button type="button" class="rich-text-editor__expand" on:click={() => void insertUploadedImage()} disabled={isUploadingImage}>
+												{isUploadingImage ? 'Uploading image...' : 'Insert uploaded image'}
+											</button>
+										{:else}
+											<button type="button" class="rich-text-editor__expand" on:click={insertImageFromUrl}>Insert image from URL</button>
+										{/if}
+									</div>
+								</div>
+
+								{#if mediaError}
+									<p class="rich-text-editor__media-error" role="alert">{mediaError}</p>
+								{/if}
+							</section>
+						{/if}
+					</div>
+				{/if}
+
 				{#if isVisualTab}
 					<div class="rich-text-editor__editor-shell" class:is-drop-target={isDropTarget}>
 						<div class="rich-text-editor__surface-frame">
@@ -784,177 +927,6 @@
 					</div>
 				{/if}
 			</section>
-
-			{#if isDesktopLayout || showFormattingTools || showMediaStudio}
-				<aside class="rich-text-editor__sidebar" id={`${editorInstanceId}-tools`} aria-label={`${label} editor tools`}>
-					{#if showFormattingTools}
-						<section class="rich-text-editor__panel">
-							<div class="rich-text-editor__panel-header">
-								<h4>Formatting</h4>
-								<p>Keep the tools close, not louder than the writing surface.</p>
-							</div>
-							<div class="rich-text-editor__toolbar" role="toolbar" aria-label={`${label} formatting toolbar`}>
-								<div class="rich-text-editor__group">
-									<button type="button" on:click={() => execCommand('bold')} aria-label="Bold">Bold</button>
-									<button type="button" on:click={() => execCommand('italic')} aria-label="Italic">Italic</button>
-									<button type="button" on:click={createLink} aria-label="Insert link">Link</button>
-								</div>
-								<div class="rich-text-editor__group">
-									<button type="button" on:click={() => applyBlock('h2')} aria-label="Heading 2">H2</button>
-									<button type="button" on:click={() => applyBlock('h3')} aria-label="Heading 3">H3</button>
-									<button type="button" on:click={() => applyBlock('blockquote')} aria-label="Blockquote">Quote</button>
-								</div>
-								<div class="rich-text-editor__group">
-									<button type="button" on:click={() => execCommand('insertUnorderedList')} aria-label="Bulleted list">Bullets</button>
-									<button type="button" on:click={() => execCommand('insertOrderedList')} aria-label="Numbered list">Numbered</button>
-									<button type="button" on:click={insertInlineCode} aria-label="Inline code">Inline code</button>
-								</div>
-							</div>
-						</section>
-
-						<section class="rich-text-editor__panel">
-							<div class="rich-text-editor__panel-header">
-								<h4>Insert blocks</h4>
-								<p>Image, table, and snippet tools stay together in one predictable place.</p>
-							</div>
-							<label class="rich-text-editor__field rich-text-editor__language-picker">
-								<span>Code block language</span>
-								<select
-									bind:this={languagePickerElement}
-									aria-label="Code block language"
-									bind:value={codeLanguage}
-									on:change={handleLanguageChange}
-								>
-									{#each codeLanguageOptions as option}
-										<option value={option.value}>{option.label}</option>
-									{/each}
-								</select>
-							</label>
-							<div class="rich-text-editor__insert-actions">
-								<button type="button" class="rich-text-editor__panel-toggle" on:click={insertCodeBlock} aria-label="Code block">Code block</button>
-								<button type="button" class="rich-text-editor__panel-toggle" on:click={() => openMediaPanel('upload')} aria-label="Insert image">Insert image</button>
-								<button type="button" class="rich-text-editor__panel-toggle" on:click={insertTable} aria-label="Insert table">Insert table</button>
-							</div>
-							<div class="rich-text-editor__chips">
-								<span>{selectedLanguageLabel}</span>
-								<span>Tables</span>
-								<span>Images</span>
-							</div>
-						</section>
-
-						<section class="rich-text-editor__panel">
-							<div class="rich-text-editor__panel-header">
-								<h4>Document outline</h4>
-								<p>Use H2 and H3 headings to keep the guide scannable.</p>
-							</div>
-							{#if documentOutline.length > 0}
-								<ul class="rich-text-editor__outline">
-									{#each documentOutline as heading}
-										<li class:sub-item={heading.level === 3}>{heading.text}</li>
-									{/each}
-								</ul>
-							{:else}
-								<p>Add H2 and H3 headings to build a stronger reading spine and table of contents.</p>
-							{/if}
-							<p class="rich-text-editor__shortcut-note">Shortcuts: Ctrl/Cmd+B for bold, Ctrl/Cmd+I for italic, Ctrl/Cmd+K for links.</p>
-						</section>
-					{/if}
-
-					{#if showMediaStudio}
-						<section class="rich-text-editor__panel rich-text-editor__media-studio" id={`${editorInstanceId}-media`} aria-label={`${label} media workflow`}>
-							<div class="rich-text-editor__media-studio-header">
-								<div>
-									<h4>Image studio</h4>
-									<p>Upload an image or point to a hosted URL without leaving the writing flow.</p>
-								</div>
-								<button type="button" class="rich-text-editor__panel-toggle" on:click={closeMediaPanel}>Close</button>
-							</div>
-
-							<div class="rich-text-editor__media-mode-switch">
-								<button
-									type="button"
-									class="rich-text-editor__tab"
-									class:is-active={mediaInsertMode === 'upload'}
-									on:click={() => setMediaInsertMode('upload')}
-								>
-									Upload
-								</button>
-								<button
-									type="button"
-									class="rich-text-editor__tab"
-									class:is-active={mediaInsertMode === 'url'}
-									on:click={() => setMediaInsertMode('url')}
-									aria-label="Use image URL"
-								>
-									Use image URL
-								</button>
-							</div>
-
-							<div class="rich-text-editor__media-grid">
-								{#if mediaInsertMode === 'upload'}
-									<label class="rich-text-editor__dropzone" class:is-drag-target={isDropTarget}>
-										<span class="rich-text-editor__dropzone-title">Upload image file</span>
-										<span class="rich-text-editor__dropzone-copy">
-											{#if selectedImageFile}
-												Ready to upload {selectedImageFile.name}.
-											{:else}
-												Drop a screenshot, paste an image, or browse from disk.
-											{/if}
-										</span>
-										<input
-											bind:this={fileInputElement}
-											class="rich-text-editor__sr-only"
-											type="file"
-											accept="image/*"
-											aria-label="Upload image file"
-											on:change={handleImageFileChange}
-										/>
-									</label>
-								{:else}
-									<label class="rich-text-editor__field">
-										<span>Image URL</span>
-										<input aria-label="Image URL" type="url" bind:value={imageUrl} placeholder="https://example.com/image.png" />
-									</label>
-								{/if}
-
-								<label class="rich-text-editor__field">
-									<span>Image alt text</span>
-									<input aria-label="Image alt text" type="text" bind:value={imageAlt} placeholder="Describe what the reader needs to understand" />
-								</label>
-
-								<label class="rich-text-editor__field">
-									<span>Image caption</span>
-									<input aria-label="Image caption" type="text" bind:value={imageCaption} placeholder="Optional caption shown under the image" />
-								</label>
-							</div>
-
-							<div class="rich-text-editor__media-actions">
-								<p class="rich-text-editor__media-status">
-									{#if mediaInsertMode === 'upload'}
-										Upload to the CMS media endpoint, then insert the responsive markdown image block.
-									{:else}
-										Use a hosted image URL when the asset already exists elsewhere.
-									{/if}
-								</p>
-								<div class="rich-text-editor__media-buttons">
-									<button type="button" class="rich-text-editor__panel-toggle" on:click={resetMediaState}>Reset</button>
-									{#if mediaInsertMode === 'upload'}
-										<button type="button" class="rich-text-editor__expand" on:click={() => void insertUploadedImage()} disabled={isUploadingImage}>
-											{isUploadingImage ? 'Uploading image...' : 'Insert uploaded image'}
-										</button>
-									{:else}
-										<button type="button" class="rich-text-editor__expand" on:click={insertImageFromUrl}>Insert image from URL</button>
-									{/if}
-								</div>
-							</div>
-
-							{#if mediaError}
-								<p class="rich-text-editor__media-error" role="alert">{mediaError}</p>
-							{/if}
-						</section>
-					{/if}
-				</aside>
-			{/if}
 		</div>
 	</div>
 </div>
@@ -1026,11 +998,9 @@
 
 	.rich-text-editor__metrics,
 	.rich-text-editor__mobile-stats,
-	.rich-text-editor__chips,
 	.rich-text-editor__mobile-actions,
 	.rich-text-editor__tabs,
 	.rich-text-editor__group,
-	.rich-text-editor__insert-actions,
 	.rich-text-editor__media-mode-switch,
 	.rich-text-editor__media-buttons {
 		display: flex;
@@ -1040,7 +1010,6 @@
 
 	.rich-text-editor__metrics span,
 	.rich-text-editor__mobile-stats span,
-	.rich-text-editor__chips span,
 	.rich-text-editor__mode-pill,
 	.rich-text-editor__surface-meta {
 		display: inline-flex;
@@ -1056,7 +1025,7 @@
 
 	.rich-text-editor__mobile-rail,
 	.rich-text-editor__mode-bar,
-	.rich-text-editor__sidebar,
+	.rich-text-editor__control-deck,
 	.rich-text-editor__media-actions,
 	.rich-text-editor__media-studio-header,
 	.rich-text-editor__panel-header,
@@ -1072,14 +1041,14 @@
 
 	.rich-text-editor__mobile-rail,
 	.rich-text-editor__mode-bar,
+	.rich-text-editor__control-deck,
 	.rich-text-editor__panel,
 	.rich-text-editor__surface-header,
 	.rich-text-editor__surface-stage {
 		padding: var(--spacing-sm);
 	}
 
-	.rich-text-editor__canvas,
-	.rich-text-editor__sidebar {
+	.rich-text-editor__canvas {
 		min-width: 0;
 	}
 
@@ -1134,6 +1103,19 @@
 	.rich-text-editor__toolbar {
 		display: grid;
 		gap: var(--spacing-xs);
+	}
+
+	.rich-text-editor__control-deck {
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.rich-text-editor__group--insert {
+		align-items: end;
+	}
+
+	.rich-text-editor__group--insert .rich-text-editor__field {
+		min-width: min(100%, 14rem);
+		flex: 1 1 14rem;
 	}
 
 	.rich-text-editor__expand,
@@ -1234,17 +1216,6 @@
 		background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
 	}
 
-	.rich-text-editor__outline {
-		margin: 0;
-		padding-left: 1rem;
-		display: grid;
-		gap: 0.45rem;
-	}
-
-	.rich-text-editor__outline .sub-item {
-		color: var(--color-text-secondary);
-	}
-
 	.rich-text-editor__shortcut-note {
 		font-size: 0.8rem;
 	}
@@ -1267,14 +1238,13 @@
 			align-items: start;
 		}
 
-		.rich-text-editor__workspace {
-			grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+		.rich-text-editor__control-deck {
+			grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
 			align-items: start;
 		}
 
-		.rich-text-editor__sidebar {
-			position: sticky;
-			top: var(--spacing-md);
+		.rich-text-editor__toolbar {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
 		}
 	}
 
