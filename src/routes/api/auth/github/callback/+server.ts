@@ -1,4 +1,5 @@
 import { mergeAccounts } from '$lib/services/account-merge';
+import { matchesOwnerUsername, resolveGitHubOwnerConfig } from '$lib/utils/owner-config';
 import { isRedirect, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -105,34 +106,14 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 		}
 
 		// Check if user is the OAuth app owner
-		// First try environment variable, then fall back to KV
-		let appOwnerId = platform?.env?.GITHUB_OWNER_ID;
+		let appOwnerId: string | undefined;
 		let appOwnerUsername: string | null = null;
-
-		// If env var is not a valid numeric ID, clear it to fall back to KV
-		if (appOwnerId && isNaN(parseInt(appOwnerId))) {
-			// It might be a username, store it for comparison
-			appOwnerUsername = appOwnerId;
-			appOwnerId = undefined;
-		}
-
-		// Try to fetch from KV if environment variable not set
-		if (!appOwnerId && platform?.env?.KV) {
-			try {
-				const storedOwnerId = await platform.env.KV.get('github_owner_id');
-				if (storedOwnerId) {
-					appOwnerId = storedOwnerId;
-				}
-				// Also get username for fallback comparison
-				if (!appOwnerUsername) {
-					const storedUsername = await platform.env.KV.get('github_owner_username');
-					if (storedUsername) {
-						appOwnerUsername = storedUsername;
-					}
-				}
-			} catch (err) {
-				console.error('Failed to fetch owner ID from KV:', err);
-			}
+		try {
+			const ownerConfig = await resolveGitHubOwnerConfig(platform?.env);
+			appOwnerId = ownerConfig.ownerId;
+			appOwnerUsername = ownerConfig.ownerUsername;
+		} catch (err) {
+			console.error('Failed to fetch owner configuration:', err);
 		}
 
 		// Check if user is owner by ID or username
@@ -144,7 +125,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 			);
 		}
 		if (!isOwner && appOwnerUsername) {
-			isOwner = githubUser.login.toLowerCase() === appOwnerUsername.toLowerCase();
+			isOwner = matchesOwnerUsername(githubUser.login, appOwnerUsername);
 			console.log(
 				`[Auth] Owner check by username: githubUser.login=${githubUser.login}, appOwnerUsername=${appOwnerUsername}, match=${isOwner}`
 			);
@@ -164,7 +145,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 						'SELECT user_id FROM oauth_accounts WHERE provider = ? AND provider_account_id = ?'
 					)
 						.bind('github', githubUser.id.toString())
-						.first<{ user_id: string }>();
+						.first<{ user_id: string; }>();
 
 					if (existingOAuth && existingOAuth.user_id !== existingUser.id) {
 						// GitHub account is linked to a different user - merge the accounts
@@ -212,7 +193,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 					'SELECT user_id FROM oauth_accounts WHERE provider = ? AND provider_account_id = ?'
 				)
 					.bind('github', githubUser.id.toString())
-					.first<{ user_id: string }>();
+					.first<{ user_id: string; }>();
 
 				if (linkedAccount) {
 					// Log in as the linked user
@@ -272,7 +253,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 					'SELECT id, is_admin FROM users WHERE id = ?'
 				)
 					.bind(githubUser.id.toString())
-					.first<{ id: string; is_admin: number }>();
+					.first<{ id: string; is_admin: number; }>();
 
 				if (existingUserRecord) {
 					// Update existing user
@@ -296,7 +277,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 						'SELECT id FROM oauth_accounts WHERE user_id = ? AND provider = ?'
 					)
 						.bind(githubUser.id.toString(), 'github')
-						.first<{ id: string }>();
+						.first<{ id: string; }>();
 
 					if (!existingOAuthRecord) {
 						await platform.env.DB.prepare(
@@ -378,13 +359,6 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 				await platform.env.KV.put('admin_first_login_completed', 'true');
 				console.log('✓ Admin first login completed - setup page is now locked');
 			}
-		}
-
-		// Log GITHUB_OWNER_ID for debugging
-		if (!appOwnerId) {
-			console.warn(
-				'GITHUB_OWNER_ID not set - all users will have isOwner=false. Set GITHUB_OWNER_ID in wrangler.toml to enable admin access.'
-			);
 		}
 
 		// Redirect to admin if owner, otherwise to home

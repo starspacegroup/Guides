@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock console to avoid noise
-vi.spyOn(console, 'log').mockImplementation(() => {});
-vi.spyOn(console, 'warn').mockImplementation(() => {});
-vi.spyOn(console, 'error').mockImplementation(() => {});
+vi.spyOn(console, 'log').mockImplementation(() => { });
+vi.spyOn(console, 'warn').mockImplementation(() => { });
+vi.spyOn(console, 'error').mockImplementation(() => { });
 
 describe('Discord Callback Server - Extended Coverage', () => {
 	let mockFetch: ReturnType<typeof vi.fn>;
@@ -267,6 +267,77 @@ describe('Discord Callback Server - Extended Coverage', () => {
 	});
 
 	describe('Owner ID fetching from KV', () => {
+		it('should redirect linked owner to admin when GITHUB_OWNER_USERNAME matches linked GitHub login', async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ access_token: 'test-token' })
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: '123456789',
+						username: 'owneruser',
+						global_name: 'Owner User',
+						email: 'owner@discord.com',
+						avatar: 'abcdef'
+					})
+			});
+
+			const mockDB = {
+				prepare: vi.fn().mockImplementation((sql: string) => {
+					if (sql.includes('oauth_accounts WHERE provider = ? AND provider_account_id = ?')) {
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue({ user_id: 'linked-user-123' })
+							})
+						};
+					}
+
+					if (sql.includes('SELECT * FROM users WHERE id = ?')) {
+						return {
+							bind: vi.fn().mockReturnValue({
+								first: vi.fn().mockResolvedValue({
+									id: 'linked-user-123',
+									email: 'owner@discord.com',
+									name: 'Owner User',
+									github_login: 'owneruser',
+									github_avatar_url: 'https://avatars.githubusercontent.com/u/123456789',
+									is_admin: 0
+								})
+							})
+						};
+					}
+
+					return {
+						bind: vi.fn().mockReturnValue({
+							first: vi.fn().mockResolvedValue(null),
+							run: vi.fn().mockResolvedValue({ success: true })
+						})
+					};
+				})
+			};
+
+			const mockEvent = {
+				url: new URL('http://localhost/api/auth/discord/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				platform: {
+					env: {
+						DISCORD_CLIENT_ID: 'client-id',
+						DISCORD_CLIENT_SECRET: 'client-secret',
+						DB: mockDB,
+						GITHUB_OWNER_USERNAME: 'owneruser'
+					}
+				}
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/discord/callback/+server');
+
+			const response = await GET(mockEvent as any);
+			expect(response.status).toBe(302);
+			expect(response.headers.get('Location')).toContain('/admin');
+		});
+
 		it('should fetch owner ID from KV when env var not set', async () => {
 			const mockKV = {
 				get: vi.fn().mockImplementation((key: string) => {

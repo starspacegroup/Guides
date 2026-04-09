@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock console to avoid noise
-vi.spyOn(console, 'log').mockImplementation(() => {});
-vi.spyOn(console, 'warn').mockImplementation(() => {});
-vi.spyOn(console, 'error').mockImplementation(() => {});
+vi.spyOn(console, 'log').mockImplementation(() => { });
+vi.spyOn(console, 'warn').mockImplementation(() => { });
+vi.spyOn(console, 'error').mockImplementation(() => { });
 
 describe('GitHub Callback Server - Extended Coverage', () => {
 	let mockFetch: ReturnType<typeof vi.fn>;
@@ -229,6 +229,42 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 	});
 
 	describe('Owner ID checking', () => {
+		it('should use GITHUB_OWNER_USERNAME from env when GITHUB_OWNER_ID is not set', async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ access_token: 'test-token' })
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: 123456789,
+						login: 'owneruser',
+						name: 'Owner User',
+						email: 'owner@github.com',
+						avatar_url: 'https://avatars.githubusercontent.com/u/123456789'
+					})
+			});
+
+			const mockEvent = {
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				platform: {
+					env: {
+						GITHUB_CLIENT_ID: 'client-id',
+						GITHUB_CLIENT_SECRET: 'client-secret',
+						GITHUB_OWNER_USERNAME: 'owneruser'
+					}
+				}
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
+
+			const response = await GET(mockEvent as any);
+			expect(response.status).toBe(302);
+			expect(response.headers.get('Location')).toContain('/admin');
+		});
+
 		it('should use username as owner when GITHUB_OWNER_ID is not numeric', async () => {
 			const mockKV = {
 				get: vi.fn().mockResolvedValue(null),
@@ -363,6 +399,44 @@ describe('GitHub Callback Server - Extended Coverage', () => {
 			const response = await GET(mockEvent as any);
 			expect(response.status).toBe(302);
 			expect(response.headers.get('Location')).toContain('/admin');
+		});
+
+		it('should not warn about missing GITHUB_OWNER_ID when GITHUB_OWNER_USERNAME is configured', async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ access_token: 'test-token' })
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () =>
+					Promise.resolve({
+						id: 123456789,
+						login: 'owneruser',
+						name: 'Owner User',
+						email: 'owner@github.com',
+						avatar_url: 'https://avatars.githubusercontent.com/u/123456789'
+					})
+			});
+
+			const mockEvent = {
+				url: new URL('http://localhost/api/auth/github/callback?code=test-code'),
+				cookies: { get: vi.fn().mockReturnValue(null), set: vi.fn() },
+				platform: {
+					env: {
+						GITHUB_CLIENT_ID: 'client-id',
+						GITHUB_CLIENT_SECRET: 'client-secret',
+						GITHUB_OWNER_USERNAME: 'owneruser'
+					}
+				}
+			};
+
+			const { GET } = await import('../../src/routes/api/auth/github/callback/+server');
+
+			await GET(mockEvent as any);
+
+			expect(console.warn).not.toHaveBeenCalledWith(
+				'GITHUB_OWNER_ID not set - all users will have isOwner=false. Set GITHUB_OWNER_ID in wrangler.toml to enable admin access.'
+			);
 		});
 
 		it('should handle KV.get error for owner ID gracefully', async () => {
