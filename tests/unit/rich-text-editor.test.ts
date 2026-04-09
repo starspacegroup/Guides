@@ -27,7 +27,7 @@ describe('RichTextEditor', () => {
   it('renders a desktop workspace with a top toolbar and focused editor canvas', () => {
     vi.stubGlobal('matchMedia', mockMatchMedia(true));
 
-    render(RichTextEditor, {
+    const { container } = render(RichTextEditor, {
       props: {
         value: '',
         label: 'Body'
@@ -43,8 +43,8 @@ describe('RichTextEditor', () => {
     expect(screen.getByLabelText(/code block language/i)).toBeTruthy();
     expect(screen.getByRole('tab', { name: /preview/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /markdown/i })).toBeTruthy();
-    expect(screen.getByText(/write in the visual canvas first/i)).toBeTruthy();
-    expect(screen.getByText(/shortcuts: ctrl\/cmd\+b/i)).toBeTruthy();
+    expect(container.querySelector('.rich-text-editor__surface-note')?.textContent).toMatch(/visual canvas first/i);
+    expect(container.querySelector('.rich-text-editor__shortcut-note')?.textContent).toMatch(/ctrl\/cmd\+b/i);
   });
 
   it('keeps secondary controls collapsed by default on mobile and reveals them on demand', async () => {

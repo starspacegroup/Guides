@@ -70,7 +70,6 @@
 	$: headingCount = documentOutline.length;
 	$: showFormattingTools = isDesktopLayout || activeMobilePanel === 'tools';
 	$: showMediaStudio = isDesktopLayout ? isMediaPanelOpen : activeMobilePanel === 'media';
-	$: selectedLanguageLabel = codeLanguage === 'plaintext' ? 'Plain code' : codeLanguage;
 	$: isVisualTab = activeTab === 'visual';
 
 	function isEditorFocused(): boolean {
@@ -720,29 +719,25 @@
 				{#if isDesktopLayout || showFormattingTools || showMediaStudio}
 					<div class="rich-text-editor__control-deck">
 						{#if showFormattingTools}
-							<section class="rich-text-editor__panel rich-text-editor__panel--toolbar">
-								<div class="rich-text-editor__panel-header">
-									<h4>Formatting</h4>
-									<p>Keep the toolbar close to the text and let the canvas do the visual work.</p>
-								</div>
+							<div class="rich-text-editor__command-bar-wrap">
 								<div class="rich-text-editor__toolbar" role="toolbar" aria-label={`${label} formatting toolbar`}>
-									<div class="rich-text-editor__group">
+									<div class="rich-text-editor__group" aria-label="Text styles">
 										<button type="button" on:click={() => execCommand('bold')} aria-label="Bold">Bold</button>
 										<button type="button" on:click={() => execCommand('italic')} aria-label="Italic">Italic</button>
 										<button type="button" on:click={createLink} aria-label="Insert link">Link</button>
 									</div>
-									<div class="rich-text-editor__group">
+									<div class="rich-text-editor__group" aria-label="Document structure">
 										<button type="button" on:click={() => applyBlock('h2')} aria-label="Heading 2">H2</button>
 										<button type="button" on:click={() => applyBlock('h3')} aria-label="Heading 3">H3</button>
 										<button type="button" on:click={() => applyBlock('blockquote')} aria-label="Blockquote">Quote</button>
 									</div>
-									<div class="rich-text-editor__group">
+									<div class="rich-text-editor__group" aria-label="Lists and inline code">
 										<button type="button" on:click={() => execCommand('insertUnorderedList')} aria-label="Bulleted list">Bullets</button>
 										<button type="button" on:click={() => execCommand('insertOrderedList')} aria-label="Numbered list">Numbered</button>
 										<button type="button" on:click={insertInlineCode} aria-label="Inline code">Inline code</button>
 									</div>
-									<div class="rich-text-editor__group rich-text-editor__group--insert">
-										<label class="rich-text-editor__field rich-text-editor__language-picker">
+									<div class="rich-text-editor__group rich-text-editor__group--insert" aria-label="Insert blocks">
+										<label class="rich-text-editor__field rich-text-editor__language-picker rich-text-editor__command-field">
 											<span>Code block language</span>
 											<select
 												bind:this={languagePickerElement}
@@ -761,7 +756,7 @@
 									</div>
 								</div>
 								<p class="rich-text-editor__shortcut-note">Shortcuts: Ctrl/Cmd+B for bold, Ctrl/Cmd+I for italic, Ctrl/Cmd+K for links.</p>
-							</section>
+							</div>
 						{/if}
 
 						{#if showMediaStudio}
@@ -865,7 +860,7 @@
 						<div class="rich-text-editor__surface-frame">
 							<div class="rich-text-editor__surface-header">
 								<div class="rich-text-editor__surface-meta">Live article canvas</div>
-								<p class="rich-text-editor__surface-note">Write directly into the article body. Images, tables, and code blocks stay available from the tools rail instead of competing with the canvas.</p>
+								<p class="rich-text-editor__surface-note">Write in the visual canvas first. Structure and insert tools stay compact so the page still feels like a document.</p>
 							</div>
 							<div class="rich-text-editor__surface-stage">
 								<div class="rich-text-editor__surface-inner">
@@ -953,6 +948,7 @@
 	.rich-text-editor__mobile-rail,
 	.rich-text-editor__mode-bar,
 	.rich-text-editor__panel,
+	.rich-text-editor__command-bar-wrap,
 	.rich-text-editor__surface-frame {
 		border: 1px solid color-mix(in srgb, var(--color-border) 86%, var(--color-background));
 		border-radius: var(--radius-lg);
@@ -988,7 +984,6 @@
 	.rich-text-editor__intro-copy p,
 	.rich-text-editor__mode-description,
 	.rich-text-editor__surface-note,
-	.rich-text-editor__panel-header p,
 	.rich-text-editor__media-status,
 	.rich-text-editor__empty,
 	.rich-text-editor__shortcut-note {
@@ -1001,6 +996,7 @@
 	.rich-text-editor__mobile-actions,
 	.rich-text-editor__tabs,
 	.rich-text-editor__group,
+	.rich-text-editor__toolbar,
 	.rich-text-editor__media-mode-switch,
 	.rich-text-editor__media-buttons {
 		display: flex;
@@ -1026,9 +1022,9 @@
 	.rich-text-editor__mobile-rail,
 	.rich-text-editor__mode-bar,
 	.rich-text-editor__control-deck,
+	.rich-text-editor__command-bar-wrap,
 	.rich-text-editor__media-actions,
 	.rich-text-editor__media-studio-header,
-	.rich-text-editor__panel-header,
 	.rich-text-editor__mode-copy,
 	.rich-text-editor__workspace,
 	.rich-text-editor__field,
@@ -1043,6 +1039,7 @@
 	.rich-text-editor__mode-bar,
 	.rich-text-editor__control-deck,
 	.rich-text-editor__panel,
+	.rich-text-editor__command-bar-wrap,
 	.rich-text-editor__surface-header,
 	.rich-text-editor__surface-stage {
 		padding: var(--spacing-sm);
@@ -1100,22 +1097,40 @@
 		color: var(--color-text-secondary);
 	}
 
-	.rich-text-editor__toolbar {
-		display: grid;
-		gap: var(--spacing-xs);
-	}
-
 	.rich-text-editor__control-deck {
 		margin-bottom: var(--spacing-sm);
 	}
 
+	.rich-text-editor__command-bar-wrap {
+		gap: 0.625rem;
+		background: color-mix(in srgb, var(--color-surface) 95%, var(--color-background));
+	}
+
+	.rich-text-editor__toolbar {
+		align-items: center;
+	}
+
 	.rich-text-editor__group--insert {
-		align-items: end;
+		align-items: center;
+	}
+
+	.rich-text-editor__group {
+		padding: 0.25rem;
+		border: 1px solid color-mix(in srgb, var(--color-border) 80%, var(--color-background));
+		border-radius: calc(var(--radius-md) + 0.125rem);
+		background: color-mix(in srgb, var(--color-background) 88%, var(--color-surface));
 	}
 
 	.rich-text-editor__group--insert .rich-text-editor__field {
-		min-width: min(100%, 14rem);
-		flex: 1 1 14rem;
+		min-width: 10rem;
+		flex: 0 1 10rem;
+	}
+
+	.rich-text-editor__command-field span {
+		font-size: 0.7rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
 	}
 
 	.rich-text-editor__expand,
@@ -1131,7 +1146,7 @@
 		background: var(--color-surface);
 		color: var(--color-text);
 		border-radius: var(--radius-md);
-		padding: 0.7rem 0.9rem;
+		padding: 0.55rem 0.75rem;
 		font: inherit;
 		transition:
 			border-color var(--transition-fast),
@@ -1220,6 +1235,14 @@
 		font-size: 0.8rem;
 	}
 
+	.rich-text-editor__toolbar button,
+	.rich-text-editor__panel-toggle,
+	.rich-text-editor__tab,
+	.rich-text-editor__mobile-action {
+		font-size: 0.875rem;
+		line-height: 1.2;
+	}
+
 	.rich-text-editor__sr-only {
 		position: absolute;
 		width: 1px;
@@ -1239,12 +1262,16 @@
 		}
 
 		.rich-text-editor__control-deck {
-			grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
+			grid-template-columns: minmax(0, 1fr);
 			align-items: start;
 		}
 
 		.rich-text-editor__toolbar {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+			justify-content: space-between;
+		}
+
+		.rich-text-editor__media-studio {
+			max-width: 32rem;
 		}
 	}
 

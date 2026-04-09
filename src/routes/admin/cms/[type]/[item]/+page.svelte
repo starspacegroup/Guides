@@ -386,8 +386,8 @@
 	}
 
 	.editor-app__title-block h1 {
-		font-size: clamp(2.2rem, 4vw, 3.8rem);
-		line-height: 0.95;
+		font-size: clamp(1.7rem, 2.6vw, 2.6rem);
+		line-height: 0.98;
 	}
 
 	.editor-app__main-header h2 {
@@ -429,12 +429,12 @@
 	}
 
 	.editor-app__meta-strip {
-		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 12rem;
+		grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 10rem;
 		align-items: start;
 	}
 
 	.editor-app__workspace {
-		grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+		grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
 		align-items: start;
 		min-height: 0;
 	}
@@ -448,6 +448,7 @@
 		align-content: start;
 		position: sticky;
 		top: 8.5rem;
+		gap: 0.75rem;
 	}
 
 	.editor-app__panel h3 {
@@ -480,7 +481,7 @@
 	.app-field input,
 	.app-field select {
 		width: 100%;
-		padding: var(--spacing-sm) var(--spacing-md);
+		padding: 0.7rem 0.8rem;
 		background: var(--color-surface);
 		color: var(--color-text);
 		border: 1px solid var(--color-border);
@@ -580,7 +581,7 @@
 	}
 
 	.tag-toggle {
-		padding: 0.25rem var(--spacing-sm);
+		padding: 0.25rem 0.6rem;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-sm);
 		background: var(--color-surface);
