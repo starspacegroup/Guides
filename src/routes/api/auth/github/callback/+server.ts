@@ -215,8 +215,8 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 							name: linkedUser.name || githubUser.name,
 							email: linkedUser.email || githubUser.email,
 							avatarUrl: linkedUser.github_avatar_url || githubUser.avatar_url,
-							isOwner: false,
-							isAdmin: linkedUser.is_admin === 1
+							isOwner,
+							isAdmin: linkedUser.is_admin === 1 || isOwner
 						};
 
 						const sessionCookie = btoa(JSON.stringify(sessionData))
@@ -236,7 +236,7 @@ export const GET: RequestHandler = async ({ url, cookies, platform }) => {
 							cookieParts.push('Secure');
 						}
 
-						const redirectUrl = linkedUser.is_admin === 1 ? '/admin' : '/';
+						const redirectUrl = isOwner || linkedUser.is_admin === 1 ? '/admin' : '/';
 
 						return new Response(null, {
 							status: 302,
