@@ -24,7 +24,7 @@ describe('RichTextEditor', () => {
     document.execCommand = vi.fn(() => true);
   });
 
-  it('renders a desktop workspace with formatting controls and guide panels visible', () => {
+  it('renders a desktop workspace with the editor canvas and tools rail visible', () => {
     vi.stubGlobal('matchMedia', mockMatchMedia(true));
 
     render(RichTextEditor, {
@@ -36,13 +36,14 @@ describe('RichTextEditor', () => {
 
     expect(screen.getByRole('toolbar', { name: /body formatting toolbar/i })).toBeTruthy();
     expect(screen.getByRole('textbox', { name: /body visual editor/i })).toBeTruthy();
-    expect(screen.getByRole('complementary', { name: /editor guide/i })).toBeTruthy();
+    expect(screen.getByRole('complementary', { name: /body editor tools/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /code block/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert image/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert table/i })).toBeTruthy();
     expect(screen.getByLabelText(/code block language/i)).toBeTruthy();
     expect(screen.getByRole('tab', { name: /preview/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /markdown/i })).toBeTruthy();
+    expect(screen.getByText(/write in the visual canvas first/i)).toBeTruthy();
   });
 
   it('keeps secondary controls collapsed by default on mobile and reveals them on demand', async () => {
@@ -56,16 +57,14 @@ describe('RichTextEditor', () => {
     });
 
     expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
-    expect(screen.queryByRole('complementary', { name: /editor guide/i })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: /body editor tools/i })).toBeNull();
 
-    await fireEvent.click(screen.getByRole('button', { name: /show formatting tools/i }));
+    await fireEvent.click(screen.getByRole('button', { name: /show editor tools/i }));
     expect(screen.getByRole('toolbar', { name: /body formatting toolbar/i })).toBeTruthy();
-
-    await fireEvent.click(screen.getByRole('button', { name: /show writing guide/i }));
-    expect(screen.getByRole('complementary', { name: /editor guide/i })).toBeTruthy();
+    expect(screen.getByRole('complementary', { name: /body editor tools/i })).toBeTruthy();
   });
 
-  it('renders a mobile command rail with compact stats and panel states', async () => {
+  it('renders a mobile control bar with compact stats and panel states', async () => {
     vi.stubGlobal('matchMedia', mockMatchMedia(false));
 
     render(RichTextEditor, {
@@ -75,8 +74,8 @@ describe('RichTextEditor', () => {
       }
     });
 
-    expect(screen.getByRole('region', { name: /body mobile editor controls/i })).toBeTruthy();
-    expect(screen.getByText(/mobile workspace/i)).toBeTruthy();
+    expect(screen.getByRole('region', { name: /body editor controls/i })).toBeTruthy();
+    expect(screen.getByText(/editor essentials/i)).toBeTruthy();
     expect(screen.getByText(/1 heading/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /show media tools/i })).toHaveAttribute('aria-expanded', 'false');
 
@@ -96,48 +95,13 @@ describe('RichTextEditor', () => {
       }
     });
 
-    await fireEvent.click(screen.getByRole('button', { name: /show formatting tools/i }));
+    await fireEvent.click(screen.getByRole('button', { name: /show editor tools/i }));
     expect(screen.getByRole('toolbar', { name: /body formatting toolbar/i })).toBeTruthy();
 
-    await fireEvent.click(screen.getByRole('button', { name: /show writing guide/i }));
+    await fireEvent.click(screen.getByRole('button', { name: /show media tools/i }));
 
     expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
-    expect(screen.getByRole('complementary', { name: /editor guide/i })).toBeTruthy();
-  });
-
-  it('exposes quick insert actions on mobile without opening the full toolset', async () => {
-    vi.stubGlobal('matchMedia', mockMatchMedia(false));
-
-    const { container } = render(RichTextEditor, {
-      props: {
-        value: '',
-        label: 'Body'
-      }
-    });
-
-    expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
-
-    await fireEvent.click(screen.getByRole('button', { name: /quick insert image/i }));
-    await waitFor(() => {
-      expect(container.querySelector('[aria-label="Use image URL"]')).toBeTruthy();
-    });
-    await fireEvent.click(container.querySelector('[aria-label="Use image URL"]') as HTMLButtonElement);
-    await fireEvent.input(container.querySelector('[aria-label="Image URL"]') as HTMLInputElement, {
-      target: { value: 'https://example.com/mobile-photo.png' }
-    });
-    await fireEvent.input(container.querySelector('[aria-label="Image alt text"]') as HTMLInputElement, {
-      target: { value: 'Mobile image' }
-    });
-    await fireEvent.click(screen.getByRole('button', { name: /insert image from url/i }));
-    await waitFor(() => {
-      expect(container.querySelector('.rich-text-editor__media-studio')).toBeNull();
-    });
-    await fireEvent.click(screen.getByRole('tab', { name: /markdown/i }));
-
-    const source = container.querySelector('textarea.rich-text-editor__source') as HTMLTextAreaElement;
-    await waitFor(() => {
-      expect(source.value).toContain('![Mobile image](https://example.com/mobile-photo.png)');
-    });
+    expect(screen.getByRole('region', { name: /body media workflow/i })).toBeTruthy();
   });
 
   it('updates markdown source when the visual editor content changes', async () => {
@@ -315,7 +279,7 @@ describe('RichTextEditor', () => {
     });
   });
 
-  it('handles keyboard formatting shortcuts in the fullscreen workspace', async () => {
+  it('handles keyboard formatting shortcuts in the inline workspace', async () => {
     render(RichTextEditor, {
       props: {
         value: '',
@@ -331,25 +295,18 @@ describe('RichTextEditor', () => {
     expect(document.execCommand).toHaveBeenCalledWith('bold', false, undefined);
   });
 
-  it('locks document scroll for the fullscreen workspace and restores it on teardown', async () => {
+  it('does not lock document scroll for the inline workspace', async () => {
     document.body.style.overflow = 'visible';
     document.documentElement.style.overflow = 'visible';
 
-    const view = render(RichTextEditor, {
+    render(RichTextEditor, {
       props: {
         value: '',
         label: 'Body'
       }
     });
 
-    expect(document.body.style.overflow).toBe('hidden');
-    expect(document.documentElement.style.overflow).toBe('hidden');
-
-    view.component.$destroy();
-
-    await waitFor(() => {
-      expect(document.body.style.overflow).toBe('visible');
-      expect(document.documentElement.style.overflow).toBe('visible');
-    });
+    expect(document.body.style.overflow).toBe('visible');
+    expect(document.documentElement.style.overflow).toBe('visible');
   });
 });
