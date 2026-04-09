@@ -1,4 +1,4 @@
-const TITLE_SELECTOR = 'h1, [data-rainbow-title]';
+const TITLE_SELECTOR = '[data-rainbow-title]';
 const MANAGED_SELECTOR = `${TITLE_SELECTOR}, [data-rainbow-title-enhanced="true"]`;
 const RAINBOW_COLORS = [
   'var(--color-title-rainbow-1)',

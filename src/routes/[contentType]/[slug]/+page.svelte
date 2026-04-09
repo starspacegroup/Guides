@@ -78,7 +78,7 @@
 							{#if item.fields.category}
 								<span class="cms-blog-article-category">{item.fields.category}</span>
 							{/if}
-							<h1>{item.title}</h1>
+							<h1 data-rainbow-title="true">{item.title}</h1>
 							<div class="cms-blog-article-meta">
 								{#if item.publishedAt}
 									<time class="cms-blog-meta-chip" datetime={item.publishedAt}>
@@ -149,7 +149,7 @@
 			<!-- Default item template -->
 			<article class="cms-default-article">
 				<header>
-					<h1>{item.title}</h1>
+					<h1 data-rainbow-title="true">{item.title}</h1>
 					{#if item.publishedAt}
 						<time datetime={item.publishedAt}>{formatDate(item.publishedAt)}</time>
 					{/if}

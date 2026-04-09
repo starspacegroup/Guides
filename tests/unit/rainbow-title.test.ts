@@ -4,6 +4,7 @@ import { enhanceRainbowTitle, rainbowTitleRegion } from '../../src/lib/utils/rai
 describe('rainbow title enhancer', () => {
   it('turns plain title text into selectable rainbow characters', () => {
     const title = document.createElement('h1');
+    title.setAttribute('data-rainbow-title', 'true');
     title.textContent = 'Launch Ready';
     document.body.appendChild(title);
 
@@ -29,6 +30,7 @@ describe('rainbow title enhancer', () => {
 
   it('keeps characters grouped by word so wrapping only happens between words', () => {
     const title = document.createElement('h1');
+    title.setAttribute('data-rainbow-title', 'true');
     title.textContent = 'Software guides for launch-ready apps';
     document.body.appendChild(title);
 
@@ -48,7 +50,8 @@ describe('rainbow title enhancer', () => {
     const container = document.createElement('main');
     container.innerHTML = `
 			<section>
-				<h1>Primary Title</h1>
+        <h1>Primary Title</h1>
+        <h1 data-rainbow-title="true">Home Hero Title</h1>
 				<h2 class="panel-title">Panel Overview</h2>
 				<h2 data-rainbow-title="true">Hero Secondary</h2>
 				<h2><span>Nested Markup</span></h2>
@@ -61,14 +64,16 @@ describe('rainbow title enhancer', () => {
       (element) => !element.classList.contains('panel-title') && !element.hasAttribute('data-rainbow-title')
     );
 
-    expect(container.querySelector('h1')?.classList.contains('rainbow-title')).toBe(true);
+    expect(container.querySelector('h1')?.classList.contains('rainbow-title')).toBe(false);
+    expect(container.querySelector('[data-rainbow-title="true"]')?.classList.contains('rainbow-title')).toBe(true);
     expect(container.querySelector('.panel-title')?.classList.contains('rainbow-title')).toBe(false);
     expect(
-      container.querySelector('[data-rainbow-title]')?.classList.contains('rainbow-title')
+      container.querySelectorAll('[data-rainbow-title]')[1]?.classList.contains('rainbow-title')
     ).toBe(true);
     expect(nestedTitle?.classList.contains('rainbow-title')).toBe(false);
 
     const nextTitle = document.createElement('h1');
+    nextTitle.setAttribute('data-rainbow-title', 'true');
     nextTitle.textContent = 'Fresh Route Title';
     container.appendChild(nextTitle);
 

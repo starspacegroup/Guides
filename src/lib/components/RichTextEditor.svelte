@@ -608,18 +608,6 @@
 		return 'Markdown source';
 	}
 
-	function getModeDescription(tab: EditorTab) {
-		if (tab === 'visual') {
-			return 'Write in the visual canvas first. Switch views only when you need to verify output or edit exact markdown.';
-		}
-
-		if (tab === 'preview') {
-			return 'Check the rendered article without the editing chrome.';
-		}
-
-		return 'Edit the raw markdown directly when structure or fenced syntax needs precision.';
-	}
-
 	function getCountLabel(count: number, singular: string, plural: string): string {
 		return `${count} ${count === 1 ? singular : plural}`;
 	}
@@ -709,10 +697,6 @@
 						>
 							Markdown
 						</button>
-					</div>
-					<div class="rich-text-editor__mode-copy">
-						<span class="rich-text-editor__mode-pill">{getVisibleModeLabel(activeTab)}</span>
-						<p class="rich-text-editor__mode-description">{getModeDescription(activeTab)}</p>
 					</div>
 				</div>
 
@@ -982,7 +966,6 @@
 	}
 
 	.rich-text-editor__intro-copy p,
-	.rich-text-editor__mode-description,
 	.rich-text-editor__surface-note,
 	.rich-text-editor__media-status,
 	.rich-text-editor__empty,
@@ -1006,7 +989,6 @@
 
 	.rich-text-editor__metrics span,
 	.rich-text-editor__mobile-stats span,
-	.rich-text-editor__mode-pill,
 	.rich-text-editor__surface-meta {
 		display: inline-flex;
 		align-items: center;
@@ -1025,7 +1007,6 @@
 	.rich-text-editor__command-bar-wrap,
 	.rich-text-editor__media-actions,
 	.rich-text-editor__media-studio-header,
-	.rich-text-editor__mode-copy,
 	.rich-text-editor__workspace,
 	.rich-text-editor__field,
 	.rich-text-editor__language-picker,

@@ -65,7 +65,7 @@
 		<div class="hero-copy">
 			<div class="hero-intro">
 				<p class="eyebrow">guides.starspace.group</p>
-				<h1>Software guides for launch-ready apps</h1>
+				<h1 data-rainbow-title="true">Software guides for launch-ready apps</h1>
 			</div>
 			<p class="lede">
 				Explore a curated library of practical guidance for building the future of software,
