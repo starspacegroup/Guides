@@ -14,6 +14,7 @@
 	export let placeholder = 'Start writing...';
 	export let helpText = 'Supports headings, lists, tables, images, links, and fenced code blocks with languages.';
 	export let uploadEndpoint = '/api/cms/uploads';
+	export let showIntro = true;
 
 	const DESKTOP_MEDIA_QUERY = '(min-width: 960px)';
 	const IMAGE_URL_PATTERN = /^(https?:\/\/|data:image\/|\/|#|\.\.?\/)/i;
@@ -627,18 +628,20 @@
 
 <div class="rich-text-editor" use:bindEditorKeydown>
 	<div class="rich-text-editor__shell">
-		<div class="rich-text-editor__intro">
-			<div class="rich-text-editor__intro-copy">
-				<span class="rich-text-editor__eyebrow">Body editor</span>
-				<h3>{label}</h3>
-				<p>{helpText}</p>
+		{#if showIntro}
+			<div class="rich-text-editor__intro">
+				<div class="rich-text-editor__intro-copy">
+					<span class="rich-text-editor__eyebrow">Body editor</span>
+					<h3>{label}</h3>
+					<p>{helpText}</p>
+				</div>
+				<div class="rich-text-editor__metrics" aria-label="Editor metrics">
+					<span>{wordCount} words</span>
+					<span>{characterCount} chars</span>
+					<span>{readingTimeMinutes} min read</span>
+				</div>
 			</div>
-			<div class="rich-text-editor__metrics" aria-label="Editor metrics">
-				<span>{wordCount} words</span>
-				<span>{characterCount} chars</span>
-				<span>{readingTimeMinutes} min read</span>
-			</div>
-		</div>
+		{/if}
 
 		{#if !isDesktopLayout}
 			<section class="rich-text-editor__mobile-rail" aria-label={`${label} editor controls`}>

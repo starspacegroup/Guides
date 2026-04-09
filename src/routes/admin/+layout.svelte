@@ -8,6 +8,8 @@
 		{ path: '/admin/ai-keys', label: 'AI Keys', icon: 'sparkles' },
 		{ path: '/admin/cms', label: 'CMS', icon: 'document' }
 	];
+
+	$: isFullBleedRoute = /^\/admin\/cms\/[^/]+\/[^/]+$/.test($page.url.pathname);
 </script>
 
 <div class="admin-layout">
@@ -97,7 +99,7 @@
 			{/each}
 		</nav>
 	</aside>
-	<main class="admin-content">
+	<main class="admin-content" class:admin-content--full-bleed={isFullBleedRoute}>
 		<slot />
 	</main>
 </div>
@@ -156,8 +158,15 @@
 
 	.admin-content {
 		flex: 1;
+		min-width: 0;
+		width: 100%;
 		padding: var(--spacing-2xl);
 		max-width: 1200px;
+	}
+
+	.admin-content--full-bleed {
+		max-width: none;
+		padding: 0;
 	}
 
 	@media (max-width: 768px) {
