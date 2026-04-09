@@ -65,6 +65,46 @@ describe('RichTextEditor', () => {
     expect(screen.getByRole('complementary', { name: /editor guide/i })).toBeTruthy();
   });
 
+  it('renders a mobile command rail with compact stats and panel states', async () => {
+    vi.stubGlobal('matchMedia', mockMatchMedia(false));
+
+    render(RichTextEditor, {
+      props: {
+        value: '## Heading\n\nWords for the command rail state.',
+        label: 'Body'
+      }
+    });
+
+    expect(screen.getByRole('region', { name: /body mobile editor controls/i })).toBeTruthy();
+    expect(screen.getByText(/mobile workspace/i)).toBeTruthy();
+    expect(screen.getByText(/1 heading/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /show media tools/i })).toHaveAttribute('aria-expanded', 'false');
+
+    await fireEvent.click(screen.getByRole('button', { name: /show media tools/i }));
+
+    expect(screen.getByRole('button', { name: /hide media tools/i })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('region', { name: /body media workflow/i })).toBeTruthy();
+  });
+
+  it('keeps only one mobile support panel open at a time', async () => {
+    vi.stubGlobal('matchMedia', mockMatchMedia(false));
+
+    render(RichTextEditor, {
+      props: {
+        value: '',
+        label: 'Body'
+      }
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: /show formatting tools/i }));
+    expect(screen.getByRole('toolbar', { name: /body formatting toolbar/i })).toBeTruthy();
+
+    await fireEvent.click(screen.getByRole('button', { name: /show writing guide/i }));
+
+    expect(screen.queryByRole('toolbar', { name: /body formatting toolbar/i })).toBeNull();
+    expect(screen.getByRole('complementary', { name: /editor guide/i })).toBeTruthy();
+  });
+
   it('exposes quick insert actions on mobile without opening the full toolset', async () => {
     vi.stubGlobal('matchMedia', mockMatchMedia(false));
 

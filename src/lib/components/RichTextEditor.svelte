@@ -20,6 +20,7 @@
 
 	type EditorTab = 'visual' | 'preview' | 'markdown';
 	type MediaInsertMode = 'upload' | 'url';
+	type MobilePanel = 'tools' | 'media' | 'guide' | null;
 	type CodeLanguage = 'plaintext' | 'ts' | 'js' | 'python' | 'html' | 'css' | 'json' | 'sql' | 'bash';
 	type CompatibleMediaQueryList = MediaQueryList & {
 		addListener?: (listener: (event: MediaQueryListEvent) => void) => void;
@@ -37,8 +38,7 @@
 		typeof window !== 'undefined' && typeof window.matchMedia === 'function'
 			? window.matchMedia(DESKTOP_MEDIA_QUERY).matches
 			: false;
-	let isToolsPanelOpen = isDesktopLayout;
-	let isGuidePanelOpen = isDesktopLayout;
+	let activeMobilePanel: MobilePanel = null;
 	let isMediaPanelOpen = false;
 	let mediaInsertMode: MediaInsertMode = 'upload';
 	let imageUrl = 'https://';
@@ -71,8 +71,10 @@
 	$: characterCount = value.length;
 	$: readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 180));
 	$: documentOutline = getMarkdownHeadings(value).filter((heading) => heading.level >= 2 && heading.level <= 3);
-	$: showFormattingTools = isDesktopLayout || isToolsPanelOpen;
-	$: showGuide = isDesktopLayout || isGuidePanelOpen;
+	$: headingCount = documentOutline.length;
+	$: showFormattingTools = isDesktopLayout || activeMobilePanel === 'tools';
+	$: showGuide = isDesktopLayout || activeMobilePanel === 'guide';
+	$: showMediaStudio = isDesktopLayout ? isMediaPanelOpen : activeMobilePanel === 'media';
 	$: selectedLanguageLabel = codeLanguage === 'plaintext' ? 'Plain code' : codeLanguage;
 	$: isVisualTab = activeTab === 'visual';
 
@@ -124,11 +126,10 @@
 		const syncResponsivePanels = (matches: boolean) => {
 			isDesktopLayout = matches;
 			if (matches) {
-				isToolsPanelOpen = true;
-				isGuidePanelOpen = true;
+				activeMobilePanel = null;
 			} else {
-				isToolsPanelOpen = false;
-				isGuidePanelOpen = false;
+				activeMobilePanel = null;
+				isMediaPanelOpen = false;
 			}
 		};
 
@@ -361,16 +362,24 @@
 
 	function openMediaPanel(nextMode: MediaInsertMode = 'upload') {
 		saveSelection();
-		isMediaPanelOpen = true;
 		mediaInsertMode = nextMode;
 		mediaError = '';
+		if (isDesktopLayout) {
+			isMediaPanelOpen = true;
+		} else {
+			activeMobilePanel = 'media';
+		}
 		if (nextMode === 'url' && !imageUrl.trim()) {
 			imageUrl = 'https://';
 		}
 	}
 
 	function closeMediaPanel() {
-		isMediaPanelOpen = false;
+		if (isDesktopLayout) {
+			isMediaPanelOpen = false;
+		} else if (activeMobilePanel === 'media') {
+			activeMobilePanel = null;
+		}
 		mediaError = '';
 		isDropTarget = false;
 	}
@@ -492,8 +501,7 @@
 		imageAlt = imageAlt.trim() || getDefaultImageAlt(file.name);
 		const uploadedUrl = await uploadImageFile(file);
 		if (!uploadedUrl) {
-			isMediaPanelOpen = true;
-			mediaInsertMode = 'upload';
+			openMediaPanel('upload');
 			return;
 		}
 
@@ -547,11 +555,21 @@
 	}
 
 	function toggleToolsPanel() {
-		isToolsPanelOpen = !isToolsPanelOpen;
+		activeMobilePanel = activeMobilePanel === 'tools' ? null : 'tools';
+		if (activeMobilePanel === 'tools') {
+			isMediaPanelOpen = false;
+		}
 	}
 
 	function toggleGuidePanel() {
-		isGuidePanelOpen = !isGuidePanelOpen;
+		activeMobilePanel = activeMobilePanel === 'guide' ? null : 'guide';
+		if (activeMobilePanel === 'guide') {
+			isMediaPanelOpen = false;
+		}
+	}
+
+	function toggleMediaPanel() {
+		activeMobilePanel = activeMobilePanel === 'media' ? null : 'media';
 	}
 
 	async function setActiveTab(nextTab: EditorTab) {
@@ -629,6 +647,10 @@
 
 		return 'Markdown source';
 	}
+
+	function getCountLabel(count: number, singular: string, plural: string): string {
+		return `${count} ${count === 1 ? singular : plural}`;
+	}
 </script>
 
 <div class="rich-text-editor is-expanded" use:bindEditorKeydown>
@@ -652,6 +674,48 @@
 		<div class="rich-text-editor__workspace">
 			<section class="rich-text-editor__canvas">
 				<div class="rich-text-editor__header">
+					{#if !isDesktopLayout}
+						<section class="rich-text-editor__mobile-rail" aria-label={`${label} mobile editor controls`}>
+							<div class="rich-text-editor__mobile-summary">
+								<span class="rich-text-editor__mobile-kicker">Mobile workspace</span>
+								<div class="rich-text-editor__mobile-stats" aria-label="Editor mobile stats">
+									<span>{getCountLabel(wordCount, 'word', 'words')}</span>
+									<span>{getCountLabel(headingCount, 'heading', 'headings')}</span>
+									<span>{getVisibleModeLabel(activeTab)}</span>
+								</div>
+							</div>
+							<div class="rich-text-editor__mobile-actions">
+								<button
+									type="button"
+									class="rich-text-editor__mobile-action"
+									aria-controls={`${editorInstanceId}-tools`}
+									aria-expanded={showFormattingTools}
+									on:click={toggleToolsPanel}
+								>
+									{showFormattingTools ? 'Hide formatting tools' : 'Show formatting tools'}
+								</button>
+								<button
+									type="button"
+									class="rich-text-editor__mobile-action"
+									aria-controls={`${editorInstanceId}-media`}
+									aria-expanded={showMediaStudio}
+									on:click={toggleMediaPanel}
+								>
+									{showMediaStudio ? 'Hide media tools' : 'Show media tools'}
+								</button>
+								<button
+									type="button"
+									class="rich-text-editor__mobile-action"
+									aria-controls={`${editorInstanceId}-guide`}
+									aria-expanded={showGuide}
+									on:click={toggleGuidePanel}
+								>
+									{showGuide ? 'Hide writing guide' : 'Show writing guide'}
+								</button>
+							</div>
+						</section>
+					{/if}
+
 					<div class="rich-text-editor__mode-summary">
 						<span class="rich-text-editor__mode-pill">{getVisibleModeLabel(activeTab)}</span>
 						<p class="rich-text-editor__mode-description">
@@ -704,24 +768,7 @@
 
 						{#if !isDesktopLayout}
 							<div class="rich-text-editor__panel-toggles">
-								<button
-									type="button"
-									class="rich-text-editor__panel-toggle"
-									aria-controls={`${editorInstanceId}-tools`}
-									aria-expanded={showFormattingTools}
-									on:click={toggleToolsPanel}
-								>
-									{showFormattingTools ? 'Hide formatting tools' : 'Show formatting tools'}
-								</button>
-								<button
-									type="button"
-									class="rich-text-editor__panel-toggle"
-									aria-controls={`${editorInstanceId}-guide`}
-									aria-expanded={showGuide}
-									on:click={toggleGuidePanel}
-								>
-									{showGuide ? 'Hide writing guide' : 'Show writing guide'}
-								</button>
+								<p class="rich-text-editor__panel-toggle-note">Open one support panel at a time to keep the canvas readable on smaller screens.</p>
 							</div>
 						{/if}
 					</div>
@@ -775,8 +822,8 @@
 							</div>
 						{/if}
 
-						{#if isMediaPanelOpen && !showFormattingTools}
-							<section class="rich-text-editor__media-studio" aria-label="Image studio">
+						{#if !isDesktopLayout && showMediaStudio}
+							<section class="rich-text-editor__media-studio" id={`${editorInstanceId}-media`} aria-label={`${label} media workflow`}>
 								<div class="rich-text-editor__media-studio-header">
 									<div>
 										<h4>Image studio</h4>
@@ -934,8 +981,8 @@
 									</div>
 								</section>
 
-								{#if isMediaPanelOpen}
-									<section class="rich-text-editor__media-studio" aria-label="Image studio">
+								{#if showMediaStudio}
+									<section class="rich-text-editor__media-studio" id={`${editorInstanceId}-media`} aria-label={`${label} media workflow`}>
 							<div class="rich-text-editor__media-studio-header">
 								<div>
 									<h4>Image studio</h4>
@@ -1201,6 +1248,13 @@
 		line-height: 1.5;
 	}
 
+	.rich-text-editor__panel-toggle-note {
+		margin: 0;
+		font-size: 0.78rem;
+		line-height: 1.45;
+		color: var(--color-text-secondary);
+	}
+
 	.rich-text-editor__metrics,
 	.rich-text-editor__chips {
 		display: flex;
@@ -1222,6 +1276,7 @@
 	.rich-text-editor__expand,
 	.rich-text-editor__panel-toggle,
 	.rich-text-editor__tab,
+	.rich-text-editor__mobile-action,
 	.rich-text-editor__quick-insert,
 	.rich-text-editor__toolbar button,
 	.rich-text-editor__quick-card,
@@ -1252,6 +1307,7 @@
 	}
 
 	.rich-text-editor__panel-toggle,
+	.rich-text-editor__mobile-action,
 	.rich-text-editor__quick-insert {
 		font-weight: 600;
 		text-align: left;
@@ -1274,6 +1330,8 @@
 	.rich-text-editor__visual-workspace,
 	.rich-text-editor__tools-column,
 	.rich-text-editor__workspace-controls,
+	.rich-text-editor__mobile-rail,
+	.rich-text-editor__mobile-summary,
 	.rich-text-editor__preview-shell,
 	.rich-text-editor__editor-shell {
 		display: grid;
@@ -1323,6 +1381,59 @@
 	.rich-text-editor__mode-summary {
 		display: grid;
 		gap: 0.35rem;
+	}
+
+	.rich-text-editor__mobile-rail {
+		gap: 0.7rem;
+		padding: 0.8rem;
+		border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
+		border-radius: calc(var(--radius-lg) - 0.1rem);
+		background:
+			linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 8%, var(--color-background)) 0%, color-mix(in srgb, var(--color-background) 96%, var(--color-surface)) 100%);
+	}
+
+	.rich-text-editor__mobile-summary {
+		gap: 0.45rem;
+	}
+
+	.rich-text-editor__mobile-kicker {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-primary);
+	}
+
+	.rich-text-editor__mobile-stats {
+		display: flex;
+		gap: var(--spacing-xs);
+		flex-wrap: wrap;
+	}
+
+	.rich-text-editor__mobile-stats span {
+		padding: 0.45rem 0.7rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--color-surface) 92%, var(--color-background));
+		border: 1px solid color-mix(in srgb, var(--color-border) 88%, var(--color-background));
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
+	}
+
+	.rich-text-editor__mobile-actions {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--spacing-xs);
+	}
+
+	.rich-text-editor__mobile-action {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.8rem;
+		padding: 0.7rem 0.75rem;
+		text-align: center;
+		background: color-mix(in srgb, var(--color-surface) 94%, var(--color-background));
 	}
 
 	.rich-text-editor__mode-pill {
@@ -1389,12 +1500,13 @@
 	}
 
 	.rich-text-editor__panel-toggle:hover,
+	.rich-text-editor__mobile-action:hover,
 	.rich-text-editor__tab:hover,
 	.rich-text-editor__tab.is-active,
 	.rich-text-editor__quick-insert:hover,
 	.rich-text-editor__toolbar button:hover,
 	.rich-text-editor__quick-card:hover,
-	.rich-text-editor__panel-toggle[aria-expanded='true'],
+	.rich-text-editor__mobile-action[aria-expanded='true'],
 	.rich-text-editor__dropzone:hover {
 		background: color-mix(in srgb, var(--color-surface-hover) 82%, var(--color-background));
 		border-color: color-mix(in srgb, var(--color-primary) 44%, var(--color-border));
@@ -1554,6 +1666,13 @@
 			gap: 0.75rem;
 		}
 
+		.rich-text-editor__mobile-rail {
+			position: sticky;
+			top: calc(env(safe-area-inset-top, 0px) + 0.15rem);
+			z-index: 4;
+			gap: 0.65rem;
+		}
+
 		.rich-text-editor__header,
 		.rich-text-editor__surface-frame,
 		.rich-text-editor__tool-panel,
@@ -1574,7 +1693,7 @@
 		}
 
 		.rich-text-editor__panel-toggles {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: 1fr;
 		}
 
 		.rich-text-editor__surface-stage {
@@ -1612,6 +1731,7 @@
 
 		.rich-text-editor__toolbar button,
 		.rich-text-editor__panel-toggle,
+		.rich-text-editor__mobile-action,
 		.rich-text-editor__quick-insert,
 		.rich-text-editor__expand {
 			min-height: 2.75rem;
