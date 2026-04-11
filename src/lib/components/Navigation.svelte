@@ -51,7 +51,7 @@
 <svelte:window on:click={handleClickOutside} />
 
 <nav class="nav">
-	<div class="container">
+	<div class="nav-shell">
 		<div class="nav-content">
 			<a href="/" class="logo" on:click={closeMobileMenu}>
 				<span class="logo-icon">✨</span>
@@ -230,12 +230,18 @@
 		backdrop-filter: blur(10px);
 	}
 
+	.nav-shell {
+		width: 100%;
+		padding: 0 var(--spacing-md);
+	}
+
 	.nav-content {
 		display: grid;
 		grid-template-columns: 1fr auto 1fr;
 		align-items: center;
 		gap: var(--spacing-md);
 		height: 64px;
+		width: 100%;
 	}
 
 	.logo {
@@ -294,6 +300,10 @@
 	}
 
 	@media (min-width: 768px) {
+		.nav-shell {
+			padding: 0 var(--spacing-lg);
+		}
+
 		.command-palette-btn {
 			display: flex;
 		}

@@ -67,6 +67,7 @@
 		{/if}
 	</div>
 
+	{#key `${contentType.id}:${item.id}:${item.updatedAt}`}
 	<div class="cms-item-shell">
 		<!-- Blog item template -->
 		{#if contentType.settings.itemTemplate === 'blog-item'}
@@ -193,6 +194,7 @@
 			</article>
 		{/if}
 	</div>
+	{/key}
 </div>
 
 <style>

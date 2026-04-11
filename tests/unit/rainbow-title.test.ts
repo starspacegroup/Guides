@@ -83,4 +83,5 @@ describe('rainbow title enhancer', () => {
 
     action.destroy();
   });
+
 });

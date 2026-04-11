@@ -26,6 +26,10 @@ function tokenizeText(value: string): Array<{ type: 'word' | 'space'; value: str
   })) ?? [];
 }
 
+function normalizeTitleText(value: string | null | undefined): string {
+  return value?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
 function getManagedTitles(root: ParentNode): HTMLElement[] {
   const titles: HTMLElement[] = [];
 
@@ -54,16 +58,20 @@ function isEligibleTitle(node: HTMLElement): boolean {
 }
 
 export function enhanceRainbowTitle(node: HTMLElement): () => void {
+  return createRainbowTitleController(node).destroy;
+}
+
+function createRainbowTitleController(node: HTMLElement): { destroy: (restoreText?: boolean) => void; } {
   if (!isEligibleTitle(node) || node.dataset.rainbowTitleEnhanced === 'true') {
-    return () => { };
+    return { destroy: () => { } };
   }
 
   const originalText = node.textContent ?? '';
-  const accessibleLabel = originalText.replace(/\s+/g, ' ').trim();
+  const accessibleLabel = normalizeTitleText(originalText);
   const characters = splitText(originalText);
 
   if (!accessibleLabel || characters.length === 0) {
-    return () => { };
+    return { destroy: () => { } };
   }
 
   const originalUserSelect = node.style.userSelect;
@@ -73,6 +81,7 @@ export function enhanceRainbowTitle(node: HTMLElement): () => void {
   const hadTabIndex = node.hasAttribute('tabindex');
 
   node.dataset.rainbowTitleEnhanced = 'true';
+  node.dataset.rainbowTitleSource = accessibleLabel;
   node.classList.add('rainbow-title');
   node.style.userSelect = 'none';
   node.setAttribute('aria-label', accessibleLabel);
@@ -224,37 +233,42 @@ export function enhanceRainbowTitle(node: HTMLElement): () => void {
     span.addEventListener('mouseenter', handleCharEnter);
   }
 
-  return () => {
-    node.removeEventListener('mousedown', handleMouseDown);
-    node.removeEventListener('keydown', handleKeyDown);
-    document.removeEventListener('mouseup', handleDocumentMouseUp);
-    document.removeEventListener('mousedown', handleDocumentMouseDown);
+  return {
+    destroy(restoreText: boolean = true) {
+      node.removeEventListener('mousedown', handleMouseDown);
+      node.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
+      document.removeEventListener('mousedown', handleDocumentMouseDown);
 
-    for (const span of spans) {
-      span.removeEventListener('mouseenter', handleCharEnter);
-    }
+      for (const span of spans) {
+        span.removeEventListener('mouseenter', handleCharEnter);
+      }
 
-    node.classList.remove('rainbow-title', 'rainbow-title--selected');
-    node.style.userSelect = originalUserSelect;
-    node.textContent = originalText;
-    delete node.dataset.rainbowTitleEnhanced;
+      node.classList.remove('rainbow-title', 'rainbow-title--selected');
+      node.style.userSelect = originalUserSelect;
+      if (restoreText) {
+        node.textContent = originalText;
+      }
+      delete node.dataset.rainbowTitleEnhanced;
+      delete node.dataset.rainbowTitleSource;
 
-    if (hadAriaLabel) {
-      node.setAttribute('aria-label', originalAriaLabel ?? '');
-    } else {
-      node.removeAttribute('aria-label');
-    }
+      if (hadAriaLabel) {
+        node.setAttribute('aria-label', originalAriaLabel ?? '');
+      } else {
+        node.removeAttribute('aria-label');
+      }
 
-    if (hadTabIndex) {
-      node.setAttribute('tabindex', originalTabIndex ?? '0');
-    } else {
-      node.removeAttribute('tabindex');
+      if (hadTabIndex) {
+        node.setAttribute('tabindex', originalTabIndex ?? '0');
+      } else {
+        node.removeAttribute('tabindex');
+      }
     }
   };
 }
 
 export function rainbowTitleRegion(node: HTMLElement) {
-  const cleanups = new Map<HTMLElement, () => void>();
+  const controllers = new Map<HTMLElement, { destroy: (restoreText?: boolean) => void; }>();
 
   const syncTitles = () => {
     const titles = getManagedTitles(node).filter((title) => node.contains(title) && isEligibleTitle(title));
@@ -263,18 +277,29 @@ export function rainbowTitleRegion(node: HTMLElement) {
     for (const title of titles) {
       liveTitles.add(title);
 
-      if (!cleanups.has(title) && title.dataset.rainbowTitleEnhanced !== 'true') {
-        cleanups.set(title, enhanceRainbowTitle(title));
+      const currentText = normalizeTitleText(title.textContent);
+      const previousText = title.dataset.rainbowTitleSource ?? '';
+      const hasChangedText = Boolean(previousText) && currentText !== previousText;
+
+      if (hasChangedText && controllers.has(title)) {
+        const controller = controllers.get(title);
+        controller?.destroy(false);
+        controllers.delete(title);
+        title.textContent = currentText;
+      }
+
+      if (!controllers.has(title) && title.dataset.rainbowTitleEnhanced !== 'true') {
+        controllers.set(title, createRainbowTitleController(title));
       }
     }
 
-    for (const [title, cleanup] of cleanups) {
+    for (const [title, controller] of controllers) {
       if (liveTitles.has(title) && node.contains(title)) {
         continue;
       }
 
-      cleanup();
-      cleanups.delete(title);
+      controller.destroy();
+      controllers.delete(title);
     }
   };
 
@@ -293,11 +318,11 @@ export function rainbowTitleRegion(node: HTMLElement) {
     destroy() {
       observer.disconnect();
 
-      for (const cleanup of cleanups.values()) {
-        cleanup();
+      for (const controller of controllers.values()) {
+        controller.destroy();
       }
 
-      cleanups.clear();
+      controllers.clear();
     }
   };
 }

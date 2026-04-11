@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ContentItemParsed, ContentTagParsed, ContentTypeParsed } from '../../src/lib/cms/types';
 import Page from '../../src/routes/[contentType]/[slug]/+page.svelte';
@@ -240,5 +241,42 @@ describe('Content item page markdown rendering', () => {
     });
 
     expect(screen.queryByRole('link', { name: /edit this guide/i })).toBeNull();
+  });
+
+  it('updates the guide heading and document title when a new item is pushed into the same route component', async () => {
+    const firstItem = createContentItem();
+    const nextItem = createContentItem({
+      id: 'item-2',
+      slug: 'cancellation-flows-should-stay-self-serve',
+      title: 'Cancellation Flows Should Stay Self-Serve',
+      seoTitle: 'Cancellation Flows',
+      updatedAt: '2026-04-04T00:00:00.000Z'
+    });
+
+    const { component, container } = render(Page, {
+      props: {
+        data: createPageData({
+          contentType: createContentType(),
+          item: firstItem,
+          tags: []
+        })
+      }
+    });
+
+    expect(container.querySelector('h1')?.textContent).toContain(firstItem.title);
+    expect(document.title).toBe('Theme Toggle Icons Should Signal the Next Action - Guides');
+
+    component.$set({
+      data: createPageData({
+        contentType: createContentType(),
+        item: nextItem,
+        tags: []
+      })
+    });
+
+    await tick();
+
+    expect(container.querySelector('h1')?.textContent).toContain('Cancellation Flows Should Stay Self-Serve');
+    expect(document.title).toBe('Cancellation Flows - Guides');
   });
 });

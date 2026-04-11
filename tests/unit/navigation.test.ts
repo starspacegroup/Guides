@@ -62,6 +62,8 @@ describe('Navigation', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
 
+		expect(document.querySelector('.nav-shell')).toBeTruthy();
+		expect(document.querySelector('.nav .container')).toBeNull();
 		expect(document.querySelector('.nav-links.open')).toBeTruthy();
 		expect(document.querySelector('.nav-link-item')).toBeTruthy();
 		expect(document.querySelector('.nav-link')).toBeTruthy();
