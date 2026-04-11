@@ -41,9 +41,10 @@ describe('RichTextEditor', () => {
     expect(screen.getByRole('button', { name: /insert image/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /insert table/i })).toBeTruthy();
     expect(screen.getByLabelText(/code block language/i)).toBeTruthy();
-    expect(screen.getByRole('tab', { name: /preview/i })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: /write/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /markdown/i })).toBeTruthy();
-    expect(container.querySelector('.rich-text-editor__surface-note')?.textContent).toMatch(/visual canvas first/i);
+    expect(screen.queryByRole('tab', { name: /preview/i })).toBeNull();
+    expect(container.querySelector('.rich-text-editor__surface-note')?.textContent).toMatch(/publish-ready layout/i);
     expect(container.querySelector('.rich-text-editor__shortcut-note')?.textContent).toMatch(/ctrl\/cmd\+b/i);
   });
 
@@ -77,6 +78,7 @@ describe('RichTextEditor', () => {
     expect(screen.getByRole('region', { name: /body editor controls/i })).toBeTruthy();
     expect(screen.getByText(/editor essentials/i)).toBeTruthy();
     expect(screen.getByText(/1 heading/i)).toBeTruthy();
+    expect(document.body.textContent).toContain('Live article canvas');
     expect(screen.getByRole('button', { name: /show media tools/i })).toHaveAttribute('aria-expanded', 'false');
 
     await fireEvent.click(screen.getByRole('button', { name: /show media tools/i }));
@@ -126,7 +128,7 @@ describe('RichTextEditor', () => {
     expect(source.value).toContain('```ts\nconst enabled = true;\n```');
   });
 
-  it('renders code blocks in preview mode from markdown content', async () => {
+  it('renders code blocks directly in the write surface from markdown content', async () => {
     render(RichTextEditor, {
       props: {
         value: 'Use this:\n\n```ts\nconst enabled = true;\n```',
@@ -134,11 +136,13 @@ describe('RichTextEditor', () => {
       }
     });
 
-    await fireEvent.click(screen.getByRole('tab', { name: /preview/i }));
+    await waitFor(() => {
+      expect(document.querySelector('.rich-text-editor__surface pre code')).toBeTruthy();
+    });
 
-    const codeBlock = document.querySelector('.rich-text-editor__preview pre code');
-    expect(codeBlock?.textContent).toContain('const enabled = true;');
-    expect(document.querySelector('.rich-text-editor__preview.cms-content')).toBeTruthy();
+    const codeBlock = document.querySelector('.rich-text-editor__surface pre code');
+    expect(codeBlock?.textContent ?? '').toContain('const enabled = true;');
+    expect(document.querySelector('.rich-text-editor__surface.cms-content')).toBeTruthy();
   });
 
   it('inserts an uploaded image with alt text and caption metadata', async () => {

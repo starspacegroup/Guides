@@ -429,14 +429,15 @@
 	}
 
 	.editor-app__meta-strip {
-		grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 10rem;
+		grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 		align-items: start;
 	}
 
 	.editor-app__workspace {
-		grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+		grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
 		align-items: start;
 		min-height: 0;
+		gap: var(--spacing-md);
 	}
 
 	.editor-app__main {
@@ -659,10 +660,12 @@
 
 		.page-header-actions {
 			width: 100%;
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 
 		.page-header-actions .btn {
-			flex: 1;
+			width: 100%;
 		}
 	}
 </style>

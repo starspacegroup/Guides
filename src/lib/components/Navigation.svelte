@@ -124,59 +124,43 @@
 			<div class="nav-links" class:open={mobileMenuOpen}>
 				{#if user}
 					{#if user.isOwner || user.isAdmin}
-						<a
-							href="/admin"
-							class:active={$page.url.pathname.startsWith('/admin')}
-							on:click={closeMobileMenu}
-						>
-							Admin
-						</a>
+						<div class="nav-link-item">
+							<a
+								href="/admin"
+								class="nav-link"
+								class:active={$page.url.pathname.startsWith('/admin')}
+								on:click={closeMobileMenu}
+							>
+								Admin
+							</a>
+						</div>
 					{/if}
-					<div class="user-dropdown-container">
-						<button
-							class="user-avatar-btn"
-							on:click|stopPropagation={toggleUserDropdown}
-							aria-label="User menu"
-							aria-expanded={userDropdownOpen}
-						>
-							{#if user.avatarUrl}
-								<img src={user.avatarUrl} alt={user.name || user.login} class="avatar" />
-							{:else}
-								<div class="avatar-fallback">
-									{(user.name || user.login).charAt(0).toUpperCase()}
-								</div>
-							{/if}
-						</button>
-						{#if userDropdownOpen}
-							<div class="user-dropdown">
-								<div class="dropdown-header">
-									<div class="user-info">
-										<div class="user-name">{user.name || user.login}</div>
-										<div class="user-email">{user.email}</div>
+					<div class="nav-link-item nav-link-item--user">
+						<div class="user-dropdown-container">
+							<button
+								class="user-avatar-btn"
+								on:click|stopPropagation={toggleUserDropdown}
+								aria-label="User menu"
+								aria-expanded={userDropdownOpen}
+							>
+								{#if user.avatarUrl}
+									<img src={user.avatarUrl} alt={user.name || user.login} class="avatar" />
+								{:else}
+									<div class="avatar-fallback">
+										{(user.name || user.login).charAt(0).toUpperCase()}
 									</div>
-								</div>
-								<div class="dropdown-divider"></div>
-								<a href="/profile" class="dropdown-item" on:click={closeUserDropdown}>
-									<svg
-										width="16"
-										height="16"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-									>
-										<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-										<circle cx="12" cy="7" r="4" />
-									</svg>
-									Profile
-								</a>
-								<div class="dropdown-divider"></div>
-								<div class="dropdown-section">
-									<ThemeToggle />
-								</div>
-								<div class="dropdown-divider"></div>
-								<form action="/api/auth/logout" method="POST">
-									<button type="submit" class="dropdown-item logout-item">
+								{/if}
+							</button>
+							{#if userDropdownOpen}
+								<div class="user-dropdown">
+									<div class="dropdown-header">
+										<div class="user-info">
+											<div class="user-name">{user.name || user.login}</div>
+											<div class="user-email">{user.email}</div>
+										</div>
+									</div>
+									<div class="dropdown-divider"></div>
+									<a href="/profile" class="dropdown-item" on:click={closeUserDropdown}>
 										<svg
 											width="16"
 											height="16"
@@ -185,25 +169,51 @@
 											stroke="currentColor"
 											stroke-width="2"
 										>
-											<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-											<polyline points="16 17 21 12 16 7" />
-											<line x1="21" y1="12" x2="9" y2="12" />
+											<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+											<circle cx="12" cy="7" r="4" />
 										</svg>
-										Logout
-									</button>
-								</form>
-							</div>
-						{/if}
+										Profile
+									</a>
+									<div class="dropdown-divider"></div>
+									<div class="dropdown-section">
+										<ThemeToggle />
+									</div>
+									<div class="dropdown-divider"></div>
+									<form action="/api/auth/logout" method="POST">
+										<button type="submit" class="dropdown-item logout-item">
+											<svg
+												width="16"
+												height="16"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+											>
+												<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+												<polyline points="16 17 21 12 16 7" />
+												<line x1="21" y1="12" x2="9" y2="12" />
+											</svg>
+											Logout
+										</button>
+									</form>
+								</div>
+							{/if}
+						</div>
 					</div>
 				{:else}
-					<a
-						href="/auth/login"
-						class:active={$page.url.pathname.startsWith('/auth')}
-						on:click={closeMobileMenu}
-					>
-						Sign In
-					</a>
-					<ThemeSwitcher variant="inline" simpleToggle={true} />
+					<div class="nav-link-item">
+						<a
+							href="/auth/login"
+							class="nav-link"
+							class:active={$page.url.pathname.startsWith('/auth')}
+							on:click={closeMobileMenu}
+						>
+							Sign In
+						</a>
+					</div>
+					<div class="nav-link-item nav-link-item--theme">
+						<ThemeSwitcher variant="inline" simpleToggle={true} />
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -325,6 +335,11 @@
 		grid-column: 1 / -1;
 	}
 
+	.nav-link-item {
+		display: flex;
+		width: 100%;
+	}
+
 	.nav-links.open {
 		display: flex;
 	}
@@ -341,9 +356,17 @@
 			justify-content: flex-end;
 			align-items: center;
 		}
+
+		.nav-link-item {
+			width: auto;
+		}
 	}
 
-	.nav-links a {
+	.nav-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
 		padding: var(--spacing-sm) var(--spacing-md);
 		border-radius: var(--radius-md);
 		color: var(--color-text-secondary);
@@ -352,12 +375,12 @@
 		font-weight: 500;
 	}
 
-	.nav-links a:hover {
+	.nav-link:hover {
 		color: var(--color-text);
 		background: var(--color-surface-hover);
 	}
 
-	.nav-links a.active {
+	.nav-link.active {
 		color: var(--color-primary);
 		background: var(--color-surface-hover);
 	}
@@ -366,6 +389,8 @@
 		position: relative;
 		display: flex;
 		align-items: center;
+		justify-content: flex-end;
+		width: 100%;
 	}
 
 	.user-avatar-btn {
@@ -476,6 +501,14 @@
 	}
 
 	@media (max-width: 768px) {
+		.nav-links {
+			align-items: stretch;
+		}
+
+		.nav-link-item--theme :global(*) {
+			width: 100%;
+		}
+
 		.user-dropdown {
 			right: auto;
 			left: 0;

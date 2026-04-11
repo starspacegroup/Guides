@@ -95,6 +95,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--spacing-sm);
+		width: 100%;
 		padding: var(--spacing-md);
 		border-radius: var(--radius-md);
 		color: var(--color-text-secondary);
@@ -138,15 +139,13 @@
 			width: 100%;
 			border-right: none;
 			border-bottom: 1px solid var(--color-border);
+			padding: var(--spacing-md);
 		}
 
 		.admin-nav {
-			flex-direction: row;
-			overflow-x: auto;
-		}
-
-		.nav-item span {
-			display: none;
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+			overflow: visible;
 		}
 	}
 </style>

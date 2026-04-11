@@ -5,7 +5,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 
-	import { enhanceCodeBlocks } from '$lib/utils/codeBlocks';
 	import { getMarkdownHeadings, renderMarkdownToHtml } from '$lib/utils/markdown';
 	import { editorHtmlToMarkdown } from '$lib/utils/richTextEditor';
 
@@ -19,7 +18,7 @@
 	const DESKTOP_MEDIA_QUERY = '(min-width: 960px)';
 	const IMAGE_URL_PATTERN = /^(https?:\/\/|data:image\/|\/|#|\.\.?\/)/i;
 
-	type EditorTab = 'visual' | 'preview' | 'markdown';
+	type EditorTab = 'write' | 'markdown';
 	type MediaInsertMode = 'upload' | 'url';
 	type MobilePanel = 'tools' | 'media' | null;
 	type CodeLanguage = 'plaintext' | 'ts' | 'js' | 'python' | 'html' | 'css' | 'json' | 'sql' | 'bash';
@@ -28,7 +27,7 @@
 		removeListener?: (listener: (event: MediaQueryListEvent) => void) => void;
 	};
 
-	let activeTab: EditorTab = 'visual';
+	let activeTab: EditorTab = 'write';
 	let editorElement: HTMLDivElement | null = null;
 	let languagePickerElement: HTMLSelectElement | null = null;
 	let fileInputElement: HTMLInputElement | null = null;
@@ -70,7 +69,7 @@
 	$: headingCount = documentOutline.length;
 	$: showFormattingTools = isDesktopLayout || activeMobilePanel === 'tools';
 	$: showMediaStudio = isDesktopLayout ? isMediaPanelOpen : activeMobilePanel === 'media';
-	$: isVisualTab = activeTab === 'visual';
+	$: isWriteTab = activeTab === 'write';
 
 	function isEditorFocused(): boolean {
 		return typeof document !== 'undefined' && document.activeElement === editorElement;
@@ -127,7 +126,8 @@
 		};
 	});
 
-	$: if (activeTab === 'visual') {
+	$: if (activeTab === 'write' && editorElement) {
+		previewHtml;
 		syncEditorFromValue();
 	}
 
@@ -534,7 +534,7 @@
 
 	async function setActiveTab(nextTab: EditorTab) {
 		activeTab = nextTab;
-		if (nextTab === 'visual') {
+		if (nextTab === 'write') {
 			await tick();
 			focusEditor();
 		}
@@ -597,12 +597,8 @@
 	}
 
 	function getVisibleModeLabel(tab: EditorTab) {
-		if (tab === 'visual') {
-			return 'Live canvas';
-		}
-
-		if (tab === 'preview') {
-			return 'Frontend preview';
+		if (tab === 'write') {
+			return 'Live article canvas';
 		}
 
 		return 'Markdown source';
@@ -666,37 +662,36 @@
 		<div class="rich-text-editor__workspace">
 			<section class="rich-text-editor__canvas">
 				<div class="rich-text-editor__mode-bar">
-					<div class="rich-text-editor__tabs" role="tablist" aria-label={`${label} editor views`}>
-						<button
-							type="button"
-							class="rich-text-editor__tab"
-							class:is-active={activeTab === 'visual'}
-							role="tab"
-							aria-selected={activeTab === 'visual'}
-							on:click={() => void setActiveTab('visual')}
-						>
-							Visual
-						</button>
-						<button
-							type="button"
-							class="rich-text-editor__tab"
-							class:is-active={activeTab === 'preview'}
-							role="tab"
-							aria-selected={activeTab === 'preview'}
-							on:click={() => void setActiveTab('preview')}
-						>
-							Preview
-						</button>
-						<button
-							type="button"
-							class="rich-text-editor__tab"
-							class:is-active={activeTab === 'markdown'}
-							role="tab"
-							aria-selected={activeTab === 'markdown'}
-							on:click={() => void setActiveTab('markdown')}
-						>
-							Markdown
-						</button>
+					<div class="rich-text-editor__mode-switch">
+						<div class="rich-text-editor__tabs" role="tablist" aria-label={`${label} editor views`}>
+							<button
+								type="button"
+								class="rich-text-editor__tab"
+								class:is-active={activeTab === 'write'}
+								role="tab"
+								aria-selected={activeTab === 'write'}
+								on:click={() => void setActiveTab('write')}
+							>
+								Write
+							</button>
+							<button
+								type="button"
+								class="rich-text-editor__tab"
+								class:is-active={activeTab === 'markdown'}
+								role="tab"
+								aria-selected={activeTab === 'markdown'}
+								on:click={() => void setActiveTab('markdown')}
+							>
+								Markdown
+							</button>
+						</div>
+						<p class="rich-text-editor__mode-copy">
+							{#if activeTab === 'write'}
+								Write in a publish-ready layout with formatting tools close by.
+							{:else}
+								Fine-tune raw markdown when you need exact structure and syntax.
+							{/if}
+						</p>
 					</div>
 				</div>
 
@@ -839,12 +834,12 @@
 					</div>
 				{/if}
 
-				{#if isVisualTab}
+				{#if isWriteTab}
 					<div class="rich-text-editor__editor-shell" class:is-drop-target={isDropTarget}>
 						<div class="rich-text-editor__surface-frame">
 							<div class="rich-text-editor__surface-header">
 								<div class="rich-text-editor__surface-meta">Live article canvas</div>
-								<p class="rich-text-editor__surface-note">Write in the visual canvas first. Structure and insert tools stay compact so the page still feels like a document.</p>
+								<p class="rich-text-editor__surface-note">Write in a publish-ready layout. The canvas keeps the article readable while structure, media, and code tools stay one tap away.</p>
 							</div>
 							<div class="rich-text-editor__surface-stage">
 								<div class="rich-text-editor__surface-inner">
@@ -866,24 +861,6 @@
 										on:dragleave={handleEditorDragLeave}
 										on:paste={handleEditorPaste}
 									></div>
-								</div>
-							</div>
-						</div>
-					</div>
-				{:else if activeTab === 'preview'}
-					<div class="rich-text-editor__surface-frame">
-						<div class="rich-text-editor__surface-header">
-							<div class="rich-text-editor__surface-meta">Public article preview</div>
-							<p class="rich-text-editor__surface-note">Read the rendered article without the editing controls.</p>
-						</div>
-						<div class="rich-text-editor__surface-stage">
-							<div class="rich-text-editor__surface-inner">
-								<div class="rich-text-editor__preview cms-content" aria-label={`${label} preview`} use:enhanceCodeBlocks>
-									{#if previewHtml}
-										{@html previewHtml}
-									{:else}
-										<p class="rich-text-editor__empty">Nothing to preview yet.</p>
-									{/if}
 								</div>
 							</div>
 						</div>
@@ -968,7 +945,6 @@
 	.rich-text-editor__intro-copy p,
 	.rich-text-editor__surface-note,
 	.rich-text-editor__media-status,
-	.rich-text-editor__empty,
 	.rich-text-editor__shortcut-note {
 		margin: 0;
 		color: var(--color-text-secondary);
@@ -1004,6 +980,7 @@
 	.rich-text-editor__mobile-rail,
 	.rich-text-editor__mode-bar,
 	.rich-text-editor__control-deck,
+	.rich-text-editor__mode-switch,
 	.rich-text-editor__command-bar-wrap,
 	.rich-text-editor__media-actions,
 	.rich-text-editor__media-studio-header,
@@ -1039,6 +1016,17 @@
 		overflow: hidden;
 	}
 
+	.rich-text-editor__mode-bar {
+		background:
+			linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 95%, var(--color-background)) 0%, color-mix(in srgb, var(--color-background) 90%, var(--color-surface)) 100%);
+	}
+
+	.rich-text-editor__mode-copy {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--color-text-secondary);
+	}
+
 	.rich-text-editor__surface-header {
 		display: grid;
 		gap: var(--spacing-xs);
@@ -1055,13 +1043,14 @@
 	}
 
 	.rich-text-editor__surface,
-	.rich-text-editor__preview,
 	.rich-text-editor__source {
 		width: 100%;
 		min-height: clamp(24rem, 58vh, 42rem);
 		padding: clamp(1rem, 2vw, 1.5rem);
-		border: none;
-		background: transparent;
+		border: 1px solid color-mix(in srgb, var(--color-border) 80%, var(--color-background));
+		border-radius: calc(var(--radius-lg) + 0.125rem);
+		background: color-mix(in srgb, var(--color-surface) 96%, var(--color-background));
+		box-shadow: var(--shadow-sm);
 		color: var(--color-text);
 		font: inherit;
 		line-height: 1.7;
@@ -1242,6 +1231,16 @@
 			align-items: start;
 		}
 
+		.rich-text-editor__mode-switch {
+			grid-template-columns: auto minmax(0, 1fr);
+			align-items: center;
+		}
+
+		.rich-text-editor__mode-copy {
+			justify-self: end;
+			text-align: right;
+		}
+
 		.rich-text-editor__control-deck {
 			grid-template-columns: minmax(0, 1fr);
 			align-items: start;
@@ -1261,8 +1260,16 @@
 			padding: var(--spacing-sm);
 		}
 
+		.rich-text-editor__tabs {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.rich-text-editor__tab {
+			justify-content: center;
+		}
+
 		.rich-text-editor__surface,
-		.rich-text-editor__preview,
 		.rich-text-editor__source {
 			min-height: 20rem;
 		}
