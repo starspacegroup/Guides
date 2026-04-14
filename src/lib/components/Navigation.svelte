@@ -54,7 +54,7 @@
 	<div class="nav-shell">
 		<div class="nav-content">
 			<a href="/" class="logo" on:click={closeMobileMenu}>
-				<span class="logo-icon">✨</span>
+				<img src="/favicon.svg" alt="" class="logo-icon" width="28" height="28" aria-hidden="true" />
 				<span class="logo-text">Guides</span>
 			</a>
 
@@ -260,7 +260,8 @@
 	}
 
 	.logo-icon {
-		font-size: 1.5rem;
+		display: block;
+		border-radius: 6px;
 	}
 
 	.nav-actions {

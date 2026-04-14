@@ -8,7 +8,7 @@
 			<!-- Brand Column -->
 			<div class="footer-brand">
 				<a href="/" class="footer-logo">
-					<span class="logo-icon">✨</span>
+					<img src="/favicon.svg" alt="" class="logo-icon" width="24" height="24" aria-hidden="true" />
 					<span class="logo-text">Guides</span>
 				</a>
 				<p class="footer-tagline">
@@ -141,7 +141,8 @@
 	}
 
 	.logo-icon {
-		font-size: 1.25rem;
+		display: block;
+		border-radius: 5px;
 	}
 
 	.footer-tagline {

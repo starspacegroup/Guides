@@ -76,23 +76,4 @@
     Collaborative guide publishing for the *Space community
   </text>
 
-  <!-- Bottom accent line -->
-  <line x1="400" y1="430" x2="800" y2="430" stroke="url(#nebula1)" stroke-width="1" opacity="0.5"/>
-
-  <!-- Feature pills -->
-  <g font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#c4b5fd" opacity="0.8">
-    <text x="350" y="480" text-anchor="middle">SvelteKit</text>
-    <text x="480" y="480" text-anchor="middle">Cloudflare Workers</text>
-    <text x="630" y="480" text-anchor="middle">D1 Database</text>
-    <text x="760" y="480" text-anchor="middle">Auth.js</text>
-    <text x="870" y="480" text-anchor="middle">AI Chat</text>
-  </g>
-
-  <!-- Dots between features -->
-  <g fill="#7c3aed" opacity="0.6">
-    <circle cx="415" cy="476" r="2"/>
-    <circle cx="555" cy="476" r="2"/>
-    <circle cx="695" cy="476" r="2"/>
-    <circle cx="815" cy="476" r="2"/>
-  </g>
 </svg>
