@@ -25,6 +25,16 @@ function createItem(slug: string, body: string, headerDemo?: string): ContentIte
 }
 
 describe('guideEnhancements', () => {
+	it('injects theme header demo for user-interface guides', () => {
+		const item = createItem('theme-mode-resolution', '# Rule\n\nKeep theme state predictable.');
+
+		const enhanced = enhanceGuideItem('user-interface', item);
+
+		expect(enhanced.fields.header_demo).toBe('theme-toggle-next-action');
+		expect(String(enhanced.fields.body)).toContain('# Code Examples');
+		expect(String(enhanced.fields.body)).toContain('Theme menu');
+	});
+
 	it('injects a modal header demo and code examples for ui-pattern guides', () => {
 		const item = createItem(
 			'modal-dialog-focus-and-close-behavior',
@@ -53,6 +63,7 @@ describe('guideEnhancements', () => {
 
 	it('recognizes the supported header demo values', () => {
 		expect(isSupportedHeaderDemo('tooltip-vs-popover')).toBe(true);
+		expect(isSupportedHeaderDemo('theme-toggle-next-action')).toBe(true);
 		expect(isSupportedHeaderDemo('unknown-demo')).toBe(false);
 	});
 });

@@ -38,6 +38,13 @@
 	--color-demo-theme-toggle-light-icon-background: #ffffff;
 	--color-demo-theme-toggle-light-icon-foreground: #53648f;
 	--color-demo-theme-toggle-light-icon-shadow: rgb(124 147 214 / 0.28);
+	--color-demo-theme-toggle-light-menu-surface: #f5f8ff;
+	--color-demo-theme-toggle-light-menu-surface-hover: #e8efff;
+	--color-demo-theme-toggle-light-menu-border: #c8d6f4;
+	--color-demo-theme-toggle-light-menu-text: #293857;
+	--color-demo-theme-toggle-light-menu-text-muted: #6a7794;
+	--color-demo-theme-toggle-light-menu-active-surface: #dce7ff;
+	--color-demo-theme-toggle-light-menu-active-border: #95afe7;
 	--color-demo-theme-toggle-dark-frame-background: #141a28;
 	--color-demo-theme-toggle-dark-frame-border: #2b334a;
 	--color-demo-theme-toggle-dark-surface-top: #182133;
@@ -49,6 +56,13 @@
 	--color-demo-theme-toggle-dark-icon-background: #0b1020;
 	--color-demo-theme-toggle-dark-icon-foreground: #c3d0ff;
 	--color-demo-theme-toggle-dark-icon-shadow: rgb(75 101 190 / 0.34);
+	--color-demo-theme-toggle-dark-menu-surface: #131b2c;
+	--color-demo-theme-toggle-dark-menu-surface-hover: #1a2540;
+	--color-demo-theme-toggle-dark-menu-border: #34456f;
+	--color-demo-theme-toggle-dark-menu-text: #d9e2ff;
+	--color-demo-theme-toggle-dark-menu-text-muted: #9eafd8;
+	--color-demo-theme-toggle-dark-menu-active-surface: #21345f;
+	--color-demo-theme-toggle-dark-menu-active-border: #5f7fcb;
 	--color-title-selection-surface: color-mix(in srgb, var(--color-surface) 88%, var(--color-background));
 	--color-title-selection-border: color-mix(in srgb, var(--color-primary) 34%, var(--color-border));
 	--color-title-selection-glow: color-mix(in srgb, var(--color-primary) 24%, transparent);
@@ -128,6 +142,13 @@
 	--color-demo-theme-toggle-light-icon-background: #ffffff;
 	--color-demo-theme-toggle-light-icon-foreground: #53648f;
 	--color-demo-theme-toggle-light-icon-shadow: rgb(124 147 214 / 0.28);
+	--color-demo-theme-toggle-light-menu-surface: #f5f8ff;
+	--color-demo-theme-toggle-light-menu-surface-hover: #e8efff;
+	--color-demo-theme-toggle-light-menu-border: #c8d6f4;
+	--color-demo-theme-toggle-light-menu-text: #293857;
+	--color-demo-theme-toggle-light-menu-text-muted: #6a7794;
+	--color-demo-theme-toggle-light-menu-active-surface: #dce7ff;
+	--color-demo-theme-toggle-light-menu-active-border: #95afe7;
 	--color-demo-theme-toggle-dark-frame-background: #141a28;
 	--color-demo-theme-toggle-dark-frame-border: #2b334a;
 	--color-demo-theme-toggle-dark-surface-top: #182133;
@@ -139,6 +160,13 @@
 	--color-demo-theme-toggle-dark-icon-background: #0b1020;
 	--color-demo-theme-toggle-dark-icon-foreground: #c3d0ff;
 	--color-demo-theme-toggle-dark-icon-shadow: rgb(75 101 190 / 0.34);
+	--color-demo-theme-toggle-dark-menu-surface: #131b2c;
+	--color-demo-theme-toggle-dark-menu-surface-hover: #1a2540;
+	--color-demo-theme-toggle-dark-menu-border: #34456f;
+	--color-demo-theme-toggle-dark-menu-text: #d9e2ff;
+	--color-demo-theme-toggle-dark-menu-text-muted: #9eafd8;
+	--color-demo-theme-toggle-dark-menu-active-surface: #21345f;
+	--color-demo-theme-toggle-dark-menu-active-border: #5f7fcb;
 }
 
 /* Reset and base styles */

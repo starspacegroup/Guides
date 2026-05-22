@@ -1,7 +1,10 @@
 <script lang="ts">
 	type PreviewTheme = 'light' | 'dark';
+	type ThemePreference = 'light' | 'dark' | 'system';
 
-	let currentTheme: PreviewTheme = 'light';
+	let themePreference: ThemePreference = 'system';
+	let systemTheme: PreviewTheme = 'light';
+	let menuOpen = false;
 
 	function buildPreviewStyle(theme: PreviewTheme) {
 		const prefix = `--color-demo-theme-toggle-${theme}`;
@@ -17,16 +20,39 @@
 			`--demo-button-glow: var(${prefix}-button-glow)`,
 			`--demo-icon-background: var(${prefix}-icon-background)`,
 			`--demo-icon-foreground: var(${prefix}-icon-foreground)`,
-			`--demo-icon-shadow: var(${prefix}-icon-shadow)`
+			`--demo-icon-shadow: var(${prefix}-icon-shadow)`,
+			`--demo-menu-surface: var(${prefix}-menu-surface)`,
+			`--demo-menu-surface-hover: var(${prefix}-menu-surface-hover)`,
+			`--demo-menu-border: var(${prefix}-menu-border)`,
+			`--demo-menu-text: var(${prefix}-menu-text)`,
+			`--demo-menu-text-muted: var(${prefix}-menu-text-muted)`,
+			`--demo-menu-active-surface: var(${prefix}-menu-active-surface)`,
+			`--demo-menu-active-border: var(${prefix}-menu-active-border)`
 		].join('; ');
 	}
 
+	$: currentTheme = themePreference === 'system' ? systemTheme : themePreference;
 	$: nextTheme = (currentTheme === 'light' ? 'dark' : 'light') as PreviewTheme;
 	$: actionLabel = `Switch to ${nextTheme} mode`;
 	$: previewStyle = buildPreviewStyle(currentTheme);
+	$: preferenceSummary =
+		themePreference === 'system'
+			? `System (${systemTheme})`
+			: themePreference === 'light'
+				? 'Light'
+				: 'Dark';
 
 	function toggleTheme() {
-		currentTheme = nextTheme;
+		themePreference = nextTheme;
+	}
+
+	function selectTheme(nextPreference: ThemePreference) {
+		themePreference = nextPreference;
+		menuOpen = false;
+	}
+
+	function toggleSystemTheme() {
+		systemTheme = systemTheme === 'light' ? 'dark' : 'light';
 	}
 </script>
 
@@ -39,37 +65,91 @@
 >
 	<div class="theme-toggle-next-action-demo__frame">
 		<div class="theme-toggle-next-action-demo__surface">
-			<button
-				type="button"
-				class="theme-toggle-next-action-demo__button"
-				data-current-theme={currentTheme}
-				data-next-theme={nextTheme}
-				on:click={toggleTheme}
-				aria-label={actionLabel}
-				title={actionLabel}
-			>
-				<span class="theme-toggle-next-action-demo__button-ring" aria-hidden="true"></span>
-				<span class="theme-toggle-next-action-demo__button-glow" aria-hidden="true"></span>
-				<span class="theme-toggle-next-action-demo__icon" aria-hidden="true">
-					{#if nextTheme === 'dark'}
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-						</svg>
-					{:else}
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="4.5"></circle>
-							<line x1="12" y1="1.5" x2="12" y2="4"></line>
-							<line x1="12" y1="20" x2="12" y2="22.5"></line>
-							<line x1="4.22" y1="4.22" x2="5.99" y2="5.99"></line>
-							<line x1="18.01" y1="18.01" x2="19.78" y2="19.78"></line>
-							<line x1="1.5" y1="12" x2="4" y2="12"></line>
-							<line x1="20" y1="12" x2="22.5" y2="12"></line>
-							<line x1="4.22" y1="19.78" x2="5.99" y2="18.01"></line>
-							<line x1="18.01" y1="5.99" x2="19.78" y2="4.22"></line>
-						</svg>
+			<div class="theme-toggle-next-action-demo__controls">
+				<button
+					type="button"
+					class="theme-toggle-next-action-demo__button"
+					data-current-theme={currentTheme}
+					data-next-theme={nextTheme}
+					on:click={toggleTheme}
+					aria-label={actionLabel}
+					title={actionLabel}
+				>
+					<span class="theme-toggle-next-action-demo__button-ring" aria-hidden="true"></span>
+					<span class="theme-toggle-next-action-demo__button-glow" aria-hidden="true"></span>
+					<span class="theme-toggle-next-action-demo__icon" aria-hidden="true">
+						{#if nextTheme === 'dark'}
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+							</svg>
+						{:else}
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<circle cx="12" cy="12" r="4.5"></circle>
+								<line x1="12" y1="1.5" x2="12" y2="4"></line>
+								<line x1="12" y1="20" x2="12" y2="22.5"></line>
+								<line x1="4.22" y1="4.22" x2="5.99" y2="5.99"></line>
+								<line x1="18.01" y1="18.01" x2="19.78" y2="19.78"></line>
+								<line x1="1.5" y1="12" x2="4" y2="12"></line>
+								<line x1="20" y1="12" x2="22.5" y2="12"></line>
+								<line x1="4.22" y1="19.78" x2="5.99" y2="18.01"></line>
+								<line x1="18.01" y1="5.99" x2="19.78" y2="4.22"></line>
+							</svg>
+						{/if}
+					</span>
+				</button>
+
+				<div class="theme-toggle-next-action-demo__menu-shell">
+					<button
+						type="button"
+						class="theme-toggle-next-action-demo__menu-trigger"
+						aria-haspopup="menu"
+						aria-expanded={menuOpen}
+						on:click={() => (menuOpen = !menuOpen)}
+					>
+						Theme menu
+					</button>
+
+					{#if menuOpen}
+						<div class="theme-toggle-next-action-demo__menu" role="menu" aria-label="Theme options">
+							<button
+								type="button"
+								role="menuitemradio"
+								aria-checked={themePreference === 'light'}
+								on:click={() => selectTheme('light')}
+							>
+								Light mode
+							</button>
+							<button
+								type="button"
+								role="menuitemradio"
+								aria-checked={themePreference === 'dark'}
+								on:click={() => selectTheme('dark')}
+							>
+								Dark mode
+							</button>
+							<button
+								type="button"
+								role="menuitemradio"
+								aria-checked={themePreference === 'system'}
+								on:click={() => selectTheme('system')}
+							>
+								System mode
+							</button>
+						</div>
 					{/if}
-				</span>
-			</button>
+				</div>
+			</div>
+
+			<p class="theme-toggle-next-action-demo__status">Active preference: {preferenceSummary}</p>
+			{#if themePreference === 'system'}
+				<button
+					type="button"
+					class="theme-toggle-next-action-demo__system-toggle"
+					on:click={toggleSystemTheme}
+				>
+					Simulate system: {systemTheme}
+				</button>
+			{/if}
 		</div>
 	</div>
 </section>
@@ -94,8 +174,10 @@
 		border-radius: 1.15rem;
 		border: 1px solid var(--demo-frame-border);
 		display: flex;
+		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+		gap: var(--spacing-sm);
 		background:
 			linear-gradient(
 				180deg,
@@ -103,6 +185,13 @@
 				var(--demo-surface-bottom) 100%
 			),
 			var(--demo-surface-bottom);
+	}
+
+	.theme-toggle-next-action-demo__controls {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--spacing-sm);
 	}
 
 	.theme-toggle-next-action-demo__button {
@@ -185,5 +274,81 @@
 	.theme-toggle-next-action-demo__button:focus-visible {
 		outline: 2px solid var(--color-primary);
 		outline-offset: 2px;
+	}
+
+	.theme-toggle-next-action-demo__menu-shell {
+		position: relative;
+	}
+
+	.theme-toggle-next-action-demo__menu-trigger,
+	.theme-toggle-next-action-demo__menu button,
+	.theme-toggle-next-action-demo__system-toggle {
+		min-height: 44px;
+		border: 1px solid var(--demo-menu-border);
+		border-radius: var(--radius-md);
+		background: var(--demo-menu-surface);
+		color: var(--demo-menu-text);
+		padding: 0.5rem 0.7rem;
+		font: inherit;
+		cursor: pointer;
+		transition:
+			background-color var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast);
+	}
+
+	.theme-toggle-next-action-demo__menu-trigger:hover,
+	.theme-toggle-next-action-demo__menu button:hover,
+	.theme-toggle-next-action-demo__system-toggle:hover {
+		background: var(--demo-menu-surface-hover);
+	}
+
+	.theme-toggle-next-action-demo__menu {
+		position: absolute;
+		top: calc(100% + 0.4rem);
+		right: 0;
+		display: grid;
+		gap: 0.35rem;
+		padding: 0.35rem;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--demo-menu-border);
+		background: var(--demo-menu-surface);
+		box-shadow: var(--shadow-md);
+		z-index: 2;
+		min-width: 11rem;
+	}
+
+	.theme-toggle-next-action-demo__menu button[aria-checked='true'] {
+		border-color: var(--demo-menu-active-border);
+		background: var(--demo-menu-active-surface);
+		color: var(--demo-menu-text);
+	}
+
+	.theme-toggle-next-action-demo__menu-trigger:focus-visible,
+	.theme-toggle-next-action-demo__menu button:focus-visible,
+	.theme-toggle-next-action-demo__system-toggle:focus-visible {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 2px;
+	}
+
+	.theme-toggle-next-action-demo__status {
+		margin: 0;
+		font-size: 0.85rem;
+		color: var(--demo-menu-text-muted);
+	}
+
+	.theme-toggle-next-action-demo__system-toggle {
+		padding-inline: 0.8rem;
+	}
+
+	@media (max-width: 560px) {
+		.theme-toggle-next-action-demo__controls {
+			flex-direction: column;
+		}
+
+		.theme-toggle-next-action-demo__menu {
+			left: 0;
+			right: auto;
+		}
 	}
 </style>

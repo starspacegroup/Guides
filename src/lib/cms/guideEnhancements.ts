@@ -17,6 +17,7 @@ interface GuideEnhancement {
 }
 
 const codeFence = '```';
+const guideEnhancementContentTypes = ['ui-patterns', 'user-interface'];
 
 const uiPatternEnhancements: Record<string, GuideEnhancement> = {
 	'inline-edit-vs-dedicated-form': {
@@ -211,6 +212,83 @@ ${codeFence}
 Show the active sort, reset pagination when the sort key changes, and reflect the current page in the UI and URL.`
 	},
 	'theme-toggle-action-icons': {
+		headerDemo: 'theme-toggle-next-action',
+		codeExamples: `# Code Examples
+## Svelte
+
+${codeFence}svelte
+<script lang="ts">
+	type ThemePreference = 'light' | 'dark' | 'system';
+	type ResolvedTheme = 'light' | 'dark';
+
+	let preference: ThemePreference = 'system';
+	let systemTheme: ResolvedTheme = 'light';
+	let menuOpen = false;
+
+	$: resolvedTheme = preference === 'system' ? systemTheme : preference;
+	$: nextTheme = resolvedTheme === 'light' ? 'dark' : 'light';
+	$: toggleLabel = \`Switch to \${nextTheme} mode\`;
+
+	function toggleNextTheme() {
+		preference = nextTheme;
+	}
+
+	function selectTheme(nextPreference: ThemePreference) {
+		preference = nextPreference;
+		menuOpen = false;
+	}
+</script>
+
+<button type="button" aria-label={toggleLabel} on:click={toggleNextTheme}>
+	{nextTheme === 'dark' ? 'Moon icon' : 'Sun icon'}
+</button>
+
+<button type="button" aria-haspopup="menu" aria-expanded={menuOpen} on:click={() => (menuOpen = !menuOpen)}>
+	Theme menu
+</button>
+
+{#if menuOpen}
+	<div role="menu" aria-label="Theme options">
+		<button type="button" role="menuitemradio" aria-checked={preference === 'light'} on:click={() => selectTheme('light')}>
+			Light mode
+		</button>
+		<button type="button" role="menuitemradio" aria-checked={preference === 'dark'} on:click={() => selectTheme('dark')}>
+			Dark mode
+		</button>
+		<button type="button" role="menuitemradio" aria-checked={preference === 'system'} on:click={() => selectTheme('system')}>
+			System mode
+		</button>
+	</div>
+{/if}
+${codeFence}
+
+Combine a one-click next-action toggle with an explicit theme menu so casual users can tap once, while power users can directly select light, dark, or system.`
+	},
+	'theme-mode-resolution': {
+		headerDemo: 'theme-toggle-next-action',
+		codeExamples: `# Code Examples
+## Svelte
+
+${codeFence}svelte
+<script lang="ts">
+	import { derived, writable } from 'svelte/store';
+
+	type ThemePreference = 'light' | 'dark' | 'system';
+	type ResolvedTheme = 'light' | 'dark';
+
+	export const themePreference = writable<ThemePreference>('system');
+	export const systemTheme = writable<ResolvedTheme>('light');
+
+	export const resolvedTheme = derived(
+		[themePreference, systemTheme],
+		([$themePreference, $systemTheme]) => ($themePreference === 'system' ? $systemTheme : $themePreference)
+	);
+</script>
+${codeFence}
+
+Theme menu selections should write the preference store, while the quick-toggle button should set the next explicit mode so the control always previews the result.`
+	},
+	'theme-token-architecture': {
 		headerDemo: 'theme-toggle-next-action'
 	},
 	'tooltip-vs-popover-when-to-use-which': {
@@ -248,7 +326,7 @@ Tooltips explain a control in one short sentence. Popovers can contain interacti
 };
 
 export function enhanceGuideItem(contentTypeSlug: string, item: ContentItemParsed): ContentItemParsed {
-	if (contentTypeSlug !== 'ui-patterns') {
+	if (!guideEnhancementContentTypes.includes(contentTypeSlug)) {
 		return item;
 	}
 

@@ -17,6 +17,12 @@ describe('ThemeToggleNextActionDemo', () => {
 			expect(preview?.getAttribute('style')).toContain(
 				'--demo-icon-foreground: var(--color-demo-theme-toggle-light-icon-foreground)'
 			);
+			expect(preview?.getAttribute('style')).toContain(
+				'--demo-menu-surface: var(--color-demo-theme-toggle-light-menu-surface)'
+			);
+			expect(preview?.getAttribute('style')).toContain(
+				'--demo-menu-active-border: var(--color-demo-theme-toggle-light-menu-active-border)'
+			);
 
 			await fireEvent.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
 
@@ -28,8 +34,30 @@ describe('ThemeToggleNextActionDemo', () => {
 			expect(preview?.getAttribute('style')).toContain(
 				'--demo-icon-foreground: var(--color-demo-theme-toggle-dark-icon-foreground)'
 			);
+			expect(preview?.getAttribute('style')).toContain(
+				'--demo-menu-surface: var(--color-demo-theme-toggle-dark-menu-surface)'
+			);
+			expect(preview?.getAttribute('style')).toContain(
+				'--demo-menu-active-border: var(--color-demo-theme-toggle-dark-menu-active-border)'
+			);
 		} finally {
 			document.documentElement.removeAttribute('data-theme');
 		}
+	});
+
+	it('opens a theme menu and applies a selected preference', async () => {
+		render(ThemeToggleNextActionDemo);
+
+		const trigger = screen.getByRole('button', { name: 'Theme menu' });
+		expect(screen.queryByRole('menu', { name: 'Theme options' })).not.toBeInTheDocument();
+
+		await fireEvent.click(trigger);
+
+		expect(screen.getByRole('menu', { name: 'Theme options' })).toBeInTheDocument();
+
+		await fireEvent.click(screen.getByRole('menuitemradio', { name: 'System mode' }));
+
+		expect(screen.queryByRole('menu', { name: 'Theme options' })).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument();
 	});
 });
