@@ -49,6 +49,21 @@ Use **clear** copy and _helpful_ guidance.`);
     expect(html).toContain('<pre data-language="ts"><code class="language-ts">const valid = true;</code></pre>');
   });
 
+  it('normalizes escaped newline sequences before rendering markdown', () => {
+    const markdown = '# Theme Mode Resolution\\n\\n## Decision Model\\n\\n- preference: light | dark | system';
+
+    const html = renderMarkdownToHtml(markdown);
+    const headings = getMarkdownHeadings(markdown);
+
+    expect(html).toContain('<h1 id="theme-mode-resolution">Theme Mode Resolution</h1>');
+    expect(html).toContain('<h2 id="decision-model">Decision Model</h2>');
+    expect(html).toContain('<li>preference: light | dark | system</li>');
+    expect(headings).toEqual([
+      { level: 1, text: 'Theme Mode Resolution', id: 'theme-mode-resolution' },
+      { level: 2, text: 'Decision Model', id: 'decision-model' }
+    ]);
+  });
+
   it('renders markdown images and tables', () => {
     const html = renderMarkdownToHtml(
       '![Diagram](https://example.com/diagram.png "System diagram")\n\n| Feature | Status |\n| --- | --- |\n| Images | Ready |\n| Tables | Ready |'

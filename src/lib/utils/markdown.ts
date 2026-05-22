@@ -48,6 +48,14 @@ function slugifyHeading(text: string): string {
   return slug || 'section';
 }
 
+function normalizeMarkdownText(markdown: string): string {
+  return markdown
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\n')
+    .replace(/\r\n?/g, '\n');
+}
+
 function getUniqueHeadingId(text: string, headingCounts: Map<string, number>): string {
   const baseId = slugifyHeading(text);
   const count = (headingCounts.get(baseId) ?? 0) + 1;
@@ -67,8 +75,7 @@ export function getMarkdownHeadings(markdown: string | null | undefined): Markdo
   }
 
   const headingCounts = new Map<string, number>();
-  return markdown
-    .replace(/\r\n?/g, '\n')
+  return normalizeMarkdownText(markdown)
     .split('\n')
     .map((line) => line.trim().match(/^(#{1,6})\s+(.*)$/))
     .filter((match): match is RegExpMatchArray => Boolean(match))
@@ -209,7 +216,7 @@ export function renderMarkdownToHtml(markdown: string | null | undefined): strin
     return '';
   }
 
-  const normalized = markdown.replace(/\r\n?/g, '\n');
+  const normalized = normalizeMarkdownText(markdown);
   const lines = normalized.split('\n');
   const blocks: string[] = [];
   const headingCounts = new Map<string, number>();
