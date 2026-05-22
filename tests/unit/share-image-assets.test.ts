@@ -1,5 +1,7 @@
-import { existsSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+/// <reference types="node" />
+
+import { existsSync, statSync } from 'fs';
+import { resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 
 const svgPath = resolve('static/og-image.svg');

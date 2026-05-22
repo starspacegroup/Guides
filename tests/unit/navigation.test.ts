@@ -1,9 +1,19 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 
+type MockPageState = {
+	url: URL;
+	params: Record<string, string>;
+	route: { id: string };
+	status: number;
+	error: unknown;
+	data: Record<string, unknown>;
+	form: undefined;
+};
+
 const { page } = vi.hoisted(() => ({
 	page: (() => {
-		let value = {
+		let value: MockPageState = {
 			url: new URL('http://localhost:4255/admin'),
 			params: {},
 			route: { id: '/' },
@@ -12,15 +22,15 @@ const { page } = vi.hoisted(() => ({
 			data: {},
 			form: undefined
 		};
-		const subscribers = new Set<(value: typeof value) => void>();
+		const subscribers = new Set<(value: MockPageState) => void>();
 
 		return {
-			subscribe(callback: (value: typeof value) => void) {
+			subscribe(callback: (value: MockPageState) => void) {
 				subscribers.add(callback);
 				callback(value);
 				return () => subscribers.delete(callback);
 			},
-			set(nextValue: typeof value) {
+			set(nextValue: MockPageState) {
 				value = nextValue;
 				for (const subscriber of subscribers) {
 					subscriber(value);
