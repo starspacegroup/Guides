@@ -410,6 +410,9 @@
 		color: var(--color-text);
 		line-height: 1.05;
 		letter-spacing: -0.04em;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+		hyphens: auto;
 	}
 
 	.cms-blog-article-meta {
@@ -669,6 +672,9 @@
 		line-height: 1.15;
 		letter-spacing: -0.03em;
 		max-width: 16ch;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+		hyphens: auto;
 	}
 
 	.cms-content :global(h2[id]),
@@ -682,6 +688,9 @@
 		margin-top: clamp(var(--spacing-lg), 2.8vw, var(--spacing-2xl));
 		margin-bottom: var(--spacing-sm);
 		line-height: 1.2;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+		hyphens: auto;
 	}
 
 	.cms-content :global(p) {
@@ -733,12 +742,17 @@
 		border-radius: 1.25rem;
 		padding: clamp(var(--spacing-lg), 2.5vw, 2rem);
 		overflow-x: auto;
+		overflow-y: hidden;
+		max-width: 100%;
+		min-width: 0;
 		margin: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl)) 0;
 		box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-background) 75%, var(--color-surface));
 	}
 
 	.cms-content :global(.cms-code-block) {
 		margin: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl)) 0;
+		max-width: 100%;
+		min-width: 0;
 	}
 
 	.cms-content :global(.cms-code-block-toolbar) {
@@ -757,12 +771,17 @@
 		border-radius: 0;
 		box-shadow: none;
 		overflow-x: auto; /* must be explicit — parent overflow:hidden would otherwise clip */
+		overflow-y: hidden;
 		max-width: 100%;
+		min-width: 0;
 	}
 
 	.cms-content :global(pre code) {
 		background: none;
 		padding: 0;
+		display: block;
+		width: max-content;
+		min-width: 100%;
 	}
 
 	.cms-content :global(.cms-code-block code) {
@@ -896,6 +915,9 @@
 		margin-bottom: var(--spacing-sm);
 		line-height: 1.08;
 		letter-spacing: -0.035em;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+		hyphens: auto;
 	}
 
 	.cms-default-article time {
@@ -1046,6 +1068,14 @@
 		.cms-blog-article-header h1,
 		.cms-default-article h1 {
 			max-width: none;
+			font-size: clamp(1.9rem, 10vw, 2.9rem);
+			letter-spacing: -0.025em;
+		}
+
+		.cms-content :global(pre),
+		.cms-content :global(.cms-code-block),
+		.cms-content :global(.cms-table-scroll) {
+			max-width: 100%;
 		}
 
 		.cms-content,

@@ -323,7 +323,8 @@ button {
 }
 
 .rainbow-title__word {
-	display: inline;
+	/* Flatten wrapper boxes so long words can break between enhanced character spans. */
+	display: contents;
 	white-space: normal;
 	overflow-wrap: anywhere;
 }
