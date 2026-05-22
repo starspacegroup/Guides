@@ -190,6 +190,7 @@ body {
 	background-color: var(--color-background);
 	color: var(--color-text);
 	min-height: 100vh;
+	overflow-x: hidden;
 	transition:
 		background-color var(--transition-base),
 		color var(--transition-base);
@@ -562,9 +563,16 @@ pre code {
 .cms-code-block {
 	border: 1px solid var(--color-code-border);
 	border-radius: var(--radius-lg);
-	overflow: hidden;
+	overflow: hidden; /* border-radius clip */
+	max-width: 100%;
 	background: linear-gradient(180deg, var(--color-code-surface-hover) 0%, var(--color-code-surface) 100%);
 	box-shadow: var(--shadow-md);
+}
+
+/* The pre inside a code block must scroll horizontally; not clip */
+.cms-code-block pre {
+	overflow-x: auto;
+	max-width: 100%;
 }
 
 .cms-code-block-toolbar {
@@ -617,9 +625,16 @@ pre code {
 	color: var(--color-code-text);
 }
 
-/* Tables */
+/* Tables: wrap in a scroll container for mobile */
+.table-scroll-wrapper {
+	overflow-x: auto;
+	max-width: 100%;
+	-webkit-overflow-scrolling: touch;
+}
+
 table {
 	width: 100%;
+	min-width: max-content; /* prevent cells from collapsing on narrow screens */
 	border-collapse: collapse;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-md);

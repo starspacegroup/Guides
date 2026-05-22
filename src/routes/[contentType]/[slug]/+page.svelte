@@ -201,8 +201,10 @@
 	.cms-item-page {
 		position: relative;
 		max-width: 1240px;
+		width: 100%;
 		margin: 0 auto;
 		padding: clamp(var(--spacing-xl), 4vw, 4rem) var(--spacing-md) var(--spacing-2xl);
+		overflow-x: hidden; /* contain decorative gradients and any runaway child */
 	}
 
 	.cms-item-page::before,
@@ -470,11 +472,13 @@
 	.cms-blog-article-main {
 		display: grid;
 		gap: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl));
+		min-width: 0;
 	}
 
 	.cms-blog-article-layout {
 		display: grid;
 		gap: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl));
+		min-width: 0;
 	}
 
 	.cms-blog-article-main.no-hero {
@@ -484,6 +488,7 @@
 	.cms-blog-article-copy {
 		display: grid;
 		gap: clamp(var(--spacing-lg), 2.4vw, var(--spacing-2xl));
+		min-width: 0;
 	}
 
 	.cms-blog-article-hero {
@@ -544,6 +549,8 @@
 	/* Rich text content styles */
 	.cms-content {
 		max-width: 82ch;
+		min-width: 0;
+		width: 100%;
 		padding: clamp(var(--spacing-xl), 3vw, 3rem);
 		border: 1px solid color-mix(in srgb, var(--color-border) 82%, var(--color-background));
 		border-radius: 1.75rem;
@@ -563,6 +570,8 @@
 
 	.cms-blog-article-body {
 		width: min(100%, 82rem);
+		min-width: 0;
+		overflow: hidden; /* contain any runaway children */
 	}
 
 	.cms-article-sidebar {
@@ -747,6 +756,8 @@
 		border: none;
 		border-radius: 0;
 		box-shadow: none;
+		overflow-x: auto; /* must be explicit — parent overflow:hidden would otherwise clip */
+		max-width: 100%;
 	}
 
 	.cms-content :global(pre code) {
@@ -810,15 +821,25 @@
 		color: var(--color-text-secondary);
 	}
 
+	/* Scroll wrapper around tables so they don't break mobile layout */
+	.cms-content :global(.cms-table-scroll) {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		max-width: 100%;
+		margin: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl)) 0;
+		border-radius: 1.1rem;
+		box-shadow: var(--shadow-sm);
+	}
+
 	.cms-content :global(table) {
 		width: 100%;
-		margin: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl)) 0;
+		min-width: max-content;
+		margin: 0;
 		border-collapse: collapse;
 		overflow: hidden;
 		border: 1px solid color-mix(in srgb, var(--color-border) 88%, var(--color-background));
 		border-radius: 1.1rem;
 		background: color-mix(in srgb, var(--color-surface) 84%, var(--color-background));
-		box-shadow: var(--shadow-sm);
 	}
 
 	.cms-content :global(th),

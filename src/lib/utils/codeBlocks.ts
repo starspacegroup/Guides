@@ -253,13 +253,33 @@ export function attachCodeBlockCopy(root: HTMLElement): () => void {
 	};
 }
 
+/**
+ * Wrap every bare <table> in the root that isn't already inside a scroll
+ * wrapper so the table can scroll horizontally on narrow viewports instead
+ * of breaking the page layout.
+ */
+export function wrapTablesForScroll(root: ParentNode): void {
+	const tables = Array.from(root.querySelectorAll('table'));
+	for (const table of tables) {
+		if (table.closest('.cms-table-scroll')) {
+			continue;
+		}
+		const wrapper = document.createElement('div');
+		wrapper.className = 'cms-table-scroll';
+		table.replaceWith(wrapper);
+		wrapper.append(table);
+	}
+}
+
 export function enhanceCodeBlocks(node: HTMLElement): { update: () => void; destroy: () => void; } {
 	decorateCodeBlocks(node);
+	wrapTablesForScroll(node);
 	const cleanup = attachCodeBlockCopy(node);
 
 	return {
 		update() {
 			decorateCodeBlocks(node);
+			wrapTablesForScroll(node);
 		},
 		destroy() {
 			cleanup();
