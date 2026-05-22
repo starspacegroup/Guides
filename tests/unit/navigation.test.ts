@@ -44,14 +44,6 @@ vi.mock('$app/stores', () => ({
 	page
 }));
 
-vi.mock('../../src/lib/components/ThemeSwitcher.svelte', () => ({
-	default: class ThemeSwitcher {}
-}));
-
-vi.mock('../../src/lib/components/ThemeToggle.svelte', () => ({
-	default: class ThemeToggle {}
-}));
-
 import Navigation from '../../src/lib/components/Navigation.svelte';
 
 describe('Navigation', () => {
@@ -72,11 +64,9 @@ describe('Navigation', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
 
-		expect(document.querySelector('.nav-shell')).toBeTruthy();
-		expect(document.querySelector('.nav .container')).toBeNull();
+		expect(document.querySelector('.nav .container.nav-container')).toBeTruthy();
 		expect(document.querySelector('.nav-links.open')).toBeTruthy();
-		expect(document.querySelector('.nav-link-item')).toBeTruthy();
-		expect(document.querySelector('.nav-link')).toBeTruthy();
-		expect(screen.getByRole('link', { name: /admin/i })).toHaveClass('nav-link');
+		expect(document.querySelector('.mobile-menu-items a[href="/admin"]')).toBeTruthy();
+		expect(screen.getByRole('link', { name: /admin/i })).toHaveClass('active');
 	});
 });
