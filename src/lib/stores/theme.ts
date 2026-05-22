@@ -5,8 +5,15 @@ export type ResolvedTheme = 'light' | 'dark';
 
 const canUseBrowserApis =
 	typeof window !== 'undefined' &&
-	typeof window.matchMedia === 'function' &&
-	typeof localStorage !== 'undefined';
+	typeof window.matchMedia === 'function';
+
+function hasLocalStorageReadApi(): boolean {
+	return typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function';
+}
+
+function hasLocalStorageWriteApi(): boolean {
+	return typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function';
+}
 
 // Get system theme preference
 function getSystemTheme(): ResolvedTheme {
@@ -18,7 +25,7 @@ function getSystemTheme(): ResolvedTheme {
 
 // Initialize theme preference from localStorage
 function getInitialThemePreference(): ThemePreference {
-	if (canUseBrowserApis) {
+	if (canUseBrowserApis && hasLocalStorageReadApi()) {
 		const stored = localStorage.getItem('theme-preference') as ThemePreference;
 		if (stored === 'light' || stored === 'dark' || stored === 'system') {
 			return stored;
@@ -47,7 +54,9 @@ export const resolvedTheme = derived(
 // Subscribe to preference changes and update localStorage
 if (canUseBrowserApis) {
 	themePreference.subscribe((value) => {
-		localStorage.setItem('theme-preference', value);
+		if (hasLocalStorageWriteApi()) {
+			localStorage.setItem('theme-preference', value);
+		}
 	});
 
 	// Listen for system theme changes
