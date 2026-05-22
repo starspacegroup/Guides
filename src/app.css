@@ -203,6 +203,20 @@ h1 {
 	line-height: 1.2;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+li,
+figcaption,
+blockquote {
+	overflow-wrap: anywhere;
+	word-break: normal;
+}
+
 h2 {
 	font-size: 2.25rem;
 	font-weight: 600;
@@ -278,6 +292,8 @@ button {
 	user-select: none;
 	cursor: crosshair;
 	outline: none;
+	max-width: 100%;
+	overflow-wrap: anywhere;
 	text-wrap: balance;
 	-webkit-user-select: none;
 
@@ -307,8 +323,9 @@ button {
 }
 
 .rainbow-title__word {
-	display: inline-block;
-	white-space: nowrap;
+	display: inline;
+	white-space: normal;
+	overflow-wrap: anywhere;
 }
 
 .rainbow-title__char::after {

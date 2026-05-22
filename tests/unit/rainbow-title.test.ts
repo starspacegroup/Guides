@@ -28,7 +28,7 @@ describe('rainbow title enhancer', () => {
     expect(title.textContent).toBe('Launch Ready');
   });
 
-  it('keeps characters grouped by word so wrapping only happens between words', () => {
+  it('does not force per-word no-wrap styles, allowing safe mobile wrapping', () => {
     const title = document.createElement('h1');
     title.setAttribute('data-rainbow-title', 'true');
     title.textContent = 'Software guides for launch-ready apps';
@@ -40,7 +40,7 @@ describe('rainbow title enhancer', () => {
     expect(words.map((word) => word.textContent).join(' ')).toBe(
       'Software guides for launch-ready apps'
     );
-    expect(words.every((word) => word.style.whiteSpace === 'nowrap')).toBe(true);
+    expect(words.every((word) => word.style.whiteSpace === '')).toBe(true);
     expect(title.textContent).toBe('Software guides for launch-ready apps');
 
     cleanup();

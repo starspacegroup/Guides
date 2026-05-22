@@ -103,7 +103,6 @@ function createRainbowTitleController(node: HTMLElement): { destroy: (restoreTex
     const word = document.createElement('span');
     word.className = 'rainbow-title__word';
     word.setAttribute('aria-hidden', 'true');
-    word.style.whiteSpace = 'nowrap';
 
     for (const character of splitText(token.value)) {
       const span = document.createElement('span');
