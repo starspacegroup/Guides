@@ -8,9 +8,9 @@
 
 When using Copilot Chat locally:
 
-- Assume `npm run dev` is already running in a separate terminal on port 4255
+- Assume `bun run dev` is already running in a separate terminal on port 4255
 - Do NOT start the dev server when performing tasks
-- Do NOT run `npm run dev`, `vite dev`, or similar commands
+- Do NOT run `bun run dev`, `vite dev`, or similar commands
 - When testing locally, assume the app is already accessible at `http://localhost:4255`
 - If you need to verify the app is running, check the existing terminal output rather than starting a new instance
 
@@ -96,7 +96,7 @@ describe('Feature Name', () => {
 
 - **Minimum 95% coverage** on all modules — this is a hard floor, never allow it to drop below 95%
 - 100% coverage on critical paths (auth, payments, data mutations)
-- **Before finishing any task**, run `npm run test:coverage` and verify coverage has not decreased
+- **Before finishing any task**, run `bun run test:coverage` and verify coverage has not decreased
 - If your changes would reduce coverage below 95%, you MUST add additional tests before considering the task complete
 - Every new feature must include:
   - Unit tests for business logic
@@ -128,7 +128,7 @@ describe('Feature Name', () => {
 
 ```bash
 # Always ensure dev environment works
-npm run dev
+bun run dev
 
 # Create feature branch
 git checkout -b feature/feature-name
@@ -148,16 +148,16 @@ git checkout -b feature/feature-name
 
 ```bash
 # Run all tests
-npm run test
+bun run test
 
 # Check coverage
-npm run test:coverage
+bun run test:coverage
 
 # Type checking
-npm run check
+bun run check
 
 # Ensure dev still works
-npm run dev
+bun run dev
 ```
 
 ## 📁 Project Structure
@@ -423,8 +423,8 @@ This project uses Cloudflare D1's built-in migration tracking. Applied migration
 1. **NEVER edit or delete an existing migration file** - They are immutable once committed
 2. **Always create a new migration file** with the next sequence number (`NNNN_description.sql`)
 3. **Use `ALTER TABLE`** to modify existing tables, not `CREATE TABLE` with changes
-4. **Test locally first**: `npm run db:migrate:local`
-5. **Check status**: `npm run db:migrate:list`
+4. **Test locally first**: `bun run db:migrate:local`
+5. **Check status**: `bun run db:migrate:list`
 
 ### Creating a Migration
 
@@ -436,17 +436,17 @@ This project uses Cloudflare D1's built-in migration tracking. Applied migration
 #    ALTER TABLE users ADD COLUMN preferences TEXT;
 
 # 3. Test locally
-npm run db:migrate:local
+bun run db:migrate:local
 
 # 4. Apply to production
-npm run db:migrate
+bun run db:migrate
 ```
 
 ### Migration Commands
 
-- `npm run db:migrate` - Apply pending migrations to remote D1
-- `npm run db:migrate:local` - Apply pending migrations to local D1
-- `npm run db:migrate:list` - Show migration status (applied/pending)
+- `bun run db:migrate` - Apply pending migrations to remote D1
+- `bun run db:migrate:local` - Apply pending migrations to local D1
+- `bun run db:migrate:list` - Show migration status (applied/pending)
 
 ## 🔒 Security Practices
 

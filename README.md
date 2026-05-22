@@ -16,8 +16,8 @@ It is a section-based guide platform for the *Space Discord community where cont
 ## Local Development
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ## Helpful Routes
@@ -36,18 +36,18 @@ This is a Cloudflare Pages project. Do not run `wrangler deploy`, which is for W
 Use:
 
 ```bash
-npm run deploy
+bun run deploy
 ```
 
 Or directly:
 
 ```bash
-npx wrangler pages deploy .svelte-kit/cloudflare
+bunx wrangler pages deploy .svelte-kit/cloudflare
 ```
 
 Use:
 
 ```bash
-npm run db:migrate:list
-npm run db:migrate:local
+bun run db:migrate:list
+bun run db:migrate:local
 ```
