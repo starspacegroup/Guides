@@ -28,6 +28,7 @@
 		"db:migrate:list": "wrangler d1 migrations list guides-db"
 	},
 	"devDependencies": {
+		"@types/node": "^24.10.1",
 		"@playwright/test": "^1.40.0",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",
 		"@sveltejs/kit": "^2.0.0",
