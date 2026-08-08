@@ -1,15 +1,27 @@
-import { error, json } from '@sveltejs/kit';
+import { error, isHttpError, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import {
+	isPiiRevealed,
+	maskEmail,
+	maskGeneric,
+	maskName,
+	PII_REVEAL_COOKIE
+} from '$lib/server/pii-mask';
+import { requireAdmin } from '$lib/server/auth-guards';
 
-export const GET: RequestHandler = async ({ platform, locals }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
+interface UserRow {
+	id: string;
+	email: string;
+	name: string | null;
+	is_admin: number;
+	github_login: string | null;
+	github_avatar_url: string | null;
+	created_at: string;
+	github_id: string | null;
+}
 
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+export const GET: RequestHandler = async ({ platform, locals, cookies }) => {
+	const user = requireAdmin(locals);
 
 	try {
 		const db = platform?.env?.DB;
@@ -35,26 +47,32 @@ export const GET: RequestHandler = async ({ platform, locals }) => {
 			ORDER BY u.created_at DESC
 		`
 			)
-			.all();
+			.all<UserRow>();
 
-		return json({
-			users: result.results || []
-		});
+		const revealed = isPiiRevealed(user, cookies.get(PII_REVEAL_COOKIE));
+		const users = (result.results || []).map((entry) =>
+			revealed
+				? entry
+				: {
+						...entry,
+						id: maskGeneric(entry.id),
+						email: maskEmail(entry.email),
+						name: maskName(entry.name),
+						github_login: maskGeneric(entry.github_login),
+						github_avatar_url: null,
+						github_id: maskGeneric(entry.github_id)
+					}
+		);
+		return json({ users });
 	} catch (err) {
+		if (isHttpError(err)) throw err;
 		console.error('Failed to fetch users:', err);
 		throw error(500, 'Failed to fetch users');
 	}
 };
 
 export const POST: RequestHandler = async ({ platform, locals, request }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	requireAdmin(locals);
 
 	try {
 		const db = platform?.env?.DB;
@@ -91,9 +109,10 @@ export const POST: RequestHandler = async ({ platform, locals, request }) => {
 				is_admin: 0
 			}
 		});
-	} catch (err: any) {
+	} catch (err) {
+		if (isHttpError(err)) throw err;
 		console.error('Failed to invite user:', err);
-		if (err.message?.includes('UNIQUE constraint')) {
+		if (err instanceof Error && err.message.includes('UNIQUE constraint')) {
 			throw error(400, 'User with this email or GitHub login already exists');
 		}
 		throw error(500, 'Failed to invite user');

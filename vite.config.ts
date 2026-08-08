@@ -27,15 +27,14 @@ export default defineConfig({
 				// These are tested via E2E tests for user interaction flows
 				'**/*.svelte',
 				// Page route type files that just define load types
-				'src/routes/**/+page.ts',
-				// Hooks are tested implicitly through integration tests
-				'src/hooks.server.ts'
+				'src/routes/**/+page.ts'
+				// SvelteKit-generated route wrappers are type-only glue.
 			],
 			thresholds: {
-				lines: 90,
-				functions: 90,
-				branches: 90,
-				statements: 90
+				lines: 95,
+				functions: 95,
+				branches: 95,
+				statements: 95
 			}
 		},
 		poolOptions: {
@@ -43,6 +42,7 @@ export default defineConfig({
 				singleThread: true
 			}
 		},
+		unstubGlobals: true,
 		teardownTimeout: 5000
 	}
 });

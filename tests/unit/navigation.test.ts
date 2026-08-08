@@ -44,18 +44,10 @@ vi.mock('$app/stores', () => ({
 	page
 }));
 
-vi.mock('../../src/lib/components/ThemeSwitcher.svelte', () => ({
-	default: class ThemeSwitcher {}
-}));
-
-vi.mock('../../src/lib/components/ThemeToggle.svelte', () => ({
-	default: class ThemeToggle {}
-}));
-
 import Navigation from '../../src/lib/components/Navigation.svelte';
 
 describe('Navigation', () => {
-	it('renders menu links inside full-width nav items on mobile', async () => {
+	it('opens the mobile menu and exposes the authorized navigation links', async () => {
 		render(Navigation, {
 			props: {
 				user: {
@@ -72,11 +64,11 @@ describe('Navigation', () => {
 
 		await fireEvent.click(screen.getByRole('button', { name: /toggle menu/i }));
 
-		expect(document.querySelector('.nav-shell')).toBeTruthy();
-		expect(document.querySelector('.nav .container')).toBeNull();
+		const navigation = screen.getByRole('navigation');
+		expect(navigation.querySelector('.nav-container')).toBeTruthy();
 		expect(document.querySelector('.nav-links.open')).toBeTruthy();
-		expect(document.querySelector('.nav-link-item')).toBeTruthy();
-		expect(document.querySelector('.nav-link')).toBeTruthy();
-		expect(screen.getByRole('link', { name: /admin/i })).toHaveClass('nav-link');
+		expect(document.querySelector('.mobile-menu-shell')).toBeTruthy();
+		expect(document.querySelector('.mobile-menu-items')).toBeTruthy();
+		expect(screen.getByRole('link', { name: /admin/i })).toHaveAttribute('href', '/admin');
 	});
 });

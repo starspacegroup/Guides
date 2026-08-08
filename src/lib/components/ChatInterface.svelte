@@ -38,7 +38,7 @@
 	let voiceState: 'idle' | 'listening' | 'processing' | 'speaking' = 'idle';
 	let currentUserTranscript = '';
 	let currentAssistantId: string | null = null;
-	let pendingUserMessageId: string | null = null;
+	let currentUserMessageId: string | null = null;
 	let isFocused = false;
 	let audioQueue: ArrayBuffer[] = [];
 	let isPlayingAudio = false;
@@ -104,6 +104,10 @@
 				}
 			}, 100);
 		}
+	}
+
+	function ensureVoiceConversation(): string {
+		return $chatHistoryStore.currentConversationId || chatHistoryStore.createConversation().id;
 	}
 
 	function autoResizeTextarea() {
@@ -391,6 +395,8 @@
 
 					// Track when user starts speaking
 					if (data.type === 'input_audio_buffer.speech_started') {
+						currentUserTranscript = '';
+						currentUserMessageId = null;
 						voiceState = 'listening';
 					}
 
@@ -403,21 +409,14 @@
 					if (data.type === 'conversation.item.input_audio_transcription.completed') {
 						const transcript = data.transcript;
 						if (transcript) {
-							if (pendingUserMessageId) {
-								// Update the placeholder message with actual transcript
-								messages = messages.map((msg) =>
-									msg.id === pendingUserMessageId ? { ...msg, content: transcript } : msg
-								);
-								pendingUserMessageId = null;
+							const conversationId = ensureVoiceConversation();
+							if (currentUserMessageId) {
+								chatHistoryStore.updateMessage(conversationId, currentUserMessageId, transcript);
 							} else {
-								// No pending message, add new one (shouldn't happen often)
-								const userMessage = {
-									id: Date.now().toString(),
-									role: 'user' as const,
-									content: transcript,
-									timestamp: new Date()
-								};
-								messages = [...messages, userMessage];
+								currentUserMessageId = chatHistoryStore.addMessage(conversationId, {
+									role: 'user',
+									content: transcript
+								}).id;
 							}
 							currentUserTranscript = '';
 							scrollToBottom();
@@ -445,35 +444,27 @@
 					if (data.type === 'response.audio_transcript.delta') {
 						voiceState = 'speaking';
 						if (!currentAssistantId) {
-							// First, ensure user message exists before assistant response
-							if (!pendingUserMessageId) {
-								// Create placeholder for user message (will be updated with transcript)
-								pendingUserMessageId = Date.now().toString();
-								const userPlaceholder = {
-									id: pendingUserMessageId,
-									role: 'user' as const,
-									content: currentUserTranscript || '...',
-									timestamp: new Date()
-								};
-								messages = [...messages, userPlaceholder];
+							const conversationId = ensureVoiceConversation();
+							if (!currentUserMessageId) {
+								currentUserMessageId = chatHistoryStore.addMessage(conversationId, {
+									role: 'user',
+									content: currentUserTranscript || '...'
+								}).id;
 							}
 
-							// Now start new assistant message
-							currentAssistantId = (Date.now() + 1).toString();
-							const assistantMessage = {
-								id: currentAssistantId,
-								role: 'assistant' as const,
-								content: data.delta || '',
-								timestamp: new Date()
-							};
-							messages = [...messages, assistantMessage];
+							currentAssistantId = chatHistoryStore.addMessage(conversationId, {
+								role: 'assistant',
+								content: data.delta || ''
+							}).id;
 						} else {
-							// Update existing assistant message
-							messages = messages.map((msg) =>
-								msg.id === currentAssistantId
-									? { ...msg, content: msg.content + (data.delta || '') }
-									: msg
-							);
+							const conversationId = ensureVoiceConversation();
+							const assistant = $currentMessages.find((msg) => msg.id === currentAssistantId);
+							if (assistant)
+								chatHistoryStore.updateMessage(
+									conversationId,
+									currentAssistantId,
+									assistant.content + (data.delta || '')
+								);
 						}
 						scrollToBottom();
 					}
@@ -499,23 +490,15 @@
 								displayName: getModelDisplayName(currentVoiceModel)
 							};
 
-							// Update the assistant message with cost info
-							messages = messages.map((msg) =>
-								msg.id === currentAssistantId ? { ...msg, cost: messageCost } : msg
-							);
-
-							// Also save to the store if we have a conversation
 							const conversationId = $chatHistoryStore.currentConversationId;
-							if (conversationId) {
-								// Find the assistant message and save it with cost
-								const assistantMsg = messages.find((m) => m.id === currentAssistantId);
-								if (assistantMsg) {
-									chatHistoryStore.addMessage(conversationId, {
-										role: 'assistant',
-										content: assistantMsg.content,
-										cost: messageCost
-									});
-								}
+							const assistant = $currentMessages.find((msg) => msg.id === currentAssistantId);
+							if (conversationId && assistant) {
+								chatHistoryStore.updateMessage(
+									conversationId,
+									currentAssistantId,
+									assistant.content,
+									messageCost
+								);
 							}
 
 							console.log('Voice message cost:', formatCost(costResult.totalCost));
@@ -529,11 +512,11 @@
 						}
 
 						currentAssistantId = null;
+						currentUserMessageId = null;
 						voiceState = 'listening';
 					}
 
 					if (data.type === 'response.audio_transcript.done') {
-						currentAssistantId = null;
 						voiceState = 'listening';
 					}
 
@@ -683,7 +666,7 @@
 		voiceState = 'idle';
 		currentUserTranscript = '';
 		currentAssistantId = null;
-		pendingUserMessageId = null;
+		currentUserMessageId = null;
 		audioQueue = [];
 		isPlayingAudio = false;
 		sessionConfigured = false;
@@ -1418,4 +1401,3 @@
 		}
 	}
 </style>
-
