@@ -2,6 +2,7 @@
  * Database utility functions for D1
  */
 import type { D1Database } from '@cloudflare/workers-types';
+import { createSessionToken, hashSessionToken } from './session';
 
 export interface User {
 	id: string;
@@ -14,6 +15,10 @@ export interface Session {
 	id: string;
 	user_id: string;
 	expires_at: Date;
+}
+
+export interface CreatedSession extends Session {
+	token: string;
 }
 
 /**
@@ -55,28 +60,24 @@ export async function createSession(
 	db: D1Database,
 	userId: string,
 	expiresInDays: number = 30
-): Promise<Session> {
-	// Generate UUID (Cloudflare Workers supports crypto.randomUUID)
-	const id = crypto.randomUUID();
+): Promise<CreatedSession> {
+	const token = createSessionToken();
+	const id = await hashSessionToken(token);
 	const expiresAt = new Date();
 	expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
-	const stmt = db.prepare(
-		'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?) RETURNING *'
-	);
-	const result = await stmt.bind(id, userId, expiresAt.toISOString()).first<Session>();
-
-	if (!result) {
-		throw new Error('Failed to create session');
-	}
-
-	return result;
+	await db
+		.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)')
+		.bind(id, userId, expiresAt.toISOString())
+		.run();
+	return { id, token, user_id: userId, expires_at: expiresAt };
 }
 
 /**
  * Find session by ID and check if it's valid
  */
 export async function findValidSession(db: D1Database, sessionId: string): Promise<Session | null> {
+	sessionId = await hashSessionToken(sessionId);
 	const stmt = db.prepare('SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")');
 	return await stmt.bind(sessionId).first<Session>();
 }
@@ -85,6 +86,7 @@ export async function findValidSession(db: D1Database, sessionId: string): Promi
  * Delete session (logout)
  */
 export async function deleteSession(db: D1Database, sessionId: string): Promise<void> {
+	sessionId = await hashSessionToken(sessionId);
 	const stmt = db.prepare('DELETE FROM sessions WHERE id = ?');
 	await stmt.bind(sessionId).run();
 }

@@ -35,13 +35,18 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 	if (!contentType) {
 		throw error(404, 'Content type not found');
 	}
+	if (contentType.visibility !== 'public' || contentType.settings.isPublic === false) {
+		throw error(404, 'Not found');
+	}
 
-	const sortBy = contentType.purpose === 'guide_section'
-		? 'sort_order'
-		: contentType.settings.defaultSort || 'published_at';
-	const sortDirection = contentType.purpose === 'guide_section'
-		? 'asc'
-		: contentType.settings.defaultSortDirection || 'desc';
+	const sortBy =
+		contentType.purpose === 'guide_section'
+			? 'sort_order'
+			: contentType.settings.defaultSort || 'published_at';
+	const sortDirection =
+		contentType.purpose === 'guide_section'
+			? 'asc'
+			: contentType.settings.defaultSortDirection || 'desc';
 
 	// Parse query params
 	const filters: ContentItemFilters = {

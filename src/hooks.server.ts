@@ -1,58 +1,50 @@
+import { resolveOwnerStatus } from '$lib/utils/auth-identity';
+import { findValidSession } from '$lib/utils/db';
+import { decodeDatabaseSessionCookie } from '$lib/utils/session';
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 
-// Auth handling hook
-const authHandler: Handle = async ({ event, resolve }) => {
-	// Get session cookie
-	const sessionId = event.cookies.get('session');
-
-	if (sessionId) {
-		// In production, fetch session from D1 or KV
-		// For now, decode the session from the cookie
+export const authHandler: Handle = async ({ event, resolve }) => {
+	const cookie = event.cookies.get('session');
+	if (cookie) {
 		try {
-			// Handle both standard base64 and URL-safe base64
-			// URL-safe uses - instead of +, _ instead of /, and no padding
-			let base64 = sessionId;
-
-			// Only apply URL-safe decoding if the string contains URL-safe characters
-			if (base64.includes('-') || base64.includes('_')) {
-				base64 = base64.replace(/-/g, '+').replace(/_/g, '/');
-			}
-
-			// Add padding if needed (for both standard and URL-safe base64)
-			while (base64.length % 4) {
-				base64 += '=';
-			}
-
-			const decoded = atob(base64);
-			const sessionData = JSON.parse(decoded);
-
-			// Check if user is admin from database (optional - don't fail auth if DB unavailable)
-			if (event.platform?.env?.DB) {
-				try {
-					const userRecord = await event.platform.env.DB.prepare(
-						'SELECT is_admin FROM users WHERE id = ?'
-					)
-						.bind(sessionData.id)
-						.first<{ is_admin: number }>();
-
-					if (userRecord) {
-						sessionData.isAdmin = userRecord.is_admin === 1;
-					}
-				} catch {
-					// Database error - continue with session data from cookie
-				}
-			}
-
-			event.locals.user = sessionData;
+			const db = event.platform?.env.DB;
+			if (!db) throw new Error('Session database unavailable');
+			const token = await decodeDatabaseSessionCookie(cookie, event.platform?.env.SESSION_SECRET);
+			if (!token) throw new Error('Invalid session cookie');
+			const session = await findValidSession(db, token);
+			if (!session) throw new Error('Expired or revoked session');
+			const user = await db
+				.prepare(
+					`SELECT id, email, name, github_login, github_avatar_url, is_admin
+				 FROM users WHERE id = ?`
+				)
+				.bind(session.user_id)
+				.first<{
+					id: string;
+					email: string;
+					name: string | null;
+					github_login: string | null;
+					github_avatar_url: string | null;
+					is_admin: number;
+				}>();
+			if (!user) throw new Error('Session user missing');
+			const isOwner = await resolveOwnerStatus(event.platform, user);
+			event.locals.user = {
+				id: user.id,
+				login: user.github_login || user.email.split('@')[0] || user.email,
+				email: user.email,
+				name: user.name || undefined,
+				avatarUrl: user.github_avatar_url || undefined,
+				isOwner,
+				isAdmin: user.is_admin === 1 || isOwner
+			};
 		} catch {
-			// Invalid session, clear cookie
+			delete event.locals.user;
 			event.cookies.delete('session', { path: '/' });
 		}
 	}
-
 	return resolve(event);
 };
 
-// Combine all hooks
 export const handle = sequence(authHandler);
