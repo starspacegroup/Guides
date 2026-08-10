@@ -191,6 +191,31 @@ describe('Admin Users API', () => {
 			}
 		});
 
+		it('should forbid a non-owner admin from changing admin status', async () => {
+			mockLocals.user.isOwner = false;
+			mockLocals.user.isAdmin = true;
+
+			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server.js');
+
+			try {
+				await PATCH({
+					platform: mockPlatform,
+					locals: mockLocals,
+					params: { id: '2' },
+					request: {
+						json: async () => ({ isAdmin: true })
+					}
+				} as any);
+				expect.fail('Should have thrown error');
+			} catch (err: any) {
+				expect(err.status).toBe(403);
+				expect(err.body?.message).toBe('Owner access required');
+			}
+
+			// The guard must reject before any database access
+			expect(mockPlatform.env.DB.prepare).not.toHaveBeenCalled();
+		});
+
 		it('should prevent user from modifying their own status', async () => {
 			mockPlatform.env.DB.first.mockResolvedValueOnce({
 				id: '1',
@@ -254,6 +279,28 @@ describe('Admin Users API', () => {
 			} catch (err: any) {
 				expect(err.status).toBe(401);
 			}
+		});
+
+		it('should forbid a non-owner admin from deleting a user', async () => {
+			mockLocals.user.isOwner = false;
+			mockLocals.user.isAdmin = true;
+
+			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server.js');
+
+			try {
+				await DELETE({
+					platform: mockPlatform,
+					locals: mockLocals,
+					params: { id: '2' }
+				} as any);
+				expect.fail('Should have thrown error');
+			} catch (err: any) {
+				expect(err.status).toBe(403);
+				expect(err.body?.message).toBe('Owner access required');
+			}
+
+			// The guard must reject before any database access
+			expect(mockPlatform.env.DB.prepare).not.toHaveBeenCalled();
 		});
 
 		it('should prevent user from deleting themselves', async () => {
