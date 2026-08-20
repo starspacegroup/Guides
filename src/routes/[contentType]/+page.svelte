@@ -53,9 +53,17 @@
 				{#each items as item}
 					<article class="cms-blog-card">
 						{#if item.fields.featured_image}
-							<div class="cms-blog-card-image">
+							<!-- The picture is the biggest target on the card, so it goes where
+							     the title goes. Hidden from the accessibility tree because the
+							     heading link beside it already says the same thing. -->
+							<a
+								class="cms-blog-card-image"
+								href="{getRoutePrefix()}/{item.slug}"
+								tabindex="-1"
+								aria-hidden="true"
+							>
 								<img src={String(item.fields.featured_image)} alt={item.title} loading="lazy" />
-							</div>
+							</a>
 						{/if}
 						<div class="cms-blog-card-content">
 							{#if item.fields.category}
@@ -196,6 +204,7 @@
 	}
 
 	.cms-blog-card-image {
+		display: block;
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
 	}
