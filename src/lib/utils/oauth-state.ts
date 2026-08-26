@@ -66,6 +66,20 @@ export async function createOAuthTransaction(
 		payload = { provider, state, intent, issuedAt: Date.now() };
 	}
 	const cookie = await signValue(payload, secret);
+	// Consumed and expired rows are dead weight: consume already rejects them, and nothing else
+	// deletes them, so without this they accumulate for the lifetime of the installation. Best
+	// effort — a failed sweep must never stop someone logging in. No bound parameters, so this
+	// leaves the insert below as the first statement carrying user data.
+	try {
+		await db
+			.prepare(
+				`DELETE FROM oauth_transactions
+			WHERE consumed_at IS NOT NULL OR datetime(expires_at) <= CURRENT_TIMESTAMP`
+			)
+			.run();
+	} catch {
+		console.error('Failed to prune spent OAuth transactions');
+	}
 	await db
 		.prepare(
 			`INSERT INTO oauth_transactions (id, provider, intent, user_id, session_id, expires_at)
