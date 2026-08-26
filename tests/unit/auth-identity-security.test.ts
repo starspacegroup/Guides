@@ -54,3 +54,63 @@ describe('owner identity resolution', () => {
 		expect(await resolveOwnerStatus(platform({}), { id: 'user', github_login: null })).toBe(false);
 	});
 });
+
+describe('owner identity resolution with a configured owner ID', () => {
+	function linkedTo(providerAccountId: string | null) {
+		const statement = {
+			bind: vi.fn(),
+			first: vi.fn().mockResolvedValue(providerAccountId ? { providerAccountId } : null)
+		};
+		statement.first.mockResolvedValue(
+			providerAccountId ? { provider_account_id: providerAccountId } : null
+		);
+		statement.bind.mockReturnValue(statement);
+		return { prepare: vi.fn().mockReturnValue(statement) };
+	}
+
+	it('refuses owner access to a username match when an owner ID is configured', async () => {
+		const env = {
+			GITHUB_OWNER_ID: '123',
+			GITHUB_OWNER_USERNAME: 'Owner',
+			DB: linkedTo(null)
+		};
+		expect(await resolveOwnerStatus(platform(env), { id: 'impostor', github_login: 'owner' })).toBe(
+			false
+		);
+	});
+
+	it('refuses owner access to a username match linked to a different GitHub account', async () => {
+		const env = {
+			GITHUB_OWNER_ID: '123',
+			GITHUB_OWNER_USERNAME: 'Owner',
+			DB: linkedTo('999')
+		};
+		expect(await resolveOwnerStatus(platform(env), { id: 'impostor', github_login: 'Owner' })).toBe(
+			false
+		);
+	});
+
+	it('refuses owner access when the account link cannot be read', async () => {
+		expect(
+			await resolveOwnerStatus(platform({ GITHUB_OWNER_ID: '123' }), {
+				id: 'someone',
+				github_login: 'Owner'
+			})
+		).toBe(false);
+	});
+
+	it('still grants owner access through the stable ID and the linked GitHub account', async () => {
+		expect(
+			await resolveOwnerStatus(platform({ GITHUB_OWNER_ID: '123', DB: linkedTo(null) }), {
+				id: '123',
+				github_login: null
+			})
+		).toBe(true);
+		expect(
+			await resolveOwnerStatus(platform({ GITHUB_OWNER_ID: '123', DB: linkedTo('123') }), {
+				id: 'user',
+				github_login: null
+			})
+		).toBe(true);
+	});
+});
