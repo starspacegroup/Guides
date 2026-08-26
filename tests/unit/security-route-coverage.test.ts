@@ -103,8 +103,13 @@ describe('secure setup route', () => {
 			headers: new Headers({ authorization }),
 			json: async () => body
 		});
+		// A complete installation locks. A partial one stays repairable by the setup secret and is
+		// covered in setup-recovery.test.ts.
 		await expect(
-			setupPost({ platform: { env: { KV: kv(['config']) } }, locals: {} } as any)
+			setupPost({
+				platform: { env: { KV: kv(['config', 'owner-id', 'owner-name']) } },
+				locals: {}
+			} as any)
 		).rejects.toMatchObject({ status: 401 });
 		await expect(
 			setupPost({
