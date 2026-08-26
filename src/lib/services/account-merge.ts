@@ -77,12 +77,55 @@ export async function mergeAccounts(
 		db.prepare('UPDATE sessions SET user_id = ? WHERE user_id = ?').bind(targetUserId, sourceUserId)
 	);
 
+	// Transfer CMS authorship and edit history. These columns are ON DELETE SET NULL, so the
+	// delete below would silently strip attribution instead of moving it to the surviving user.
+	statements.push(
+		db
+			.prepare('UPDATE content_items SET author_id = ? WHERE author_id = ?')
+			.bind(targetUserId, sourceUserId)
+	);
+	statements.push(
+		db
+			.prepare('UPDATE content_items SET last_edited_by = ? WHERE last_edited_by = ?')
+			.bind(targetUserId, sourceUserId)
+	);
+	statements.push(
+		db
+			.prepare('UPDATE guide_revisions SET edited_by = ? WHERE edited_by = ?')
+			.bind(targetUserId, sourceUserId)
+	);
+	statements.push(
+		db
+			.prepare('UPDATE section_contributors SET granted_by = ? WHERE granted_by = ?')
+			.bind(targetUserId, sourceUserId)
+	);
+
+	// Transfer section permissions. section_contributors is ON DELETE CASCADE, so the delete
+	// below would drop them outright. UNIQUE (content_type_id, user_id) means the source's grant
+	// for a section the target already holds cannot move, so drop that duplicate first and keep
+	// the surviving user's existing role.
+	statements.push(
+		db
+			.prepare(
+				`DELETE FROM section_contributors
+			 WHERE user_id = ?
+			   AND content_type_id IN (SELECT content_type_id FROM section_contributors WHERE user_id = ?)`
+			)
+			.bind(sourceUserId, targetUserId)
+	);
+	statements.push(
+		db
+			.prepare('UPDATE section_contributors SET user_id = ? WHERE user_id = ?')
+			.bind(targetUserId, sourceUserId)
+	);
+
 	// If source user was admin, make target user admin too
 	if (sourceIsAdmin) {
 		statements.push(db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').bind(targetUserId));
 	}
 
-	// Delete the source user (CASCADE will clean up any remaining references)
+	// Delete the source user. Everything worth keeping has been moved above; CASCADE now only
+	// clears rows that belong to the retired account itself.
 	statements.push(db.prepare('DELETE FROM users WHERE id = ?').bind(sourceUserId));
 
 	// Execute all statements in a batch for atomicity
