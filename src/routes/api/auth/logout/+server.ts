@@ -8,13 +8,20 @@ async function logout(
 	cookies: Parameters<RequestHandler>[0]['cookies'],
 	platform: App.Platform | undefined
 ): Promise<never> {
-	const token = await decodeDatabaseSessionCookie(
-		cookies.get('session'),
-		platform?.env.SESSION_SECRET
-	);
-	if (token && platform?.env.DB) await deleteSession(platform.env.DB, token);
-	// Clear session cookie
-	cookies.delete('session', { path: '/' });
+	// Server-side revocation is best effort. If D1 is unavailable the browser must still lose its
+	// credential, otherwise an explicit logout leaves the user holding a session that still works.
+	try {
+		const token = await decodeDatabaseSessionCookie(
+			cookies.get('session'),
+			platform?.env.SESSION_SECRET
+		);
+		if (token && platform?.env.DB) await deleteSession(platform.env.DB, token);
+	} catch {
+		console.error('Failed to revoke session on logout');
+	} finally {
+		// Clear session cookie
+		cookies.delete('session', { path: '/' });
+	}
 
 	throw redirect(302, '/auth/login');
 }
