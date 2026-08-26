@@ -115,8 +115,10 @@ async function fetchIdentity(provider: OAuthProvider, accessToken: string): Prom
 	if (!response.ok) throw redirect(302, '/auth/login?error=user_fetch_failed');
 	const profile = record(await response.json());
 	const providerAccountId = requiredString(profile.id);
-	const email = optionalString(profile.email);
 	if (provider === 'github') {
+		// GitHub only publishes an address on /user that the account has already verified,
+		// so the profile email is safe to match an existing user against.
+		const email = optionalString(profile.email);
 		const login = requiredString(profile.login);
 		const name = optionalString(profile.name);
 		const avatar = optionalString(profile.avatar_url);
@@ -145,6 +147,9 @@ async function fetchIdentity(provider: OAuthProvider, accessToken: string): Prom
 			}
 		};
 	}
+	// Discord hands back an address before the account confirms it. An unverified address must
+	// never select an existing user, and must never be stored where a later login could match it.
+	const email = profile.verified === true ? optionalString(profile.email) : null;
 	const username = requiredString(profile.username);
 	const name = optionalString(profile.global_name) || username;
 	return {
