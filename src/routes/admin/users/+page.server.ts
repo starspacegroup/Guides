@@ -1,12 +1,16 @@
+import { PII_REVEAL_COOKIE } from '$lib/server/pii-mask';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ fetch }) => {
+export const load: PageServerLoad = async ({ fetch, cookies }) => {
+	const piiRevealed = cookies.get(PII_REVEAL_COOKIE) === '1';
+
 	try {
 		const response = await fetch('/api/admin/users');
 		if (response.ok) {
 			const data = await response.json();
 			return {
-				users: data.users || []
+				users: data.users || [],
+				piiRevealed
 			};
 		}
 	} catch (error) {
@@ -14,6 +18,7 @@ export const load: PageServerLoad = async ({ fetch }) => {
 	}
 
 	return {
-		users: []
+		users: [],
+		piiRevealed: false
 	};
 };

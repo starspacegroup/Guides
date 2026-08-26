@@ -54,8 +54,8 @@ export const GET: RequestHandler = async ({ platform, locals, cookies }) => {
 			revealed
 				? entry
 				: {
+						// id is the handle PATCH and DELETE act on; masking it breaks user management.
 						...entry,
-						id: maskGeneric(entry.id),
 						email: maskEmail(entry.email),
 						name: maskName(entry.name),
 						github_login: maskGeneric(entry.github_login),

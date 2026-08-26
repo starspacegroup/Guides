@@ -4,6 +4,7 @@
 	export let data: PageData;
 
 	let users = data.users || [];
+	let piiRevealed = data.piiRevealed || false;
 	let searchQuery = '';
 	let searchResults: any[] = [];
 	let isSearching = false;
@@ -155,6 +156,30 @@
 		}
 	}
 
+	// The users API masks personal data by default. Only the owner can lift that, and only
+	// through this control — otherwise the reveal endpoint is unreachable from the UI.
+	async function togglePiiReveal() {
+		const reveal = !piiRevealed;
+
+		try {
+			const response = await fetch('/api/admin/pii-reveal', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ reveal })
+			});
+			if (!response.ok) return;
+
+			piiRevealed = reveal;
+
+			const usersResponse = await fetch('/api/admin/users');
+			if (usersResponse.ok) {
+				users = (await usersResponse.json()).users || [];
+			}
+		} catch (error) {
+			console.error('Failed to change PII visibility:', error);
+		}
+	}
+
 	function formatDate(dateString: string) {
 		return new Date(dateString).toLocaleDateString();
 	}
@@ -164,6 +189,11 @@
 	<header class="page-header">
 		<h1>User Management</h1>
 		<p class="page-description">Manage users and their admin permissions.</p>
+		{#if data.user?.isOwner}
+			<button class="pii-toggle" type="button" on:click={togglePiiReveal}>
+				{piiRevealed ? 'Hide personal data' : 'Reveal personal data'}
+			</button>
+		{/if}
 	</header>
 
 	<div class="search-section">
@@ -452,6 +482,21 @@
 	.page-description {
 		color: var(--color-text-secondary);
 		margin: 0;
+	}
+
+	.pii-toggle {
+		margin-top: var(--spacing-sm);
+		padding: var(--spacing-xs) var(--spacing-md);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: transparent;
+		color: var(--color-text);
+		cursor: pointer;
+		transition: background-color var(--transition-fast);
+	}
+
+	.pii-toggle:hover {
+		background: var(--color-background);
 	}
 
 	.search-section {

@@ -373,3 +373,53 @@ describe('Admin Users API', () => {
 		});
 	});
 });
+
+describe('Admin Users API - actionable identifiers', () => {
+	const rows = [
+		{
+			id: 'user-uuid-1',
+			email: 'member@example.com',
+			name: 'Member One',
+			is_admin: 0,
+			github_login: 'memberone',
+			github_avatar_url: 'https://example.com/a.png',
+			created_at: '2026-01-01',
+			github_id: '4815162342'
+		}
+	];
+
+	function context(cookie?: string) {
+		const statement = { bind: vi.fn(), all: vi.fn().mockResolvedValue({ results: rows }) };
+		statement.bind.mockReturnValue(statement);
+		return {
+			platform: { env: { DB: { prepare: vi.fn().mockReturnValue(statement) } } },
+			locals: { user: { id: 'owner', isOwner: true, isAdmin: true } },
+			cookies: { get: vi.fn().mockReturnValue(cookie) }
+		} as any;
+	}
+
+	it('returns usable IDs so promote and delete can target a real row', async () => {
+		const { GET } = await import('../../src/routes/api/admin/users/+server.js');
+		const { users } = await (await GET(context())).json();
+		expect(users[0].id).toBe('user-uuid-1');
+	});
+
+	it('still masks personal data when PII is not revealed', async () => {
+		const { GET } = await import('../../src/routes/api/admin/users/+server.js');
+		const { users } = await (await GET(context())).json();
+		expect(users[0].email).not.toBe('member@example.com');
+		expect(users[0].name).not.toBe('Member One');
+		expect(users[0].github_login).not.toBe('memberone');
+		expect(users[0].github_id).not.toBe('4815162342');
+	});
+
+	it('returns unmasked data once the owner reveals PII', async () => {
+		const { GET } = await import('../../src/routes/api/admin/users/+server.js');
+		const { users } = await (await GET(context('1'))).json();
+		expect(users[0]).toMatchObject({
+			id: 'user-uuid-1',
+			email: 'member@example.com',
+			github_login: 'memberone'
+		});
+	});
+});
