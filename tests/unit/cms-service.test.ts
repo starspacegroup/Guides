@@ -120,7 +120,8 @@ describe('CMS Service', () => {
 							name: 'UI Patterns',
 							description: 'Guide collection',
 							fields: '[]',
-							settings: '{"isPublic":true,"routePrefix":"/ui-patterns","defaultSort":"published_at","defaultSortDirection":"desc"}',
+							settings:
+								'{"isPublic":true,"routePrefix":"/ui-patterns","defaultSort":"published_at","defaultSortDirection":"desc"}',
 							icon: 'layout',
 							sort_order: 1,
 							is_system: 0,
@@ -177,7 +178,9 @@ describe('CMS Service', () => {
 			expect(collections[0].slug).toBe('ui-patterns');
 			expect(collections[0].href).toBe('/ui-patterns');
 			expect(collections[0].items.map((item) => item.title)).toEqual(['Second item', 'First item']);
-			expect(mockDB.prepare).toHaveBeenCalledWith(expect.stringContaining('ORDER BY sort_order ASC'));
+			expect(mockDB.prepare).toHaveBeenCalledWith(
+				expect.stringContaining('ORDER BY sort_order ASC')
+			);
 		});
 	});
 
@@ -543,7 +546,9 @@ describe('CMS Service', () => {
 
 			expect(result.items.map((item) => item.id)).toEqual(['ci-2', 'ci-1']);
 			expect(result.items.map((item) => item.sortOrder)).toEqual([0, 1]);
-			expect(mockDB.prepare).toHaveBeenCalledWith(expect.stringContaining('ORDER BY sort_order ASC'));
+			expect(mockDB.prepare).toHaveBeenCalledWith(
+				expect.stringContaining('ORDER BY sort_order ASC')
+			);
 		});
 	});
 

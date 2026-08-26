@@ -1,18 +1,36 @@
 import { redirect } from '@sveltejs/kit';
+import { decodeDatabaseSessionCookie } from '$lib/utils/session';
+import { deleteSession } from '$lib/utils/db';
 import type { RequestHandler } from './$types';
 
 // POST - Logout user
-export const POST: RequestHandler = async ({ cookies }) => {
-	// Clear session cookie
-	cookies.delete('session', { path: '/' });
+async function logout(
+	cookies: Parameters<RequestHandler>[0]['cookies'],
+	platform: App.Platform | undefined
+): Promise<never> {
+	// Server-side revocation is best effort. If D1 is unavailable the browser must still lose its
+	// credential, otherwise an explicit logout leaves the user holding a session that still works.
+	try {
+		const token = await decodeDatabaseSessionCookie(
+			cookies.get('session'),
+			platform?.env.SESSION_SECRET
+		);
+		if (token && platform?.env.DB) await deleteSession(platform.env.DB, token);
+	} catch {
+		console.error('Failed to revoke session on logout');
+	} finally {
+		// Clear session cookie
+		cookies.delete('session', { path: '/' });
+	}
 
 	throw redirect(302, '/auth/login');
+}
+
+export const POST: RequestHandler = async ({ cookies, platform }) => {
+	return logout(cookies, platform);
 };
 
 // GET - Logout user (for convenience)
-export const GET: RequestHandler = async ({ cookies }) => {
-	// Clear session cookie
-	cookies.delete('session', { path: '/' });
-
-	throw redirect(302, '/auth/login');
+export const GET: RequestHandler = async ({ cookies, platform }) => {
+	return logout(cookies, platform);
 };

@@ -1,74 +1,40 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { GET } from '../../src/routes/api/auth/discord/+server';
 
-describe('Discord OAuth Init - Extended Branch Coverage', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		vi.resetModules();
+describe('Discord OAuth initiation', () => {
+	it('fails closed without configuration or D1', async () => {
+		await expect(GET({ platform: { env: {} } } as any)).rejects.toMatchObject({
+			location: '/setup?error=oauth_not_configured'
+		});
+		await expect(
+			GET({ platform: { env: { DISCORD_CLIENT_ID: 'client' } } } as any)
+		).rejects.toMatchObject({ location: '/auth/login?error=oauth_failed' });
 	});
-
-	describe('GET /api/auth/discord', () => {
-		it('should fallback to KV when env var not set and handle KV errors', async () => {
-			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-
-			const mockEvent = {
+	it('persists one-time state and redirects to Discord', async () => {
+		const run = vi.fn();
+		const set = vi.fn();
+		try {
+			await GET({
+				url: new URL('https://guides.example/api/auth/discord'),
+				locals: {},
+				cookies: { get: vi.fn(), set },
 				platform: {
 					env: {
-						DISCORD_CLIENT_ID: undefined,
-						KV: {
-							get: vi.fn().mockRejectedValue(new Error('KV Error'))
-						}
+						DISCORD_CLIENT_ID: 'client',
+						SESSION_SECRET: 'test-secret',
+						DB: { prepare: vi.fn(() => ({ bind: vi.fn(() => ({ run })) })) }
 					}
-				},
-				url: new URL('http://localhost:4255/api/auth/discord')
-			};
-
-			const { GET } = await import('../../src/routes/api/auth/discord/+server');
-
-			try {
-				await GET(mockEvent as any);
-				expect.fail('Should have thrown redirect');
-			} catch (err: any) {
-				// Should redirect to setup with error
-				expect(err.status).toBe(302);
-				expect(err.location).toContain('/setup');
-			}
-
-			expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch from KV:', expect.any(Error));
-			consoleSpy.mockRestore();
-		});
-
-		it('should use KV clientId when env var not set', async () => {
-			const mockEvent = {
-				platform: {
-					env: {
-						DISCORD_CLIENT_ID: undefined,
-						KV: {
-							get: vi.fn().mockResolvedValue(
-								JSON.stringify({
-									clientId: 'kv-client-id',
-									clientSecret: 'kv-secret'
-								})
-							)
-						}
-					}
-				},
-				url: new URL('http://localhost:4255/api/auth/discord'),
-				cookies: {
-					set: vi.fn()
 				}
-			};
-
-			const { GET } = await import('../../src/routes/api/auth/discord/+server');
-
-			try {
-				await GET(mockEvent as any);
-				expect.fail('Should have thrown redirect');
-			} catch (err: any) {
-				// Should redirect to Discord OAuth
-				expect(err.status).toBe(302);
-				expect(err.location).toContain('discord.com');
-				expect(err.location).toContain('kv-client-id');
-			}
-		});
+			} as any);
+			expect.fail('redirect expected');
+		} catch (error: any) {
+			expect(error.location).toContain('discord.com');
+		}
+		expect(run).toHaveBeenCalled();
+		expect(set).toHaveBeenCalledWith(
+			'oauth_state_discord',
+			expect.any(String),
+			expect.objectContaining({ secure: true })
+		);
 	});
 });

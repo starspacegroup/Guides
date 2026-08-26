@@ -2,7 +2,7 @@
 
 Guides is the foundation for guides.starspace.group.
 
-It is a section-based guide platform for the *Space Discord community where content is published with URLs shaped like:
+It is a section-based guide platform for the \*Space Discord community where content is published with URLs shaped like:
 
 - /user-interface
 - /user-interface/theme-toggles
@@ -20,6 +20,10 @@ bun install
 bun run dev
 ```
 
+Authentication requires D1, KV, `SESSION_SECRET`, and configured OAuth credentials. Initial
+setup additionally requires `SETUP_SECRET` as a bearer token. Turnstile is considered enabled only
+when both `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` are configured.
+
 ## Helpful Routes
 
 - /admin/cms: create and manage sections
@@ -29,7 +33,7 @@ bun run dev
 
 ## Cloudflare
 
-This project is configured for Cloudflare Pages/Workers with D1, KV, and R2 bindings in wrangler.toml.
+This project is configured for Cloudflare Pages, using the Workers runtime with D1, KV, and R2 bindings from `wrangler.toml`.
 
 This is a Cloudflare Pages project. Do not run `wrangler deploy`, which is for Workers projects and will fail for this repository.
 
@@ -51,3 +55,7 @@ Use:
 bun run db:migrate:list
 bun run db:migrate:local
 ```
+
+`bun run test:coverage` enforces the documented 95% floor for lines, functions, branches, and
+statements; CI runs that same gate. Existing D1 migrations are immutable, so schema changes must use
+the next sequential migration file.

@@ -1,102 +1,84 @@
-import { error, json } from '@sveltejs/kit';
+import { requireOwner } from '$lib/server/auth-guards';
+import {
+	AUTH_PROVIDERS,
+	isAuthProvider,
+	readAuthProviderSummary
+} from '$lib/utils/auth-provider-config';
+import { error, isHttpError, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-// GET - List all auth keys
-export const GET: RequestHandler = async ({ platform }) => {
+export const GET: RequestHandler = async ({ platform, locals }) => {
+	requireOwner(locals);
 	try {
-		const keys: any[] = [];
-
-		// Fetch GitHub OAuth configuration from KV (saved during setup)
-		if (platform?.env?.KV) {
+		if (!platform?.env.KV) throw error(500, 'KV storage not available');
+		const keys = [];
+		for (const provider of AUTH_PROVIDERS) {
 			try {
-				const authConfigStr = await platform.env.KV.get('auth_config:github');
-				if (authConfigStr) {
-					const authConfig = JSON.parse(authConfigStr);
-					// Add GitHub OAuth as a key in the list
-					keys.push({
-						id: authConfig.id,
-						name: 'GitHub OAuth (Setup)',
-						provider: authConfig.provider,
-						type: 'oauth',
-						clientId: authConfig.clientId,
-						createdAt: authConfig.createdAt,
-						isSetupKey: true // Mark as setup key (read-only)
-					});
-				}
-			} catch (err) {
-				console.error('Failed to parse GitHub OAuth config:', err);
-			}
-
-			// Fetch Discord OAuth configuration from KV
-			try {
-				const discordConfigStr = await platform.env.KV.get('auth_config:discord');
-				if (discordConfigStr) {
-					const discordConfig = JSON.parse(discordConfigStr);
-					keys.push({
-						id: discordConfig.id,
-						name: 'Discord OAuth (Setup)',
-						provider: discordConfig.provider,
-						type: 'oauth',
-						clientId: discordConfig.clientId,
-						createdAt: discordConfig.createdAt,
-						isSetupKey: true
-					});
-				}
-			} catch (err) {
-				console.error('Failed to parse Discord OAuth config:', err);
+				const config = await readAuthProviderSummary(platform.env.KV, provider);
+				if (!config) continue;
+				keys.push({
+					id: config.id,
+					name: `${provider === 'github' ? 'GitHub' : 'Discord'} OAuth`,
+					provider,
+					type: 'oauth',
+					clientId: config.clientId,
+					createdAt: config.createdAt,
+					isSetupKey: provider === 'github'
+				});
+			} catch (parseError) {
+				console.error(
+					`Failed to parse ${provider === 'github' ? 'GitHub' : 'Discord'} OAuth config:`,
+					parseError
+				);
 			}
 		}
-
 		return json({ keys });
 	} catch (err) {
-		console.error('Failed to fetch auth keys:', err);
+		if (isHttpError(err)) throw err;
 		throw error(500, 'Failed to fetch authentication keys');
 	}
 };
 
-// POST - Create new auth key
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const POST: RequestHandler = async ({ request, platform, locals }) => {
+	requireOwner(locals);
 	try {
-		const data = await request.json();
-
-		// Validate required fields
-		if (!data.name || !data.clientId || !data.clientSecret) {
+		if (!platform?.env.KV) throw error(500, 'KV storage not available');
+		const data: unknown = await request.json();
+		if (typeof data !== 'object' || data === null) throw error(400, 'Invalid request body');
+		const input = data as Record<string, unknown>;
+		if (
+			typeof input.name !== 'string' ||
+			!isAuthProvider(input.provider) ||
+			typeof input.clientId !== 'string' ||
+			typeof input.clientSecret !== 'string'
+		)
 			throw error(400, 'Missing required fields');
-		}
-
-		// Generate unique ID
 		const id = crypto.randomUUID();
 		const createdAt = new Date().toISOString();
-
-		const newKey = {
-			id,
-			name: data.name,
-			provider: data.provider,
-			type: data.type,
-			clientId: data.clientId,
-			createdAt
-		};
-
-		// Store in KV for OAuth providers (github, discord, etc.)
-		if (platform?.env?.KV && data.provider) {
-			const authConfig = {
+		await platform.env.KV.put(
+			`auth_config:${input.provider}`,
+			JSON.stringify({
 				id,
-				provider: data.provider,
-				clientId: data.clientId,
-				clientSecret: data.clientSecret,
+				provider: input.provider,
+				clientId: input.clientId,
+				clientSecret: input.clientSecret,
 				createdAt,
-				updatedAt: new Date().toISOString()
-			};
-			await platform.env.KV.put(`auth_config:${data.provider}`, JSON.stringify(authConfig));
-			console.log(`✓ Saved ${data.provider} OAuth config to KV`);
-		}
-
-		return json({ success: true, key: newKey });
+				updatedAt: createdAt
+			})
+		);
+		return json({
+			success: true,
+			key: {
+				id,
+				name: input.name,
+				provider: input.provider,
+				type: input.type,
+				clientId: input.clientId,
+				createdAt
+			}
+		});
 	} catch (err) {
-		if (err instanceof Error && 'status' in err) {
-			throw err;
-		}
-		console.error('Failed to create auth key:', err);
+		if (isHttpError(err)) throw err;
 		throw error(500, 'Failed to create authentication key');
 	}
 };
