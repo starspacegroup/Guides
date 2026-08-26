@@ -78,7 +78,12 @@ export async function createSession(
  */
 export async function findValidSession(db: D1Database, sessionId: string): Promise<Session | null> {
 	sessionId = await hashSessionToken(sessionId);
-	const stmt = db.prepare('SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")');
+	// expires_at is stored as an ISO string ('...T10:00:00.000Z') and datetime('now') returns
+	// '... 10:00:00'. Compared as text, 'T' sorts after the space, so an unnormalized comparison
+	// keeps an expired session valid until the end of its expiry day. Normalize both sides.
+	const stmt = db.prepare(
+		"SELECT * FROM sessions WHERE id = ? AND datetime(expires_at) > datetime('now')"
+	);
 	return await stmt.bind(sessionId).first<Session>();
 }
 
@@ -95,6 +100,6 @@ export async function deleteSession(db: D1Database, sessionId: string): Promise<
  * Clean up expired sessions
  */
 export async function cleanupExpiredSessions(db: D1Database): Promise<void> {
-	const stmt = db.prepare('DELETE FROM sessions WHERE expires_at < datetime("now")');
+	const stmt = db.prepare("DELETE FROM sessions WHERE datetime(expires_at) < datetime('now')");
 	await stmt.run();
 }
