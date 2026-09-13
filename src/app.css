@@ -180,8 +180,17 @@
 
 html {
 	font-family: var(--font-sans);
-	font-size: 22px;
+	/*
+	  22px is the desktop base the whole rem scale is tuned against, and it is
+	  reached at 900px and above — nothing on desktop changes. Below that it
+	  falls to 17px at phone widths; a fixed 22px root made every rem 37% larger
+	  than the layout assumed, so headings ran to ~60px on a 390px screen.
+	*/
+	font-size: clamp(17px, 0.98vw + 13.2px, 22px);
 	line-height: 1.6;
+	/* We size text ourselves; stop mobile Safari/Chrome inflating it on top. */
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }

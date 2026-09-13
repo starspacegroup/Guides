@@ -474,12 +474,21 @@
 
 	.cms-blog-article-main {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl));
 		min-width: 0;
 	}
 
 	.cms-blog-article-layout {
 		display: grid;
+		/*
+		  Explicit, shrinkable track. An implicit `auto` column takes its minimum
+		  from the item's automatic minimum size, so the sidebar's min-content
+		  blew this column out to 1910px inside a 346px phone viewport, and every
+		  descendant inherited that width. Never rely on the implicit track here;
+		  the 900px rule below replaces this with the two-column layout.
+		*/
+		grid-template-columns: minmax(0, 1fr);
 		gap: clamp(var(--spacing-lg), 3vw, var(--spacing-2xl));
 		min-width: 0;
 	}
@@ -490,6 +499,7 @@
 
 	.cms-blog-article-copy {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: clamp(var(--spacing-lg), 2.4vw, var(--spacing-2xl));
 		min-width: 0;
 	}
@@ -579,6 +589,8 @@
 
 	.cms-article-sidebar {
 		display: block;
+		/* Without this its min-content sizes the grid column, not the viewport. */
+		min-width: 0;
 	}
 
 	.cms-article-toc {

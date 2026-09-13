@@ -104,3 +104,18 @@ rows for testing, and so on.
   drawing reads on a white page and a black one. The theming motif is the
   deliberate exception: it paints a fixed light half and dark half, because that
   contrast is the subject.
+
+### The root font size is fluid (2026-09-12)
+
+`html` sets `font-size: clamp(17px, 0.98vw + 13.2px, 22px)`. **22px is the base the
+whole rem scale is tuned against and is reached at 900px and up**, so desktop is
+unchanged; below that it falls to 17px on phones. It used to be a flat `22px`,
+which made every rem 37% larger than the layout assumed — an `h1` rendered at
+~60px on a 390px screen. If a component looks right on desktop and oversized on a
+phone, check whether it is sizing in `rem` against the wrong assumption.
+
+Related: grid columns in the article layout are declared `minmax(0, 1fr)`, never
+left implicit. An implicit `auto` track takes its minimum from the item's
+automatic minimum size, and the code-examples sidebar's min-content once blew the
+single mobile column out to 1910px inside a 390px viewport. `tests/unit/mobile-layout.test.ts`
+pins both fixes.

@@ -285,8 +285,8 @@
 		border-radius: 1.125rem;
 		overflow: hidden;
 		border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--color-border));
-		/* Decorative: never the reason the header grows on a narrow screen. */
-		display: none;
+		/* Stacks under the copy on a phone; the motif is the point of the header. */
+		display: block;
 	}
 
 	.cms-empty-state {
@@ -510,10 +510,6 @@
 	@media (min-width: 900px) {
 		.cms-list-header {
 			grid-template-columns: minmax(0, 1fr) minmax(240px, 22rem);
-		}
-
-		.cms-list-header-art {
-			display: block;
 		}
 	}
 
