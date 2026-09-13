@@ -34,19 +34,8 @@
 			<!-- Navigation Links -->
 			<nav class="footer-nav" aria-label="Footer navigation">
 				<div class="footer-section">
-					<h3 class="footer-heading">Navigation</h3>
-					<ul class="footer-links">
-						<li><a href="/">Home</a></li>
-						<li><a href="/chat">Chat</a></li>
-						<li><a href="/auth/login">Sign In</a></li>
-						<li><a href="/auth/signup">Sign Up</a></li>
-					</ul>
-				</div>
-
-				<div class="footer-section">
 					<h3 class="footer-heading">Resources</h3>
 					<ul class="footer-links">
-						<li><a href="/admin/cms">Admin CMS</a></li>
 						<li><a href="/user-interface">User Interface</a></li>
 						<li>
 							<a

@@ -19,11 +19,6 @@ describe('Footer', () => {
 		expect(screen.getByText(/collaborative section-based guides/i)).toBeInTheDocument();
 	});
 
-	it('should have navigation links section', () => {
-		render(Footer);
-		expect(screen.getByRole('heading', { name: /navigation/i })).toBeInTheDocument();
-	});
-
 	it('should have resources links section', () => {
 		render(Footer);
 		expect(screen.getByRole('heading', { name: /resources/i })).toBeInTheDocument();
@@ -34,34 +29,19 @@ describe('Footer', () => {
 		expect(screen.getByRole('heading', { name: /legal/i })).toBeInTheDocument();
 	});
 
-	it('should contain home link', () => {
+	// The footer no longer duplicates the header nav. The brand logo still links
+	// home; Home/Chat/Sign In/Sign Up are reachable from the header alone.
+	it('does not repeat the site navigation in the footer', () => {
 		render(Footer);
-		const homeLink = screen.getByRole('link', { name: /^home$/i });
-		expect(homeLink).toHaveAttribute('href', '/');
+		expect(screen.queryByRole('heading', { name: /navigation/i })).toBeNull();
+		for (const name of [/^home$/i, /^chat$/i, /sign in/i, /sign up/i]) {
+			expect(screen.queryByRole('link', { name })).toBeNull();
+		}
 	});
 
-	it('should contain chat link', () => {
+	it('does not advertise the admin CMS in the public footer', () => {
 		render(Footer);
-		const chatLink = screen.getByRole('link', { name: /^chat$/i });
-		expect(chatLink).toHaveAttribute('href', '/chat');
-	});
-
-	it('should contain sign in link', () => {
-		render(Footer);
-		const loginLink = screen.getByRole('link', { name: /sign in/i });
-		expect(loginLink).toHaveAttribute('href', '/auth/login');
-	});
-
-	it('should contain sign up link', () => {
-		render(Footer);
-		const signupLink = screen.getByRole('link', { name: /sign up/i });
-		expect(signupLink).toHaveAttribute('href', '/auth/signup');
-	});
-
-	it('should contain admin cms link pointing to /admin/cms', () => {
-		render(Footer);
-		const adminCmsLink = screen.getByRole('link', { name: /admin cms/i });
-		expect(adminCmsLink).toHaveAttribute('href', '/admin/cms');
+		expect(screen.queryByRole('link', { name: /admin cms/i })).toBeNull();
 	});
 
 	it('should contain user interface section link', () => {
