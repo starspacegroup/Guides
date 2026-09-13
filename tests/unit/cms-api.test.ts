@@ -388,6 +388,20 @@ describe('CMS API - Content Items', () => {
 		it('should update a content item', async () => {
 			const { PUT } = await import('../../src/routes/api/cms/[type]/[id]/+server.js');
 
+			// API validation: content type
+			mockDB.first.mockResolvedValueOnce({
+				id: 'ct-1',
+				slug: 'blog',
+				name: 'Blog',
+				description: null,
+				fields: '[]',
+				settings: '{}',
+				icon: 'document',
+				sort_order: 0,
+				is_system: 1,
+				created_at: '2024-01-01',
+				updated_at: '2024-01-01'
+			});
 			// updateContentItem: get existing
 			mockDB.first.mockResolvedValueOnce({
 				id: 'ci-1',

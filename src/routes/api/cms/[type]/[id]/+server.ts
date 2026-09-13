@@ -6,6 +6,8 @@
  * DELETE /api/cms/[type]/[id] - Delete an item
  */
 import { deleteContentItem, getContentItem, updateContentItem } from '$lib/services/cms';
+import { getContentTypeBySlug } from '$lib/services/cms';
+import { validateFields } from '$lib/cms/utils';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -48,6 +50,12 @@ export const PUT: RequestHandler = async ({ platform, locals, params, request })
 
 	try {
 		const body = await request.json();
+		const contentType = await getContentTypeBySlug(db, params.type);
+		if (!contentType) throw error(404, 'Content type not found');
+		if (body.fields !== undefined) {
+			const fieldErrors = validateFields(body.fields, contentType.fields);
+			if (fieldErrors.length) throw error(400, fieldErrors.join(', '));
+		}
 
 		const item = await updateContentItem(db, params.id, {
 			title: body.title,

@@ -1,15 +1,10 @@
 import { error, json } from '@sveltejs/kit';
+import { requireOwner } from '$lib/server/auth-guards';
 import type { RequestHandler } from './$types';
 
 export const PATCH: RequestHandler = async ({ platform, locals, params, request }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	// Changing another user's admin status is owner-only
+	const owner = requireOwner(locals);
 
 	const userId = params.id;
 	const body = await request.json();
@@ -36,7 +31,7 @@ export const PATCH: RequestHandler = async ({ platform, locals, params, request 
 		}
 
 		// Check if trying to modify self
-		if (userId === locals.user.id) {
+		if (userId === owner.id) {
 			throw error(400, 'Cannot modify your own admin status');
 		}
 
@@ -72,14 +67,8 @@ export const PATCH: RequestHandler = async ({ platform, locals, params, request 
 };
 
 export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
-	// Check if user is authenticated and is admin
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!locals.user.isOwner && !locals.user.isAdmin) {
-		throw error(403, 'Forbidden');
-	}
+	// Deleting a user is owner-only
+	const owner = requireOwner(locals);
 
 	const userId = params.id;
 
@@ -90,7 +79,7 @@ export const DELETE: RequestHandler = async ({ platform, locals, params }) => {
 		}
 
 		// Check if trying to delete self
-		if (userId === locals.user.id) {
+		if (userId === owner.id) {
 			throw error(400, 'Cannot delete your own account');
 		}
 

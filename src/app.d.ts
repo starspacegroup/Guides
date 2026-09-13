@@ -22,19 +22,22 @@ declare global {
 				MEDIA_BUCKET?: R2Bucket;
 				QUEUE: Queue;
 				TURNSTILE_SECRET_KEY: string;
+				TURNSTILE_SITE_KEY?: string;
 				GITHUB_CLIENT_ID?: string;
 				GITHUB_CLIENT_SECRET?: string;
 				GITHUB_OWNER_ID?: string;
 				GITHUB_OWNER_USERNAME?: string;
 				DISCORD_CLIENT_ID?: string;
 				DISCORD_CLIENT_SECRET?: string;
+				SESSION_SECRET?: string;
+				SETUP_SECRET?: string;
 			};
 			context: {
-				waitUntil(promise: Promise<any>): void;
+				waitUntil(promise: Promise<unknown>): void;
 			};
-			caches: CacheStorage & { default: Cache; };
+			caches: CacheStorage & { default: Cache };
 		}
 	}
 }
 
-export { };
+export {};

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/svelte';
+import { clear_loops } from 'svelte/internal';
 import { writable } from 'svelte/store';
 import { afterEach, beforeEach, vi } from 'vitest';
 
@@ -19,6 +20,17 @@ vi.mock('$app/stores', () => ({
 // Cleanup after each test
 afterEach(() => {
 	cleanup();
+	// Svelte 4 keeps a module-level rAF-driven task queue (svelte/internal/loop.js)
+	// that drives `in:`/`out:` transitions and svelte/motion stores. If a test renders
+	// a component with an unfinished transition (e.g. a 400ms `in:fly`) and the test ends
+	// before that transition completes, cleanup()'s $destroy() does not necessarily abort
+	// the pending loop task. Because svelte/internal/environment.js resolves `raf`/`now`
+	// via an unbound, unprefixed `requestAnimationFrame`/`performance.now()` lookup at each
+	// call (not a reference captured once), a real timer left over from this file can later
+	// fire against a DIFFERENT test file's active requestAnimationFrame (including a
+	// vi.useFakeTimers() fake one), which can spin runAllTimersAsync into an infinite loop.
+	// Clearing the queue after every test closes the leak at its source.
+	clear_loops();
 });
 
 function ensureLocalStorageApi() {

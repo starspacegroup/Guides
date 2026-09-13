@@ -235,7 +235,8 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 		};
 
 		const response = await GET({
-			platform: { env: { KV: mockKV } }
+			platform: { env: { KV: mockKV } },
+			locals: { user: { id: 'owner', isOwner: true } }
 		} as any);
 
 		expect(response.status).toBe(200);
@@ -261,7 +262,8 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 		};
 
 		const response = await GET({
-			platform: { env: { KV: mockKV } }
+			platform: { env: { KV: mockKV } },
+			locals: { user: { id: 'owner', isOwner: true } }
 		} as any);
 
 		expect(response.status).toBe(200);
@@ -291,7 +293,8 @@ describe('Admin Auth Keys - uncovered catch branches', () => {
 						type: 'oauth'
 					})
 				},
-				platform: { env: { KV: { put: vi.fn() } } }
+				platform: { env: { KV: { put: vi.fn() } } },
+				locals: { user: { id: 'owner', isOwner: true } }
 			} as any);
 			expect.fail('Should have thrown');
 		} catch (err: any) {

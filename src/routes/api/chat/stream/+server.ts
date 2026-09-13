@@ -26,15 +26,27 @@ export async function POST({ request, platform, locals }: RequestEvent) {
 		if (!Array.isArray(messages) || messages.length === 0) {
 			throw error(400, 'Invalid messages format');
 		}
+		if (requestedModel !== undefined && (typeof requestedModel !== 'string' || !requestedModel)) {
+			throw error(400, 'Invalid model');
+		}
 
 		// Get enabled OpenAI key
-		const aiKey = await getEnabledOpenAIKey(platform!);
+		const aiKey = await getEnabledOpenAIKey(platform!, requestedModel);
+		if (!aiKey && requestedModel) throw error(400, 'Unknown or disabled model');
 		if (!aiKey) {
 			throw error(503, 'No OpenAI API key configured');
 		}
 
 		// Use requested model or default to gpt-4o
-		const model = requestedModel || 'gpt-4o';
+		const configuredModels = aiKey.models || (aiKey.model ? [aiKey.model] : ['gpt-4o']);
+		const model =
+			requestedModel ||
+			(configuredModels.includes('gpt-4o-mini')
+				? 'gpt-4o-mini'
+				: configuredModels.includes('gpt-4o')
+					? 'gpt-4o'
+					: configuredModels[0]);
+		if (!model) throw error(503, 'No chat models configured');
 
 		// Format messages for OpenAI
 		const formattedMessages = formatMessagesForOpenAI(messages);

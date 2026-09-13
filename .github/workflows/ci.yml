@@ -32,7 +32,7 @@ jobs:
       - name: Type check
         run: bun run check
 
-      - name: Run unit tests
-        run: bun run test
+      - name: Run unit tests with coverage gate
+        run: bun run test:coverage
 
   # Deployment is handled by Cloudflare Pages Git integration.

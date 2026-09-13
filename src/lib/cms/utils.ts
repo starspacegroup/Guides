@@ -14,6 +14,7 @@ import type {
 	ContentTypeParsed,
 	ContentTypeSettings
 } from './types';
+import { sanitizeCmsUrl } from './sanitize';
 
 /**
  * Generate a URL-friendly slug from a title string.
@@ -164,11 +165,13 @@ export function validateFields(
 
 		// URL validation
 		if (def.type === 'url' && value) {
-			try {
-				new URL(String(value));
-			} catch {
+			if (!sanitizeCmsUrl(String(value))) {
 				errors.push(`${def.label} must be a valid URL`);
 			}
+		}
+
+		if (def.type === 'image' && value && !sanitizeCmsUrl(String(value), true)) {
+			errors.push(`${def.label} must be a valid image URL`);
 		}
 
 		// Email validation

@@ -9,8 +9,8 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 [[d1_databases]]
 binding = "DB"
 database_name = "guides-db"
-database_id = "bd776be3-9823-4763-abb1-c18b40931456"
-preview_database_id = "bd776be3-9823-4763-abb1-c18b40931456"
+database_id = "1ef63781-6d28-43e5-a7e4-f28bc386339e"
+preview_database_id = "75a71718-ce9d-4e51-85e1-a090045d4f15"
 migrations_dir = "./migrations"
 
 # KV Namespace
@@ -18,8 +18,8 @@ migrations_dir = "./migrations"
 # For local dev preview: wrangler kv:namespace create "KV" --preview
 [[kv_namespaces]]
 binding = "KV"
-id = "12a6576334dd4e16bf1e08d5cc1fac4a"
-preview_id = "e9b0a93432b1406786dc7b9b334da90d"
+id = "11c1d98d83df48a38e8d8663b8566640"
+preview_id = "71cb9f13b718488d83685844d0ea4311"
 
 # Queue (disabled - enable Queues at https://dash.cloudflare.com before uncommenting)
 # [[queues.producers]]

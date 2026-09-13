@@ -1,200 +1,141 @@
-/**
- * Extended tests for auth-keys [id] API endpoint
- * Tests covering more branch coverage
- */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DELETE, PUT } from '../../src/routes/api/admin/auth-keys/[id]/+server';
 
-describe('Auth Keys [id] API - Extended Branch Coverage', () => {
-	let mockKVGet: ReturnType<typeof vi.fn>;
-
-	beforeEach(() => {
-		mockKVGet = vi.fn();
-	});
-
-	const createMockEvent = (
-		overrides: {
-			id?: string;
-			body?: object;
-			kvGet?: ReturnType<typeof vi.fn>;
-			platform?: object | null;
-		} = {}
-	) => {
-		const mockRequest = {
-			json: vi.fn().mockResolvedValue(
-				overrides.body || {
-					name: 'Test Key',
-					clientId: 'client-id-123',
-					provider: 'github',
-					type: 'oauth'
-				}
-			)
-		};
-
-		return {
-			params: { id: overrides.id || 'test-key-1' },
-			request: mockRequest,
-			platform:
-				overrides.platform !== null
-					? {
-							env: {
-								KV: { get: overrides.kvGet || mockKVGet }
-							}
-						}
-					: overrides.platform,
-			locals: {}
-		};
+describe('auth key mutation security', () => {
+	const owner = {
+		user: { id: 'owner', login: 'owner', email: 'owner@example.com', isOwner: true }
 	};
-
-	describe('PUT - Update auth key', () => {
-		it('should allow update when no auth config exists in KV', async () => {
-			mockKVGet.mockResolvedValue(null);
-
-			const response = await PUT(createMockEvent() as unknown as Parameters<typeof PUT>[0]);
-			const data = await response.json();
-
-			expect(data.success).toBe(true);
-			expect(data.key.name).toBe('Test Key');
+	const config = (provider: 'github' | 'discord', id: string, clientSecret = 'existing') =>
+		JSON.stringify({
+			id,
+			provider,
+			clientId: 'client',
+			clientSecret,
+			createdAt: 'old',
+			updatedAt: 'old'
 		});
 
-		it('should allow update when key ID does not match setup key', async () => {
-			mockKVGet.mockResolvedValue(JSON.stringify({ id: 'setup-key-different' }));
+	it('rejects ordinary admins', async () => {
+		await expect(
+			DELETE({ locals: { user: { isAdmin: true, isOwner: false } } } as any)
+		).rejects.toMatchObject({ status: 403 });
+	});
 
-			const response = await PUT(
-				createMockEvent({ id: 'other-key-id' }) as unknown as Parameters<typeof PUT>[0]
-			);
-			const data = await response.json();
+	it('rejects unsupported provider updates', async () => {
+		await expect(
+			PUT({
+				locals: { user: { isOwner: true } },
+				params: { id: 'id' },
+				request: { json: vi.fn().mockResolvedValue({ provider: 'google' }) }
+			} as any)
+		).rejects.toMatchObject({ status: 400 });
+	});
 
-			expect(data.success).toBe(true);
-		});
+	it('validates required update fields', async () => {
+		await expect(
+			PUT({
+				locals: owner,
+				params: { id: 'id' },
+				request: { json: async () => ({ name: 'Name' }) }
+			} as any)
+		).rejects.toMatchObject({ status: 400 });
+	});
 
-		it('should throw 403 when trying to edit setup key', async () => {
-			mockKVGet.mockResolvedValue(JSON.stringify({ id: 'setup-key-id' }));
-
-			await expect(
-				PUT(createMockEvent({ id: 'setup-key-id' }) as unknown as Parameters<typeof PUT>[0])
-			).rejects.toThrow();
-		});
-
-		it('should allow update when KV check throws non-HttpError', async () => {
-			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-			mockKVGet.mockRejectedValue(new Error('KV connection failed'));
-
-			const response = await PUT(createMockEvent() as unknown as Parameters<typeof PUT>[0]);
-			const data = await response.json();
-
-			expect(data.success).toBe(true);
-			expect(consoleSpy).toHaveBeenCalled();
-			consoleSpy.mockRestore();
-		});
-
-		it('should throw 400 when name is missing', async () => {
-			mockKVGet.mockResolvedValue(null);
-
-			await expect(
-				PUT(createMockEvent({ body: { clientId: 'test' } }) as unknown as Parameters<typeof PUT>[0])
-			).rejects.toThrow();
-		});
-
-		it('should throw 400 when clientId is missing', async () => {
-			mockKVGet.mockResolvedValue(null);
-
-			await expect(
-				PUT(createMockEvent({ body: { name: 'Test' } }) as unknown as Parameters<typeof PUT>[0])
-			).rejects.toThrow();
-		});
-
-		it('should handle platform being undefined', async () => {
-			const response = await PUT(
-				createMockEvent({ platform: null }) as unknown as Parameters<typeof PUT>[0]
-			);
-			const data = await response.json();
-
-			expect(data.success).toBe(true);
-		});
-
-		it('should include all provided fields in updated key', async () => {
-			mockKVGet.mockResolvedValue(null);
-
-			const response = await PUT(
-				createMockEvent({
-					body: {
-						name: 'Updated Key',
-						clientId: 'new-client-id',
-						provider: 'gitlab',
-						type: 'oauth'
-					}
-				}) as unknown as Parameters<typeof PUT>[0]
-			);
-			const data = await response.json();
-
-			expect(data.key.name).toBe('Updated Key');
-			expect(data.key.clientId).toBe('new-client-id');
-			expect(data.key.provider).toBe('gitlab');
-			expect(data.key.updatedAt).toBeDefined();
+	it('updates provider configuration while preserving secrets', async () => {
+		const get = vi
+			.fn()
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce(config('discord', 'discord-key'));
+		const put = vi.fn();
+		const response = await PUT({
+			locals: owner,
+			params: { id: 'discord-key' },
+			request: {
+				json: async () => ({
+					name: 'Discord',
+					provider: 'discord',
+					type: 'oauth',
+					clientId: 'client'
+				})
+			},
+			platform: { env: { KV: { get, put, delete: vi.fn() } } }
+		} as any);
+		expect(response.status).toBe(200);
+		const saved = JSON.parse(put.mock.calls[0][1]);
+		expect(saved).toMatchObject({
+			id: 'discord-key',
+			clientSecret: 'existing',
+			updatedBy: 'owner'
 		});
 	});
 
-	describe('DELETE - Delete auth key', () => {
-		it('should allow deletion when no auth config exists', async () => {
-			mockKVGet.mockResolvedValue(null);
+	it('includes a replacement client secret when supplied', async () => {
+		const kv = { get: vi.fn().mockResolvedValue(null), put: vi.fn(), delete: vi.fn() };
+		await PUT({
+			locals: owner,
+			params: { id: 'discord-key' },
+			request: {
+				json: async () => ({
+					name: 'Discord',
+					provider: 'discord',
+					clientId: 'client',
+					clientSecret: 'new'
+				})
+			},
+			platform: { env: { KV: kv } }
+		} as any);
+		expect(JSON.parse(kv.put.mock.calls[0][1]).clientSecret).toBe('new');
+	});
 
-			const response = await DELETE(createMockEvent() as unknown as Parameters<typeof DELETE>[0]);
-			const data = await response.json();
+	it.each([
+		['edit', PUT],
+		['delete', DELETE]
+	])('protects the setup key from %s', async (_action, handler) => {
+		const input: any = {
+			locals: owner,
+			params: { id: 'setup' },
+			platform: { env: { KV: { get: vi.fn().mockResolvedValue(config('github', 'setup')) } } }
+		};
+		if (handler === PUT)
+			input.request = {
+				json: async () => ({ name: 'GitHub', provider: 'github', clientId: 'client' })
+			};
+		await expect(handler(input)).rejects.toMatchObject({ status: 403 });
+	});
 
-			expect(data.success).toBe(true);
-		});
+	it('deletes the matching provider configuration', async () => {
+		const kv = {
+			get: vi
+				.fn()
+				.mockResolvedValueOnce(null)
+				.mockResolvedValueOnce(null)
+				.mockResolvedValueOnce(config('discord', 'discord-key')),
+			delete: vi.fn()
+		};
+		const response = await DELETE({
+			locals: owner,
+			params: { id: 'discord-key' },
+			platform: { env: { KV: kv } }
+		} as any);
+		expect(response.status).toBe(200);
+		expect(kv.delete).toHaveBeenCalledWith('auth_config:discord');
+	});
 
-		it('should allow deletion when key ID does not match setup key', async () => {
-			mockKVGet.mockResolvedValue(JSON.stringify({ id: 'setup-key-different' }));
+	it('fails closed when KV is unavailable', async () => {
+		await expect(DELETE({ locals: owner, params: { id: 'missing' } } as any)).rejects.toMatchObject(
+			{
+				status: 500
+			}
+		);
+	});
 
-			const response = await DELETE(
-				createMockEvent({ id: 'other-key-id' }) as unknown as Parameters<typeof DELETE>[0]
-			);
-			const data = await response.json();
-
-			expect(data.success).toBe(true);
-		});
-
-		it('should throw 403 when trying to delete setup key', async () => {
-			mockKVGet.mockResolvedValue(JSON.stringify({ id: 'setup-key-id' }));
-
-			await expect(
-				DELETE(createMockEvent({ id: 'setup-key-id' }) as unknown as Parameters<typeof DELETE>[0])
-			).rejects.toThrow();
-		});
-
-		it('should allow deletion when KV check throws non-HttpError', async () => {
-			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-			mockKVGet.mockRejectedValue(new Error('KV connection failed'));
-
-			const response = await DELETE(createMockEvent() as unknown as Parameters<typeof DELETE>[0]);
-			const data = await response.json();
-
-			expect(data.success).toBe(true);
-			expect(consoleSpy).toHaveBeenCalled();
-			consoleSpy.mockRestore();
-		});
-
-		it('should handle platform being undefined', async () => {
-			const response = await DELETE(
-				createMockEvent({ platform: null }) as unknown as Parameters<typeof DELETE>[0]
-			);
-			const data = await response.json();
-
-			expect(data.success).toBe(true);
-		});
-
-		it('should handle empty auth config string', async () => {
-			mockKVGet.mockResolvedValue('');
-
-			// Empty string will fail JSON.parse, should be caught and allow deletion
-			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-			const response = await DELETE(createMockEvent() as unknown as Parameters<typeof DELETE>[0]);
-			const data = await response.json();
-
-			expect(data.success).toBe(true);
-			consoleSpy.mockRestore();
-		});
+	it('fails closed when stored configuration is malformed', async () => {
+		await expect(
+			DELETE({
+				locals: owner,
+				params: { id: 'id' },
+				platform: { env: { KV: { get: vi.fn().mockResolvedValue('{') } } }
+			} as any)
+		).rejects.toBeInstanceOf(SyntaxError);
 	});
 });

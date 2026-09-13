@@ -201,12 +201,12 @@ export async function getPublicGuideCollections(
 			const finalResult =
 				itemsPerType === null && result.total > firstPageSize
 					? await listContentItems(db, contentType.id, {
-						status: 'published',
-						page: 1,
-						pageSize: result.total,
-						sortBy: preferredSort.sortBy,
-						sortDirection: preferredSort.sortDirection
-					})
+							status: 'published',
+							page: 1,
+							pageSize: result.total,
+							sortBy: preferredSort.sortBy,
+							sortDirection: preferredSort.sortDirection
+						})
 					: result;
 
 			return {
@@ -255,7 +255,7 @@ export async function createContentItem(
 			'SELECT COALESCE(MAX(sort_order), -1) + 1 as next_sort_order FROM content_items WHERE content_type_id = ?'
 		)
 		.bind(contentType.id)
-		.first<{ next_sort_order: number; }>();
+		.first<{ next_sort_order: number }>();
 	const nextSortOrder = nextSortOrderResult?.next_sort_order ?? 0;
 
 	// Check slug uniqueness within this content type
@@ -392,7 +392,7 @@ export async function listContentItems(
 	const countResult = await db
 		.prepare(`SELECT COUNT(*) as count FROM content_items WHERE ${whereClause}`)
 		.bind(...params)
-		.first<{ count: number; }>();
+		.first<{ count: number }>();
 
 	const total = countResult?.count || 0;
 
@@ -448,7 +448,7 @@ export async function reorderContentItems(
 			`SELECT COUNT(*) as count FROM content_items WHERE content_type_id = ? AND id IN (${placeholders})`
 		)
 		.bind(contentTypeId, ...itemIds)
-		.first<{ count: number; }>();
+		.first<{ count: number }>();
 
 	if ((countResult?.count || 0) !== itemIds.length) {
 		return false;
@@ -636,7 +636,7 @@ export async function getContentTypeById(
 export async function getAllContentTypeSlugs(db: D1Database): Promise<string[]> {
 	const result = await db
 		.prepare('SELECT slug FROM content_types ORDER BY sort_order ASC')
-		.all<{ slug: string; }>();
+		.all<{ slug: string }>();
 
 	return (result.results || []).map((row) => row.slug);
 }
@@ -648,7 +648,7 @@ export async function isContentTypeSlug(db: D1Database, slug: string): Promise<b
 	const row = await db
 		.prepare('SELECT id FROM content_types WHERE slug = ?')
 		.bind(slug)
-		.first<{ id: string; }>();
+		.first<{ id: string }>();
 
 	return row !== null;
 }
@@ -666,7 +666,7 @@ export async function createContentTypeInDB(
 	const existing = await db
 		.prepare('SELECT id FROM content_types WHERE slug = ?')
 		.bind(slug)
-		.first<{ id: string; }>();
+		.first<{ id: string }>();
 
 	if (existing) {
 		return null; // Slug already taken
@@ -680,7 +680,7 @@ export async function createContentTypeInDB(
 	// Get next sort_order
 	const maxOrder = await db
 		.prepare('SELECT MAX(sort_order) as max_order FROM content_types')
-		.first<{ max_order: number | null; }>();
+		.first<{ max_order: number | null }>();
 	const sortOrder = (maxOrder?.max_order ?? -1) + 1;
 
 	const row = await db
@@ -778,12 +778,12 @@ export async function updateContentTypeInDB(
 export async function deleteContentTypeFromDB(
 	db: D1Database,
 	id: string
-): Promise<{ success: boolean; reason?: string; }> {
+): Promise<{ success: boolean; reason?: string }> {
 	// Check if the type exists and whether it's a system type
 	const existing = await db
 		.prepare('SELECT id, is_system FROM content_types WHERE id = ?')
 		.bind(id)
-		.first<{ id: string; is_system: number; }>();
+		.first<{ id: string; is_system: number }>();
 
 	if (!existing) {
 		return { success: false, reason: 'Content type not found' };

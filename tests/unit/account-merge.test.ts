@@ -191,3 +191,59 @@ describe('Discord Callback - Account Merge on Link', () => {
 		expect(true).toBe(true);
 	});
 });
+
+describe('mergeAccounts - CMS ownership', () => {
+	function harness() {
+		const prepare = vi.fn().mockReturnValue({
+			bind: vi.fn().mockReturnValue({
+				run: vi.fn().mockResolvedValue({}),
+				first: vi.fn().mockResolvedValue({ is_admin: 0 })
+			})
+		});
+		return { db: { prepare, batch: vi.fn().mockResolvedValue({ success: true }) }, prepare };
+	}
+
+	it('reassigns authored and edited content before deleting the source user', async () => {
+		const { mergeAccounts } = await import('../../src/lib/services/account-merge');
+		const { db, prepare } = harness();
+
+		await mergeAccounts(db as any, 'source-user-id', 'target-user-id');
+
+		const statements = prepare.mock.calls.map(([sql]) => sql);
+		expect(statements).toContain('UPDATE content_items SET author_id = ? WHERE author_id = ?');
+		expect(statements).toContain(
+			'UPDATE content_items SET last_edited_by = ? WHERE last_edited_by = ?'
+		);
+		expect(statements).toContain('UPDATE guide_revisions SET edited_by = ? WHERE edited_by = ?');
+		expect(statements).toContain(
+			'UPDATE section_contributors SET granted_by = ? WHERE granted_by = ?'
+		);
+	});
+
+	it('transfers section permissions without breaking the per-section unique key', async () => {
+		const { mergeAccounts } = await import('../../src/lib/services/account-merge');
+		const { db, prepare } = harness();
+
+		await mergeAccounts(db as any, 'source-user-id', 'target-user-id');
+
+		const statements = prepare.mock.calls.map(([sql]) => sql);
+		const dropsCollisions = statements.findIndex((sql: string) =>
+			/DELETE FROM section_contributors/.test(sql)
+		);
+		const transfers = statements.findIndex((sql: string) =>
+			/UPDATE section_contributors SET user_id/.test(sql)
+		);
+		expect(dropsCollisions).toBeGreaterThanOrEqual(0);
+		expect(transfers).toBeGreaterThan(dropsCollisions);
+	});
+
+	it('deletes the source user only after every transfer statement', async () => {
+		const { mergeAccounts } = await import('../../src/lib/services/account-merge');
+		const { db, prepare } = harness();
+
+		await mergeAccounts(db as any, 'source-user-id', 'target-user-id');
+
+		const statements = prepare.mock.calls.map(([sql]) => sql);
+		expect(statements.at(-1)).toBe('DELETE FROM users WHERE id = ?');
+	});
+});

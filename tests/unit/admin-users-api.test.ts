@@ -82,7 +82,11 @@ describe('Admin Users API', () => {
 			mockPlatform.env.DB.all.mockResolvedValueOnce({ results: mockUsers });
 
 			const { GET } = await import('../../src/routes/api/admin/users/+server.js');
-			const response = await GET({ platform: mockPlatform, locals: mockLocals } as any);
+			const response = await GET({
+				platform: mockPlatform,
+				locals: mockLocals,
+				cookies: { get: vi.fn().mockReturnValue('1') }
+			} as any);
 			const data = await response.json();
 
 			expect(data.users).toEqual(mockUsers);
@@ -187,6 +191,31 @@ describe('Admin Users API', () => {
 			}
 		});
 
+		it('should forbid a non-owner admin from changing admin status', async () => {
+			mockLocals.user.isOwner = false;
+			mockLocals.user.isAdmin = true;
+
+			const { PATCH } = await import('../../src/routes/api/admin/users/[id]/+server.js');
+
+			try {
+				await PATCH({
+					platform: mockPlatform,
+					locals: mockLocals,
+					params: { id: '2' },
+					request: {
+						json: async () => ({ isAdmin: true })
+					}
+				} as any);
+				expect.fail('Should have thrown error');
+			} catch (err: any) {
+				expect(err.status).toBe(403);
+				expect(err.body?.message).toBe('Owner access required');
+			}
+
+			// The guard must reject before any database access
+			expect(mockPlatform.env.DB.prepare).not.toHaveBeenCalled();
+		});
+
 		it('should prevent user from modifying their own status', async () => {
 			mockPlatform.env.DB.first.mockResolvedValueOnce({
 				id: '1',
@@ -250,6 +279,28 @@ describe('Admin Users API', () => {
 			} catch (err: any) {
 				expect(err.status).toBe(401);
 			}
+		});
+
+		it('should forbid a non-owner admin from deleting a user', async () => {
+			mockLocals.user.isOwner = false;
+			mockLocals.user.isAdmin = true;
+
+			const { DELETE } = await import('../../src/routes/api/admin/users/[id]/+server.js');
+
+			try {
+				await DELETE({
+					platform: mockPlatform,
+					locals: mockLocals,
+					params: { id: '2' }
+				} as any);
+				expect.fail('Should have thrown error');
+			} catch (err: any) {
+				expect(err.status).toBe(403);
+				expect(err.body?.message).toBe('Owner access required');
+			}
+
+			// The guard must reject before any database access
+			expect(mockPlatform.env.DB.prepare).not.toHaveBeenCalled();
 		});
 
 		it('should prevent user from deleting themselves', async () => {
@@ -323,4 +374,52 @@ describe('Admin Users API', () => {
 	});
 });
 
+describe('Admin Users API - actionable identifiers', () => {
+	const rows = [
+		{
+			id: 'user-uuid-1',
+			email: 'member@example.com',
+			name: 'Member One',
+			is_admin: 0,
+			github_login: 'memberone',
+			github_avatar_url: 'https://example.com/a.png',
+			created_at: '2026-01-01',
+			github_id: '4815162342'
+		}
+	];
 
+	function context(cookie?: string) {
+		const statement = { bind: vi.fn(), all: vi.fn().mockResolvedValue({ results: rows }) };
+		statement.bind.mockReturnValue(statement);
+		return {
+			platform: { env: { DB: { prepare: vi.fn().mockReturnValue(statement) } } },
+			locals: { user: { id: 'owner', isOwner: true, isAdmin: true } },
+			cookies: { get: vi.fn().mockReturnValue(cookie) }
+		} as any;
+	}
+
+	it('returns usable IDs so promote and delete can target a real row', async () => {
+		const { GET } = await import('../../src/routes/api/admin/users/+server.js');
+		const { users } = await (await GET(context())).json();
+		expect(users[0].id).toBe('user-uuid-1');
+	});
+
+	it('still masks personal data when PII is not revealed', async () => {
+		const { GET } = await import('../../src/routes/api/admin/users/+server.js');
+		const { users } = await (await GET(context())).json();
+		expect(users[0].email).not.toBe('member@example.com');
+		expect(users[0].name).not.toBe('Member One');
+		expect(users[0].github_login).not.toBe('memberone');
+		expect(users[0].github_id).not.toBe('4815162342');
+	});
+
+	it('returns unmasked data once the owner reveals PII', async () => {
+		const { GET } = await import('../../src/routes/api/admin/users/+server.js');
+		const { users } = await (await GET(context('1'))).json();
+		expect(users[0]).toMatchObject({
+			id: 'user-uuid-1',
+			email: 'member@example.com',
+			github_login: 'memberone'
+		});
+	});
+});

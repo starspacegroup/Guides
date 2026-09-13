@@ -100,23 +100,23 @@ describe('Setup Page Server', () => {
 	});
 
 	it('should handle missing platform gracefully', async () => {
-		const result = await load({
-			platform: undefined,
-			locals: {}
-		});
-
-		expect(result).toEqual({});
+		await expect(
+			load({
+				platform: undefined,
+				locals: {}
+			})
+		).rejects.toThrow('KV storage not available');
 	});
 
 	it('should handle missing KV gracefully', async () => {
-		const result = await load({
-			platform: {
-				env: {}
-			},
-			locals: {}
-		});
-
-		expect(result).toEqual({});
+		await expect(
+			load({
+				platform: {
+					env: {}
+				},
+				locals: {}
+			})
+		).rejects.toThrow('KV storage not available');
 	});
 
 	it('should handle null user when setup is locked', async () => {

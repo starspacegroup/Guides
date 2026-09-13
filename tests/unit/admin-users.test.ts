@@ -21,7 +21,8 @@ const createPageData = (users: unknown[]) => ({
 	user: mockUser,
 	hasAIProviders: false,
 	guideCollections: [],
-	users
+	users,
+	piiRevealed: false
 });
 
 describe('Admin Users Page', () => {
@@ -444,4 +445,3 @@ describe('Admin Users Page', () => {
 		expect(deleteButton.hasAttribute('disabled')).toBe(false);
 	});
 });
-

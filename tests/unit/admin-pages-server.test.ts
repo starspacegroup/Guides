@@ -138,12 +138,14 @@ describe('Admin Auth Keys Page Server', () => {
 
 describe('Admin Users Page Server', () => {
 	let mockFetch: ReturnType<typeof vi.fn>;
+	let mockCookies: { get: ReturnType<typeof vi.fn> };
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	let load: any;
 
 	beforeEach(async () => {
 		vi.resetModules();
 		mockFetch = vi.fn();
+		mockCookies = { get: vi.fn().mockReturnValue(undefined) };
 
 		const module = await import('../../src/routes/admin/users/+page.server');
 		load = module.load;
@@ -160,7 +162,7 @@ describe('Admin Users Page Server', () => {
 			json: async () => ({ users: mockUsers })
 		});
 
-		const result = await load({ fetch: mockFetch });
+		const result = await load({ fetch: mockFetch, cookies: mockCookies });
 
 		expect(result.users).toEqual(mockUsers);
 		expect(mockFetch).toHaveBeenCalledWith('/api/admin/users');
@@ -171,7 +173,7 @@ describe('Admin Users Page Server', () => {
 			ok: false
 		});
 
-		const result = await load({ fetch: mockFetch });
+		const result = await load({ fetch: mockFetch, cookies: mockCookies });
 
 		expect(result.users).toEqual([]);
 	});
@@ -180,7 +182,7 @@ describe('Admin Users Page Server', () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		mockFetch.mockRejectedValue(new Error('Network error'));
 
-		const result = await load({ fetch: mockFetch });
+		const result = await load({ fetch: mockFetch, cookies: mockCookies });
 
 		expect(result.users).toEqual([]);
 		expect(consoleSpy).toHaveBeenCalledWith('Failed to load users:', expect.any(Error));
@@ -193,7 +195,7 @@ describe('Admin Users Page Server', () => {
 			json: async () => ({})
 		});
 
-		const result = await load({ fetch: mockFetch });
+		const result = await load({ fetch: mockFetch, cookies: mockCookies });
 
 		expect(result.users).toEqual([]);
 	});

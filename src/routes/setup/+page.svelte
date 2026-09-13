@@ -6,6 +6,7 @@
 	let formData = {
 		clientId: '',
 		clientSecret: '',
+		setupSecret: '',
 		adminGithubUsername: ''
 	};
 	let errors: Record<string, string> = {};
@@ -59,6 +60,7 @@
 				errors.adminGithubUsername = 'Invalid GitHub username format';
 			}
 		}
+		if (!formData.setupSecret.trim()) errors.setupSecret = 'Setup secret is required';
 
 		return Object.keys(errors).length === 0;
 	}
@@ -89,7 +91,8 @@
 			const response = await fetch('/api/setup', {
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${formData.setupSecret}`
 				},
 				body: JSON.stringify(requestBody)
 			});
@@ -191,6 +194,21 @@
 		{/if}
 
 		<form on:submit|preventDefault={handleSubmit} class="setup-form">
+			<div class="form-group">
+				<label for="setupSecret">
+					Setup Secret
+					<span class="required" aria-label="required">*</span>
+				</label>
+				<input
+					type="password"
+					id="setupSecret"
+					bind:value={formData.setupSecret}
+					class:error={errors.setupSecret}
+					placeholder="Value configured as SETUP_SECRET"
+					disabled={loading}
+				/>
+				{#if errors.setupSecret}<span class="error-text">{errors.setupSecret}</span>{/if}
+			</div>
 			{#if !hasExistingConfig}
 				<div class="form-group">
 					<label for="clientId">
@@ -553,4 +571,3 @@
 		}
 	}
 </style>
-
