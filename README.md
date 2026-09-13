@@ -33,6 +33,25 @@ This project is configured for Cloudflare Pages/Workers with D1, KV, and R2 bind
 
 This is a Cloudflare Pages project. Do not run `wrangler deploy`, which is for Workers projects and will fail for this repository.
 
+### Dev tunnel
+
+The dev server runs on port **4255**. A named Cloudflare tunnel exposes it at:
+
+```
+https://dev-guides-a5b1c1.starspace.group
+```
+
+Config lives at `~/.cloudflared/guides-dev-a5b1c1.yml` (tunnel `guides-dev-a5b1c1`), and
+`vite.config.ts` lists `.starspace.group` in `server.allowedHosts` — without that
+entry Vite rejects the tunnel's Host header and the public URL returns 403.
+
+Bring both up with `/dev-tunnel`, or by hand:
+
+```bash
+systemctl --user start guides-dev guides-tunnel
+```
+
+
 Use:
 
 ```bash

@@ -3,6 +3,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	server: {
+		// Allow the dev Cloudflare tunnel (dev-guides-<hash>.starspace.group) through
+		// Vite's dev-server host check; without this the tunnel 403s at the origin.
+		allowedHosts: ['.starspace.group']
+	},
 	test: {
 		name: 'guides',
 		include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
