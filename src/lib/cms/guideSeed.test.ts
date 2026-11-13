@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	buildGuideSql,
 	buildSectionSql,
+	buildTagSql,
 	buildSeedMigration,
 	estimateReadTime,
 	findSeededGuideKeys,
@@ -130,17 +131,39 @@ describe('SQL builders', () => {
 		expect(sql).toContain("'general',\n\t'admin_only',\n\t'public'");
 	});
 
-	it('writes a marked, guarded guide insert with escaped body and its tags', () => {
+	it('writes a marked, guarded guide insert with escaped body and its tag links', () => {
 		const sql = buildGuideSql(guide);
 
 		expect(sql.startsWith('-- guide: cloudflare/bind-your-own-d1\n')).toBe(true);
 		expect(sql).toContain("it''s");
 		expect(sql).toContain("'published'");
 		expect(sql).toContain("AND slug = 'bind-your-own-d1'");
-		expect(sql).toContain("'Cloudflare',\n\t'cloudflare'");
-		expect(sql).toContain("'D1',\n\t'd1'");
-		expect(sql).toContain('INSERT OR IGNORE INTO content_item_tags');
-		expect(sql.match(/INSERT INTO content_tags/g)).toHaveLength(2);
+		expect(sql.match(/INSERT OR IGNORE INTO content_item_tags/g)).toHaveLength(2);
+		expect(sql).toContain("g.slug = 'cloudflare'");
+		expect(sql).toContain("g.slug = 'd1'");
+		expect(sql).not.toContain('INSERT INTO content_tags');
+	});
+
+	it('writes a guarded tag insert', () => {
+		const sql = buildTagSql('cloudflare', 'Durable Objects');
+		expect(sql).toContain("'Durable Objects', 'durable-objects'");
+		expect(sql).toContain("WHERE t.slug = 'cloudflare'");
+		expect(sql).toContain('NOT EXISTS');
+	});
+
+	it('writes each section tag once, however many guides carry it', () => {
+		const second = parseGuideFile(
+			'content/guides/cloudflare/04-b.md',
+			'---\ntitle: B\nexcerpt: E\ntags: D1, Workers\n---\nBody'
+		);
+		const { sql } = buildSeedMigration({
+			title: 'T',
+			guides: [guide, second],
+			sections: [{ ...contentTypeRegistry[0], slug: 'cloudflare' }],
+			seeded: new Set()
+		});
+		expect(sql.match(/INSERT INTO content_tags/g)).toHaveLength(3);
+		expect(sql.indexOf('INSERT INTO content_tags')).toBeLessThan(sql.indexOf('-- guide:'));
 	});
 
 	it('assembles a migration from only the guides no earlier migration seeded', () => {

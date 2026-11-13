@@ -53,7 +53,7 @@ There is no lint/format script; Prettier (with prettier-plugin-svelte) is config
 
 - **bun, not npm.** All scripts and package operations go through bun (`bun run …`, `bun install`, `bunx …`).
 - **Port 4255 is pinned** in `package.json` (dev/preview) and `playwright.config.ts` (baseURL + webServer). Do not change it or start servers on other ports. When working interactively on a local workstation, assume `bun run dev` is already running on 4255 — check it before starting another instance.
-- **D1 migrations are immutable once applied** (treat anything committed to `main` as applied — D1 tracks them in a `d1_migrations` table). NEVER edit, delete, reorder, or renumber an existing file in `migrations/`. Schema changes go in a NEW file with the next sequence number (`NNNN_description.sql`, currently up to `0014`), using `ALTER TABLE` rather than recreating tables. Test with `bun run db:migrate:local` before `bun run db:migrate`. Full rules in `migrations/README.md`.
+- **D1 migrations are immutable once applied** (treat anything committed to `main` as applied — D1 tracks them in a `d1_migrations` table). NEVER edit, delete, reorder, or renumber an existing file in `migrations/`. Schema changes go in a NEW file with the next sequence number (`NNNN_description.sql`, see `migrations/` for the highest number), using `ALTER TABLE` rather than recreating tables. Test with `bun run db:migrate:local` before `bun run db:migrate`. Full rules in `migrations/README.md`.
 - **This is a Cloudflare Pages project, not Workers.** Never run `wrangler deploy` (it will fail); use `bun run deploy` / `bunx wrangler pages deploy .svelte-kit/cloudflare`.
 - **Never hardcode colors.** All colors must use CSS custom properties (`var(--color-*)`) defined in `src/app.css`, with both light and dark theme values; text/background pairs must meet WCAG AA (validated by `bun run validate:contrast`).
 - **TDD is mandatory.** Write failing tests before implementation. `vite.config.ts` and CI enforce 95% thresholds for lines, functions, branches, and statements. Run `bun run test:coverage` before finishing a task.
@@ -72,6 +72,10 @@ There is no lint/format script; Prettier (with prettier-plugin-svelte) is config
 ### CMS content model
 
 Content types are **defined in code** in `src/lib/cms/registry.ts` (`ContentTypeDefinition` in `src/lib/cms/types.ts`: fields, purpose `guide_section` vs `general`, submission policy, visibility) and **synced to D1** by `syncContentTypes()` in `src/lib/services/cms.ts` — the DB rows in `content_types` mirror the registry. Content items live in `content_items` with per-type field data stored as JSON; tags via `content_tags` / `content_item_tags`. Guide sections sort items by `sort_order`; other types by their configured default sort. Parsing/slug helpers are in `src/lib/cms/utils.ts`.
+
+### Seeded guides
+
+Guides that ship with the site are Markdown files at `content/guides/<section>/<NN>-<slug>.md`. `bun scripts/build-guide-seed.ts <name>` turns the ones no migration has seeded yet into the next migration (`--check` only validates). Parsing and SQL generation are in `src/lib/cms/guideSeed.ts`. Never hand-edit a generated seed migration, and never write guide bodies as SQL strings. A new section is a `defineGuideSection()` entry in the registry plus a folder of Markdown. README "Writing a guide that ships with the site" has the format and the renderer limits.
 
 ### D1 access pattern
 

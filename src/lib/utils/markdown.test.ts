@@ -106,3 +106,25 @@ Use **clear** copy and _helpful_ guidance.`);
     expect(headings).toEqual([{ level: 1, text: 'Telemetry', id: 'telemetry' }]);
   });
 });
+
+describe('getMarkdownHeadings and fenced code', () => {
+  it('ignores heading-shaped lines inside a code fence, so the outline matches the page', () => {
+    const fence = '```';
+    const markdown = [
+      '## Setup',
+      '',
+      `${fence}bash`,
+      '# Setup',
+      '## Not a section',
+      fence,
+      '',
+      '## Setup'
+    ].join(String.fromCharCode(10));
+
+    expect(getMarkdownHeadings(markdown)).toEqual([
+      { level: 2, text: 'Setup', id: 'setup' },
+      { level: 2, text: 'Setup', id: 'setup-2' }
+    ]);
+    expect(renderMarkdownToHtml(markdown)).toContain('<h2 id="setup-2">Setup</h2>');
+  });
+});

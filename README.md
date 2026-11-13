@@ -9,9 +9,71 @@ It is a section-based guide platform for the \*Space Discord community where con
 
 ## Core Idea
 
-- Sections are modeled as CMS content types (for example: user-interface, cloudflare, automation).
+- Sections are modeled as CMS content types (for example: user-interface, cloudflare, security).
 - Guide pages are content items within each section.
 - Guide bodies are written with the built-in rich text (Markdown-supporting) editor.
+
+## Sections
+
+| Section | Path | What it covers |
+| --- | --- | --- |
+| User Interface | `/user-interface` | theming, command palettes, shortcuts, and component behaviour |
+| Cloudflare | `/cloudflare` | Pages, Workers, D1, KV, Durable Objects |
+| Auth & Security | `/security` | sessions, OAuth, secrets, access checks |
+| Reliability | `/reliability` | retries, caches, timeouts, failure reports |
+| Testing & Verification | `/testing` | property tests, proofs, real databases, CI gates |
+| AI & Agents | `/ai-agents` | model features, and working with coding agents |
+| Discord | `/discord` | bots, Activities, server administration |
+| Launch | `/launch` | project setup, copy, search, trust |
+
+Sections are declared in `src/lib/cms/registry.ts` with `defineGuideSection()`.
+
+## Writing a guide that ships with the site
+
+Guides that ship with the site are Markdown files, not hand-written SQL:
+
+```
+content/guides/<section-slug>/<NN>-<guide-slug>.md
+```
+
+`NN` sets the order in the section. The file starts with frontmatter:
+
+```
+---
+title: Never Cache a Failure
+excerpt: One or two sentences for the index card, 300 characters at most.
+difficulty: intermediate
+tags: Caching, Reliability
+---
+
+## Rule
+...
+```
+
+`difficulty` is `beginner`, `intermediate`, or `advanced`. `read_time` and
+`description` are optional. The read time is estimated from the body when it is absent.
+
+Turn new files into the next migration, then apply it locally:
+
+```bash
+bun scripts/build-guide-seed.ts --check                 # parse every guide, write nothing
+bun scripts/build-guide-seed.ts seed_more_guides        # writes migrations/NNNN_seed_more_guides.sql
+bun run db:migrate:local
+```
+
+The script writes only the guides that no earlier migration seeded. It finds them by the
+`-- guide: <section>/<slug>` marker above each insert. Every statement is guarded, so a
+guide or a tag that an editor already made in the CMS is left alone.
+
+Three limits of the built-in Markdown renderer matter when you write:
+
+- Start body sections at `##`. The page prints the title, and the outline lists `##` and `###`.
+- Lists do not nest.
+- A literal backslash-n in a code sample is turned into a line break, because the first seed
+  migrations stored bodies that way. The seed script rejects a guide that contains one.
+
+A seeded guide is a starting point. Once it is in the database, edit it in `/admin/cms`.
+A later change to the Markdown file does not reach a database that already has the guide.
 
 ## Local Development
 

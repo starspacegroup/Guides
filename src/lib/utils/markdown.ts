@@ -75,9 +75,21 @@ export function getMarkdownHeadings(markdown: string | null | undefined): Markdo
   }
 
   const headingCounts = new Map<string, number>();
+  // A shell comment or a Markdown sample inside a code fence is not a section.
+  // The renderer skips fences, so counting them here would also push the ids
+  // of later real headings out of step with the page.
+  let inFence = false;
   return normalizeMarkdownText(markdown)
     .split('\n')
-    .map((line) => line.trim().match(/^(#{1,6})\s+(.*)$/))
+    .map((line) => line.trim())
+    .filter((line) => {
+      if (/^```/.test(line)) {
+        inFence = !inFence;
+        return false;
+      }
+      return !inFence;
+    })
+    .map((line) => line.match(/^(#{1,6})\s+(.*)$/))
     .filter((match): match is RegExpMatchArray => Boolean(match))
     .map((match) => {
       const text = normalizeHeadingText(match[2].trim());
