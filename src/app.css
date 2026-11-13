@@ -332,8 +332,14 @@ button {
 }
 
 .rainbow-title__word {
-	/* Flatten wrapper boxes so long words can break between enhanced character spans. */
-	display: contents;
+	/*
+	 * Each character is its own inline-block, so without a box around the word
+	 * every letter is a line-break opportunity and "Budgets" wraps as "Bu / dgets".
+	 * An inline-block keeps the word whole. max-width still lets a word that is
+	 * wider than the title wrap between its characters instead of overflowing.
+	 */
+	display: inline-block;
+	max-width: 100%;
 	white-space: normal;
 	overflow-wrap: anywhere;
 }

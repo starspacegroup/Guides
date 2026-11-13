@@ -78,4 +78,16 @@ describe('mobile layout', () => {
 			expect(listSource).not.toMatch(/\.cms-list-header-art\s*\{[^}]*display:\s*none/);
 		});
 	});
+	describe('rainbow titles', () => {
+		it('keeps each word in a box of its own so a title never wraps mid-word', () => {
+			// Every character is an inline-block. With `display: contents` on the
+			// word wrapper, "Free-Tier Budgets" wrapped as "Bu / dgets".
+			const word = appCss.match(/\.rainbow-title__word\s*\{([^}]*)\}/);
+			expect(word).not.toBeNull();
+			expect(word![1]).toMatch(/display:\s*inline-block/);
+			expect(word![1]).not.toMatch(/display:\s*contents/);
+			// A word wider than the title must still be able to wrap inside its box.
+			expect(word![1]).toMatch(/max-width:\s*100%/);
+		});
+	});
 });

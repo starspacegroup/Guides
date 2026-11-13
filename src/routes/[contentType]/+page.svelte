@@ -19,6 +19,8 @@
 	$: contentType = data.contentType;
 	$: items = data.items || [];
 	$: totalPages = data.totalPages || 1;
+	// The count is for the collection, not for the page of it on screen.
+	$: totalItems = data.total ?? items.length;
 	$: currentPage = data.page || 1;
 
 	function formatDate(dateStr: string | null): string {
@@ -88,8 +90,8 @@
 			{/if}
 			{#if items.length > 0}
 				<p class="cms-list-count">
-					{items.length}
-					{items.length === 1 ? 'guide' : 'guides'} in this collection
+					{totalItems}
+					{totalItems === 1 ? 'guide' : 'guides'} in this collection
 				</p>
 			{/if}
 		</div>
