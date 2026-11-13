@@ -8,7 +8,14 @@
 
 	const collectionLabels: Record<string, string> = {
 		article: 'Editorial collection',
-		layout: 'Product systems'
+		layout: 'Product systems',
+		cloud: 'Platform',
+		shield: 'Trust boundaries',
+		pulse: 'Failure handling',
+		check: 'Proof and tests',
+		sparkles: 'Models and agents',
+		chat: 'Community tooling',
+		rocket: 'Going public'
 	};
 
 	const accentVariants = ['aurora', 'signal', 'ember'] as const;
