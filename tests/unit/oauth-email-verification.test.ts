@@ -90,4 +90,43 @@ describe('Discord email verification', () => {
 		expect(stored).not.toContain('victim@example.com');
 		expect(stored).toContain('attacker@discord.local');
 	});
+
+	it('applies the Discord profile on every sign-in: Discord-hosted avatar only', async () => {
+		respondWith({
+			id: '293484886726279168',
+			username: 'ada',
+			avatar: 'abcdef0123456789abcdef0123456789',
+			email: 'ada@example.com',
+			verified: true
+		});
+		const request = event();
+		await discordCallback(request);
+		const sql = request.platform.env.DB.prepare.mock.calls.map((call: string[]) => call[0]);
+		expect(sql.some((q: string) => q.includes('SET github_avatar_url'))).toBe(true);
+		const bound = request.statement.bind.mock.calls.flat();
+		expect(bound).toContain(
+			'https://cdn.discordapp.com/avatars/293484886726279168/abcdef0123456789abcdef0123456789.png?size=128'
+		);
+	});
+
+	it('does not let a hostile avatar hash point the picture off Discord', async () => {
+		respondWith({ id: '1234567', username: 'x', avatar: '../evil', verified: false });
+		const request = event();
+		await discordCallback(request);
+		const urls = request.statement.bind.mock.calls
+			.flat()
+			.filter((v: unknown) => typeof v === 'string' && v.startsWith('http'));
+		for (const url of urls) expect(url.startsWith('https://cdn.discordapp.com/')).toBe(true);
+	});
+
+	it('still signs in when the profile steps throw', async () => {
+		respondWith({ id: '1234567', username: 'x', avatar: 'abcdef0123456789abcdef0123456789' });
+		const request = event();
+		request.statement.run
+			.mockRejectedValueOnce(new Error('seed'))
+			.mockRejectedValue(new Error('db'));
+		mocks.reconcile.mockResolvedValue({ userId: 'u' });
+		await discordCallback(request);
+		expect(mocks.finalize).toHaveBeenCalled();
+	});
 });

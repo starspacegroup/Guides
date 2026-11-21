@@ -59,4 +59,22 @@ describe('OAuth login finalization', () => {
 		expect(mocks.remove).toHaveBeenCalledWith(expect.anything(), 'old');
 		expect(mocks.create).toHaveBeenCalledWith(expect.anything(), 'user', 7);
 	});
+
+	it('records last_login_at on every sign-in, and never blocks one when that fails', async () => {
+		const input = options({ id: 'user', is_admin: 0 });
+		const run = vi.fn().mockRejectedValue(new Error('no such column'));
+		const stmt = {
+			bind: vi.fn(),
+			first: vi.fn().mockResolvedValue({ id: 'user', is_admin: 0 }),
+			run
+		};
+		stmt.bind.mockReturnValue(stmt);
+		input.db.prepare.mockReturnValue(stmt);
+		const response = await finalizeOAuthLogin(input);
+		expect(input.db.prepare).toHaveBeenCalledWith(
+			'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?'
+		);
+		expect(run).toHaveBeenCalled();
+		expect(response.status).toBe(302);
+	});
 });

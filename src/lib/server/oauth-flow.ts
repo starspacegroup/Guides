@@ -1,7 +1,13 @@
 import { reconcileOAuthAccount } from '$lib/server/oauth-account';
+import { applyDiscordProfile } from '$lib/server/discord-profile';
 import { finalizeOAuthLogin } from '$lib/server/oauth-finalization';
 import { resolveOwnerStatus } from '$lib/utils/auth-identity';
 import { getAuthProviderCredentials } from '$lib/utils/auth-provider-config';
+import {
+	DISCORD_PLACEHOLDER_DOMAIN,
+	discordDisplayName,
+	discordEmailPolicy
+} from '$lib/utils/discord-identity';
 import {
 	consumeOAuthTransaction,
 	createOAuthTransaction,
@@ -22,6 +28,8 @@ interface OAuthIdentity {
 	email: string | null;
 	createUser(db: D1Database, platform: App.Platform, id: string): Promise<void>;
 	updateUser(db: D1Database, id: string, match: AccountMatch): Promise<void>;
+	/** Runs on every sign-in once the account is settled; every step inside fails soft. */
+	afterReconcile?(db: D1Database, id: string): Promise<void>;
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -147,21 +155,24 @@ async function fetchIdentity(provider: OAuthProvider, accessToken: string): Prom
 			}
 		};
 	}
-	// Discord hands back an address before the account confirms it. An unverified address must
-	// never select an existing user, and must never be stored where a later login could match it.
-	const email = profile.verified === true ? optionalString(profile.email) : null;
+	// The shared Discord identity policy (docs/DISCORD_LOGIN.md): Discord hands back an address before
+	// the account confirms it, so only a verified one may select an existing user.
+	const emailPolicy = discordEmailPolicy(profile);
 	const username = requiredString(profile.username);
-	const name = optionalString(profile.global_name) || username;
+	const name = discordDisplayName(profile);
 	return {
 		providerAccountId,
 		legacyUserId: `discord_${providerAccountId}`,
-		email,
+		email: emailPolicy.matchEmail,
 		async createUser(db, _platform, id) {
+			// Kept stricter than the template: an unverified address is never stored on a new account,
+			// where a later GitHub login with that email could match it. A placeholder stands in.
+			const storedEmail = emailPolicy.matchEmail ?? `${username}@${DISCORD_PLACEHOLDER_DOMAIN}`;
 			await db
 				.prepare(
 					'INSERT INTO users (id, email, name, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)'
 				)
-				.bind(id, email || `${username}@discord.local`, name)
+				.bind(id, storedEmail, name)
 				.run();
 		},
 		async updateUser(db, id, match) {
@@ -171,7 +182,8 @@ async function fetchIdentity(provider: OAuthProvider, accessToken: string): Prom
 					.bind(name, id)
 					.run();
 			}
-		}
+		},
+		afterReconcile: (db, id) => applyDiscordProfile(db, id, profile)
 	};
 }
 
@@ -248,6 +260,7 @@ export async function completeOAuth(provider: OAuthProvider, event: RouteEvent):
 			createUser: (id) => identity.createUser(db, platform, id),
 			updateUser: (id, match) => identity.updateUser(db, id, match)
 		});
+		await identity.afterReconcile?.(db, reconciled.userId);
 		return finalizeOAuthLogin({
 			db,
 			platform,
