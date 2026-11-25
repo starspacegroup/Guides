@@ -85,7 +85,7 @@ Tables (from `migrations/`): `users`, `sessions`, `oauth_accounts`, `chat_messag
 
 ### Auth
 
-Custom cookie-session auth, not a framework flow (`@auth/sveltekit` is installed but the live path is hand-rolled): `src/hooks.server.ts` verifies the signed `session` cookie, resolves its hashed D1 session, and loads `event.locals.user`; missing or invalid auth dependencies fail closed. Shared OAuth transaction and callback orchestration lives in `src/lib/server/oauth-flow.ts`, with provider routes under `src/routes/api/auth/`. Client IDs/secrets come from environment bindings or owner-managed KV configuration. `GITHUB_OWNER_ID` in `wrangler.toml` vars designates the owner/admin.
+Custom cookie-session auth, not a framework flow (`@auth/sveltekit` is installed but the live path is hand-rolled): `src/hooks.server.ts` verifies the signed `session` cookie, resolves its hashed D1 session, and loads `event.locals.user`; missing or invalid auth dependencies fail closed. Shared OAuth transaction and callback orchestration lives in `src/lib/server/oauth-flow.ts`, with provider routes under `src/routes/api/auth/`. Client IDs/secrets come from environment bindings or owner-managed KV configuration. `GITHUB_OWNER_ID` in `wrangler.toml` vars designates the owner/admin. Discord login follows the shared identity policy in `docs/DISCORD_LOGIN.md` (verified-only email matching, `@discord.local` placeholders, avatar from Discord's CDN only, `users.email_verified_at` / `last_login_at`); the pure rules are `src/lib/utils/discord-identity.ts`, applied by `src/lib/server/discord-profile.ts`.
 
 ### Testing layout
 

@@ -19,6 +19,14 @@ export async function finalizeOAuthLogin(options: {
 		.bind(options.userId)
 		.first<AuthIdentityRecord>();
 	if (!user) throw new Error('OAuth user missing');
+	try {
+		await options.db
+			.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?')
+			.bind(user.id)
+			.run();
+	} catch {
+		// Never stop someone signing in over the "last sign-in" note.
+	}
 	const isOwner = await resolveOwnerStatus(options.platform, user);
 	const session = await createSession(options.db, user.id, 7);
 	if (options.currentSessionToken) await deleteSession(options.db, options.currentSessionToken);

@@ -29,7 +29,6 @@
 		"db:migrate:list": "wrangler d1 migrations list guides-db"
 	},
 	"devDependencies": {
-		"@types/node": "^24.10.1",
 		"@playwright/test": "^1.40.0",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",
 		"@sveltejs/kit": "^2.0.0",
@@ -37,8 +36,10 @@
 		"@testing-library/jest-dom": "^6.1.5",
 		"@testing-library/svelte": "^4.2.3",
 		"@testing-library/user-event": "^14.6.1",
+		"@types/node": "^24.10.1",
 		"@vitest/coverage-v8": "^1.0.4",
 		"@vitest/ui": "^1.0.4",
+		"fast-check": "^4.10.2",
 		"happy-dom": "^12.10.3",
 		"prettier": "^3.1.0",
 		"prettier-plugin-svelte": "^3.1.2",
@@ -56,4 +57,3 @@
 	},
 	"type": "module"
 }
-
