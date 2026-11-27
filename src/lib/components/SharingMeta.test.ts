@@ -220,9 +220,17 @@ describe('SharingMeta', () => {
 		expect(canonical?.getAttribute('href')).toBe('https://example.com/canonical');
 	});
 
-	it('should not render canonical link when url is not provided', () => {
+	it('should default canonical to the clean absolute URL of the current page', () => {
 		render(SharingMeta, {
 			props: { title: 'Test' }
+		});
+		const canonical = document.querySelector('link[rel="canonical"]');
+		expect(canonical?.getAttribute('href')).toBe('https://guides.starspace.group/');
+	});
+
+	it('should not render canonical link on noindex pages without a url', () => {
+		render(SharingMeta, {
+			props: { title: 'Test', noindex: true }
 		});
 		const canonical = document.querySelector('link[rel="canonical"]');
 		expect(canonical).not.toBeInTheDocument();

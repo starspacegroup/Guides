@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { canonicalUrl } from '$lib/utils/seo';
 
 	/** Page title (displayed in browser tab and social shares) */
 	export let title: string;
@@ -15,7 +16,7 @@
 	export let image: string = '';
 	/** Alt text for the share image */
 	export let imageAlt: string = '';
-	/** Canonical URL for this page */
+	/** Canonical URL for this page (defaults to the clean absolute URL of the current path) */
 	export let url: string = '';
 	/** Open Graph content type */
 	export let type: 'website' | 'article' | 'profile' = 'website';
@@ -43,6 +44,9 @@
 	/** Height of the share image in pixels */
 	export let imageHeight: number = 0;
 
+	// Canonical: explicit url wins; otherwise origin + pathname with the query stripped.
+	// noindex pages (errors) get no canonical.
+	$: canonical = url || (noindex ? '' : canonicalUrl($page.url.pathname));
 	$: fullTitle = siteName ? `${title} - ${siteName}` : title;
 	// Resolve root-relative image paths to absolute URLs for OG/Twitter compliance
 	$: absoluteImage = image && image.startsWith('/') ? `${$page.url.origin}${image}` : image;
@@ -61,8 +65,8 @@
 	{/if}
 
 	<!-- Canonical -->
-	{#if url}
-		<link rel="canonical" href={url} />
+	{#if canonical}
+		<link rel="canonical" href={canonical} />
 	{/if}
 
 	<!-- Open Graph -->
@@ -81,8 +85,8 @@
 			<meta property="og:image:height" content={String(imageHeight)} />
 		{/if}
 	{/if}
-	{#if url}
-		<meta property="og:url" content={url} />
+	{#if canonical}
+		<meta property="og:url" content={canonical} />
 	{/if}
 	<meta property="og:site_name" content={siteName || 'Guides'} />
 	<meta property="og:locale" content={locale} />

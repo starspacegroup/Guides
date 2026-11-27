@@ -1,0 +1,18 @@
+# robots.txt for Guides (guides.starspace.group)
+#
+# Cloudflare adds the content-signals block above this at the edge; keep this
+# file to crawl rules only so the two do not conflict.
+#
+# Private surfaces (admin console, JSON APIs, auth flows, reset and setup
+# routes, the signed-in profile) stay disallowed for every crawler.
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /profile
+Disallow: /reset
+Disallow: /setup
+
+Sitemap: https://guides.starspace.group/sitemap.xml
